@@ -5,7 +5,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text>Open up App.js to start working on your app!</Text>
-      <Text>Test Commit 1</Text>
+      <Text>Test Commit 2</Text>
       <StatusBar style="auto" />
     </View>
   );

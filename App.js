@@ -5,7 +5,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text>Open up App.js to start working on your app!</Text>
-      <Text>Happy Birthday Prem</Text>
+      <Text>Happy Birthday Prem!!!</Text>
       <StatusBar style="auto" />
     </View>
   );

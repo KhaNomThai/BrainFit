@@ -26,6 +26,13 @@ export default function GameScreen({ navigation }) {
       >
         <Text style={styles.buttonText}>⚡ เกมวัดความเร็วปฏิกิริยา</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate("StoryGame")}
+      >
+        <Text style={styles.buttonText}>⚡ เกมเล่าเรื่อง</Text>
+      </TouchableOpacity>
     </View>
   );
 }

@@ -5,10 +5,12 @@ import { auth, db } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
+import FastMath from "./screens/Gamescreen/FastMath";   // ✅ แก้ path ตรงนี้
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import ProfileSetupScreen from "./screens/ProfileSetupScreen";
 import MainTabs from "./navigation/MainTabs";
+import GameScreen from "./screens/GameScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -47,6 +49,8 @@ export default function App() {
           component={MainTabs}
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="GameScreen" component={GameScreen} />
+        <Stack.Screen name="FastMath" component={FastMath} />
       </Stack.Navigator>
     </NavigationContainer>
   );

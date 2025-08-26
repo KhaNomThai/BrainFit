@@ -4,7 +4,7 @@ import { View, Text, Button, StyleSheet } from "react-native";
 export default function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Example HomeScreen</Text>
+      <Text style={styles.text}>กิจกรรมประจำวัน</Text>
       
     </View>
   );

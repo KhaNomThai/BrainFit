@@ -31,7 +31,7 @@ export default function GameScreen({ navigation }) {
         style={styles.button}
         onPress={() => navigation.navigate("StoryGame")}
       >
-        <Text style={styles.buttonText}>⚡ เกมเล่าเรื่อง</Text>
+        <Text style={styles.buttonText}>📕 เกมเล่าเรื่อง</Text>
       </TouchableOpacity>
     </View>
   );

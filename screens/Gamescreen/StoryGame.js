@@ -7,17 +7,18 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  Alert,
 } from "react-native";
 
-/** =========================
+/* =========================
  * CONFIG
  * ========================= */
-const QUESTION_TIME = 30;     // วินาทีต่อข้อ
-const AUTO_NEXT_DELAY = 700;  // ms หลังตอบ
-const SHUFFLE_CHOICES = true; // สุ่มตัวเลือกทุกครั้ง
+const QUESTION_TIME = 30;     // วินาที/ข้อ
+const AUTO_NEXT_DELAY = 650;  // ms หลังเลือกระดับคำตอบ
+const SHUFFLE_CHOICES = true; // ไม่สุ่ม "ลำดับเรื่อง", สุ่มเฉพาะตัวเลือก
 
-/** =========================
- * STORIES (ครบ 30 เรื่อง x 3 คำถาม = 90 ข้อ)
+/* =========================
+ * STORIES (30 เรื่อง × 3 ข้อ)
  * ========================= */
 const STORIES = [
   {
@@ -30,7 +31,7 @@ const STORIES = [
     qas: [
       { id: "1.1", prompt: "ยายบัวไปตลาดวันอะไร?", choices: ["วันอังคาร", "วันอาทิตย์", "วันจันทร์", "วันศุกร์"], correctIndex: 2 },
       { id: "1.2", prompt: "ยายบัวซื้อปลาทูกี่ตัว?", choices: ["3 ตัว", "1 ตัว", "5 ตัว", "ไม่ได้ซื้อ"], correctIndex: 0 },
-      { id: "1.3", prompt: "ยายบัวเจอใครระหว่างเดินกลับ?", choices: ["เพื่อนข้างบ้าน", "ลูกหลาน", "พี่ชาย", "น้องสาว"], correctIndex: 1 },
+      { id: "1.3", prompt: "ยายบัวเจอใครระหว่างทางกลับ?", choices: ["เพื่อนข้างบ้าน", "ลูกหลาน", "พี่ชาย", "น้องสาว"], correctIndex: 1 },
     ],
   },
   {
@@ -90,7 +91,7 @@ const STORIES = [
     qas: [
       { id: "6.1", prompt: "งานที่เล่าคืองานอะไร?", choices: ["วันเกิด", "ขึ้นบ้านใหม่", "งานแต่ง", "งานหมั้น"], correctIndex: 2 },
       { id: "6.2", prompt: "เจ้าบ่าวชื่ออะไรและใส่ชุดแบบไหน?", choices: ["ตี๋-สูทครีม", "ต๋อง-สูทชมพู", "ตูมตาม-สูทเทา", "ต้น-สูทครีม"], correctIndex: 3 },
-      { id: "6.3", prompt: "อาหารที่เลี้ยงแขกมีอะไร?", choices: ["แกงจืด ปลาทอด และขนมหวาน", "ขนมจีนน้ำยาป่า ขนมตาล", "ก๋วยเตี๋ยว ไอศกรีม", "ปลาทอด ไอศกรีม ขนมหวาน"], correctIndex: 0 },
+      { id: "6.3", prompt: "อาหารที่เลี้ยงแขกมีอะไร?", choices: ["แกงจืด ปลาทอด และขนมหวาน", "ขนมจีน-ขนมตาล", "ก๋วยเตี๋ยว-ไอศกรีม", "ปลาทอด-ไอศกรีม-ขนมหวาน"], correctIndex: 0 },
     ],
   },
   {
@@ -101,7 +102,7 @@ const STORIES = [
       "เสร็จงานกินข้าวกลางวันใต้ต้นไม้ คุยและหัวเราะกันอย่างสนุกสนาน",
     qas: [
       { id: "7.1", prompt: "เรื่องนี้เกิดขึ้นในฤดูอะไร?", choices: ["ฤดูเกี่ยวข้าว", "ฤดูฝน", "ฤดูร้อน", "ฤดูเก็บมังคุด"], correctIndex: 0 },
-      { id: "7.2", prompt: "ตายงพาหลานไปทำกิจกรรมอะไร?", choices: ["เก็บผัก", "เก็บมังคุด", "จับปลา", "เกี่ยวข้าว"], correctIndex: 3 },
+      { id: "7.2", prompt: "พาหลานไปทำกิจกรรมอะไร?", choices: ["เก็บผัก", "เก็บมังคุด", "จับปลา", "เกี่ยวข้าว"], correctIndex: 3 },
       { id: "7.3", prompt: "ฝนช่วยทำอะไร?", choices: ["ถือเคียว", "ถือกระสอบ", "มัดฟ่อนข้าว", "แจกข้าว"], correctIndex: 2 },
     ],
   },
@@ -109,11 +110,11 @@ const STORIES = [
     id: "8",
     title: "งานวันเกิดเพื่อนเก่า",
     body:
-      "ป้าแสงได้รับเชิญไปงานวันเกิดเพื่อนเก่าสมัยเรียนชื่อ “บุญเลิศ” มีร้องเพลงวันเกิด เป่าเค้ก ช่วงค่ำมีดนตรีสดแนวลูกกรุง " +
-      "ทุกคนระลึกถึงสมัยก่อนและเต้นรำเล็กน้อย",
+      "ป้าแสงได้รับเชิญไปงานวันเกิดเพื่อนเก่าสมัยเรียนชื่อ “บุญเลิศ” มีร้องเพลงวันเกิด เป่าเค้ก " +
+      "ช่วงค่ำมีดนตรีสดแนวลูกกรุง ทุกคนระลึกถึงสมัยก่อนและเต้นรำเล็กน้อย",
     qas: [
       { id: "8.1", prompt: "เจ้าของวันเกิดชื่ออะไร?", choices: ["บุญชอบ", "บุญเลิศ", "บุญมี", "บุญเหลือ"], correctIndex: 1 },
-      { id: "8.2", prompt: "กิจกรรมในงานมีอะไร?", choices: ["เต้นรำ", "ร้องเพลงและเป่าเค้ก", "เล่นเกม", "นอน"], correctIndex: 1 },
+      { id: "8.2", prompt: "มีกิจกรรมอะไรบ้าง?", choices: ["เต้นรำ", "ร้องเพลงและเป่าเค้ก", "เล่นเกม", "นอน"], correctIndex: 1 },
       { id: "8.3", prompt: "เพลงที่เล่นเป็นแนวอะไร?", choices: ["ลูกทุ่ง", "ลูกกรุง", "สากล", "คลาสสิก"], correctIndex: 1 },
     ],
   },
@@ -125,7 +126,7 @@ const STORIES = [
       "เพื่อนบ้านมาขอแบ่งผักบ่อยๆ ทั้งสองยินดีให้",
     qas: [
       { id: "9.1", prompt: "ใครทำสวน?", choices: ["ลูกสาวกับลูกชาย", "ลุงคำกับป้าสาย", "หลานชายกับเพื่อน", "เพื่อนบ้าน"], correctIndex: 1 },
-      { id: "9.2", prompt: "ปลูกผักอะไรบ้าง?", choices: ["มะนาว พริก", "พริก กะเพรา ตะไคร้", "มะกรูด โหระพา", "ตะไคร้ ผักบุ้ง ถั่วฝักยาว"], correctIndex: 1 },
+      { id: "9.2", prompt: "ปลูกผักอะไรบ้าง?", choices: ["มะนาว-พริก", "พริก-กะเพรา-ตะไคร้", "มะกรูด-โหระพา", "ตะไคร้-ผักบุ้ง-ถั่วฝักยาว"], correctIndex: 1 },
       { id: "9.3", prompt: "เพื่อนบ้านมาขออะไร?", choices: ["ปลา", "เสื้อผ้า", "ไข่ไก่", "ผัก"], correctIndex: 3 },
     ],
   },
@@ -134,15 +135,14 @@ const STORIES = [
     title: "งานบุญประจำปีที่วัด",
     body:
       "หมู่บ้านจัดงานบุญประจำปีที่วัด ทุกคนแต่งชุดไทย มีขบวนแห่กลองยาว ฟ้อนรำ ทำบุญตักบาตร " +
-      "ตอนกลางวันประกวดทำอาหารพื้นบ้าน เช่น แกงหน่อไม้ น้ำพริก และข้าวจี่ ตอนเย็นมีการแสดงลิเก",
+      "กลางวันประกวดทำอาหารพื้นบ้าน เช่น แกงหน่อไม้ น้ำพริก และข้าวจี่ เย็นมีการแสดงลิเก",
     qas: [
-      { id: "10.1", prompt: "ทุกคนแต่งกายแบบไหน?", choices: ["ชุดไทย", "ชุดนอน", "ชุดราตรี", "ชุดสูท"], correctIndex: 0 },
-      { id: "10.2", prompt: "ประกวดเมนูอะไรตอนกลางวัน?", choices: ["แกงหน่อไม้ น้ำพริก ข้าวจี่", "ขนมจีนแกงป่า พะโล้", "ข้าวเหนียวมะม่วง ขนมตาล", "ลอดช่อง บ้าบิ่น แกงเนื้อ"], correctIndex: 0 },
-      { id: "10.3", prompt: "ตอนเย็นมีการแสดงอะไร?", choices: ["ดนตรีสด", "รำวงย้อนยุค", "ลิเก", "งิ้ว"], correctIndex: 2 },
+      { id: "10.1", prompt: "แต่งกายแบบไหน?", choices: ["ชุดไทย", "ชุดนอน", "ชุดราตรี", "ชุดสูท"], correctIndex: 0 },
+      { id: "10.2", prompt: "ประกวดเมนูอะไร?", choices: ["แกงหน่อไม้-น้ำพริก-ข้าวจี่", "ขนมจีน-พะโล้", "ข้าวเหนียวมะม่วง-ขนมตาล", "ลอดช่อง-บ้าบิ่น-แกงเนื้อ"], correctIndex: 0 },
+      { id: "10.3", prompt: "เย็นมีการแสดงอะไร?", choices: ["ดนตรีสด", "รำวงย้อนยุค", "ลิเก", "งิ้ว"], correctIndex: 2 },
     ],
   },
 
-  // 11-30
   {
     id: "11",
     title: "พายเรือในบึงใกล้บ้าน",
@@ -151,7 +151,7 @@ const STORIES = [
       "ส่วนหลานเล็กนั่งชมวิว ข้างทางมีดอกบัวบานสวยงาม เสร็จแล้วแวะซื้อไอศกรีมคลายร้อน",
     qas: [
       { id: "11.1", prompt: "ทำกิจกรรมอะไร?", choices: ["พายเรือ", "ปั่นจักรยาน", "นั่งรถเล่น", "นั่งเล่น"], correctIndex: 0 },
-      { id: "11.2", prompt: "เพื่อความปลอดภัยทุกคนใส่อะไร?", choices: ["หมวกกันน็อค", "ถุงมือ", "เสื้อชูชีพ", "รองเท้าบูท"], correctIndex: 2 },
+      { id: "11.2", prompt: "เพื่อความปลอดภัยใส่อะไร?", choices: ["หมวกกันน็อค", "ถุงมือ", "เสื้อชูชีพ", "รองเท้าบูท"], correctIndex: 2 },
       { id: "11.3", prompt: "หลังพายเรือเสร็จทำอะไร?", choices: ["นั่งพัก", "กลับบ้าน", "กินไอศกรีม", "ถ่ายรูป"], correctIndex: 2 },
     ],
   },
@@ -164,7 +164,7 @@ const STORIES = [
     qas: [
       { id: "12.1", prompt: "งานนี้คืองานอะไร?", choices: ["วันเข้าพรรษา", "วันออกพรรษา", "วันลอยกระทง", "วันสงกรานต์"], correctIndex: 1 },
       { id: "12.2", prompt: "จัดที่ไหน?", choices: ["กลางหมู่บ้าน", "วัดกลางหมู่บ้าน", "ลานหน้าหมู่บ้าน", "สวนสาธารณะ"], correctIndex: 1 },
-      { id: "12.3", prompt: "ขบวนแห่มีอะไรเด่น?", choices: ["รถแห่", "ขบวนนางรำ", "แตรวง", "แห่ผ้าไตรและดนตรีพื้นบ้าน"], correctIndex: 3 },
+      { id: "12.3", prompt: "ขบวนแห่เด่นคือ?", choices: ["รถแห่", "ขบวนนางรำ", "แตรวง", "แห่ผ้าไตร+ดนตรีพื้นบ้าน"], correctIndex: 3 },
     ],
   },
   {
@@ -176,7 +176,7 @@ const STORIES = [
     qas: [
       { id: "13.1", prompt: "ฉายหนังที่ไหน?", choices: ["วัดในหมู่บ้าน", "ลานกลางหมู่บ้าน", "โรงเรียน", "สวน"], correctIndex: 0 },
       { id: "13.2", prompt: "ชาวบ้านนั่งดูด้วยอะไร?", choices: ["ม้าหิน", "เก้าอี้พับ", "ผ้าปู", "เสื่อ"], correctIndex: 3 },
-      { id: "13.3", prompt: "ขนมยอดฮิตตอนดูหนังคืออะไร?", choices: ["ขนมกรุบกรอบ", "ยำมาม่า", "ข้าวโพดคั่วและน้ำอัดลม", "พิซซ่า"], correctIndex: 2 },
+      { id: "13.3", prompt: "ขนมยอดฮิตคือ?", choices: ["ขนมกรุบกรอบ", "ยำมาม่า", "ข้าวโพดคั่วและน้ำอัดลม", "พิซซ่า"], correctIndex: 2 },
     ],
   },
   {
@@ -186,8 +186,8 @@ const STORIES = [
       "วันแม่แห่งชาติ โรงเรียนประจำตำบลจัดกิจกรรมปลูกต้นไม้ นักเรียนพาคุณแม่มาร่วม " +
       "ทุกครอบครัวปลูกต้นมะม่วงหนึ่งต้น แล้วช่วยกันรดน้ำและถ่ายรูปร่วมกัน",
     qas: [
-      { id: "14.1", prompt: "กิจกรรมจัดเนื่องในวันอะไร?", choices: ["วันพ่อ", "วันแม่", "วันครู", "วันเกิด"], correctIndex: 1 },
-      { id: "14.2", prompt: "ปลูกต้นอะไร?", choices: ["ต้นมะม่วง", "ต้นมะลิ", "ต้นพุทธรักษา", "ต้นกล้วย"], correctIndex: 0 },
+      { id: "14.1", prompt: "จัดเนื่องในวันอะไร?", choices: ["วันพ่อ", "วันแม่", "วันครู", "วันเกิด"], correctIndex: 1 },
+      { id: "14.2", prompt: "ปลูกต้นอะไร?", choices: ["มะม่วง", "มะลิ", "พุทธรักษา", "กล้วย"], correctIndex: 0 },
       { id: "14.3", prompt: "หลังปลูกเสร็จทำอะไร?", choices: ["กินข้าว", "กลับบ้าน", "นั่งเล่น", "รดน้ำและถ่ายรูป"], correctIndex: 3 },
     ],
   },
@@ -224,7 +224,7 @@ const STORIES = [
     qas: [
       { id: "17.1", prompt: "ใครไปโรงพยาบาล?", choices: ["ลุงทอง", "ลุงสมร", "ป้าสมศรี", "ลูกสาว"], correctIndex: 0 },
       { id: "17.2", prompt: "ใครเป็นคนพาไป?", choices: ["ญาติ", "ลูกสาว", "เพื่อนบ้าน", "หลานชาย"], correctIndex: 1 },
-      { id: "17.3", prompt: "ตรวจอะไรบ้าง?", choices: ["ความดัน เบาหวาน", "ตรวจฟัน", "ความดันโลหิตและเอ็กซเรย์", "เลือดและตา"], correctIndex: 2 },
+      { id: "17.3", prompt: "ตรวจอะไรบ้าง?", choices: ["ความดัน-เบาหวาน", "ตรวจฟัน", "ความดันโลหิตและเอ็กซเรย์", "เลือด-ตา"], correctIndex: 2 },
     ],
   },
   {
@@ -260,7 +260,7 @@ const STORIES = [
     qas: [
       { id: "20.1", prompt: "ไปที่ไหน?", choices: ["นา", "สวนผัก", "สวนผลไม้", "แอ่งน้ำ"], correctIndex: 0 },
       { id: "20.2", prompt: "ท้องทุ่งเต็มไปด้วยอะไร?", choices: ["แมลง", "ฝูงนก", "รวงข้าวสีเหลืองทอง", "ฝุ่น"], correctIndex: 2 },
-      { id: "20.3", prompt: "กินอะไรใต้ต้นไม้?", choices: ["หมูทอดกับข้าวสวย", "ข้าวเหนียวกับปลาร้า", "แกงเนื้อกับข้าวสวย", "ข้าวเหนียวกับไก่ทอด"], correctIndex: 3 },
+      { id: "20.3", prompt: "กินอะไรใต้ต้นไม้?", choices: ["หมูทอด-ข้าวสวย", "ข้าวเหนียว-ปลาร้า", "แกงเนื้อ-ข้าวสวย", "ข้าวเหนียว-ไก่ทอด"], correctIndex: 3 },
     ],
   },
   {
@@ -378,12 +378,12 @@ const STORIES = [
     qas: [
       { id: "30.1", prompt: "ใครไปหาเพื่อนเก่า?", choices: ["ตาเล็ก", "ลุงดำ", "ตาเพียร", "ป้าละไม"], correctIndex: 0 },
       { id: "30.2", prompt: "เพื่อนอยู่ที่ไหน?", choices: ["ต่างประเทศ", "จังหวัดใกล้เคียง", "หมู่บ้านเดียวกัน", "เมืองหลวง"], correctIndex: 1 },
-      { id: "30.3", prompt: "เมื่อเจอกันทำกิจกรรมอะไร?", choices: ["เล่นกีฬา", "ปลูกต้นไม้", "ดูทีวี", "คุยถึงความหลังและหัวเราะ"], correctIndex: 3 },
+      { id: "30.3", prompt: "เมื่อเจอกันทำอะไร?", choices: ["เล่นกีฬา", "ปลูกต้นไม้", "ดูทีวี", "คุยถึงความหลังและหัวเราะ"], correctIndex: 3 },
     ],
   },
 ];
 
-/** =========================
+/* =========================
  * UTILS
  * ========================= */
 const shuffleArray = (arr) => {
@@ -395,34 +395,33 @@ const shuffleArray = (arr) => {
   return a;
 };
 
-const prepareRoundQuestions = (qas) =>
-  shuffleArray(qas).map((q) => {
+const prepareRoundQuestions = (qas, onlyIds = null) => {
+  const base = onlyIds ? qas.filter((q) => onlyIds.includes(q.id)) : qas; // ลำดับข้อคงเดิม
+  return base.map((q) => {
     if (!SHUFFLE_CHOICES) return { ...q };
-    const pair = q.choices.map((c, i) => ({ c, i }));
-    const shuffled = shuffleArray(pair);
+    const pairs = q.choices.map((c, i) => ({ c, i }));
+    const shuffled = shuffleArray(pairs);
     return {
       ...q,
       choices: shuffled.map((p) => p.c),
       correctIndex: shuffled.findIndex((p) => p.i === q.correctIndex),
     };
   });
+};
 
-/** =========================
- * COMPONENTS
- * ========================= */
+/* ปุ่มเด้งตอนกด */
 const PressableScale = ({ style, onPress, disabled, children }) => {
   const scale = useRef(new Animated.Value(1)).current;
-  const pressIn = () =>
+  const onIn = () =>
     Animated.spring(scale, { toValue: 0.98, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
-  const pressOut = () =>
+  const onOut = () =>
     Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
-
   return (
-    <Animated.View style={[{ transform: [{ scale }] }]}>
+    <Animated.View style={{ transform: [{ scale }] }}>
       <TouchableOpacity
         activeOpacity={0.8}
-        onPressIn={pressIn}
-        onPressOut={pressOut}
+        onPressIn={onIn}
+        onPressOut={onOut}
         onPress={onPress}
         disabled={disabled}
         style={style}
@@ -433,34 +432,49 @@ const PressableScale = ({ style, onPress, disabled, children }) => {
   );
 };
 
-/** =========================
- * MAIN SCREEN
+/* =========================
+ * MAIN (เฟส: home | read | quiz | result)
  * ========================= */
 export default function StoryGame() {
-  const [phase, setPhase] = useState("read"); // read | quiz | result
-  const [story, setStory] = useState(() => STORIES[Math.floor(Math.random() * STORIES.length)]);
+  const TOTAL = STORIES.length;
+
+  // เฟส/เรื่องที่ทำอยู่
+  const [phase, setPhase] = useState("home");
+  const [storyIndex, setStoryIndex] = useState(0);
+  const story = STORIES[storyIndex];
+
+  // สถานะรวม
+  const [completed, setCompleted] = useState(Array(TOTAL).fill(false)); // ผ่านแล้ว (นับคะแนน)
+  const [attempted, setAttempted] = useState(Array(TOTAL).fill(false)); // เคยทำมาแล้วแต่ยังไม่ผ่าน
+  const totalScore = completed.filter(Boolean).length;
+  const allCleared = totalScore === TOTAL;
+
+  // สถานะของ "เรื่องปัจจุบัน"
   const [questions, setQuestions] = useState(() => prepareRoundQuestions(story.qas));
   const [index, setIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(QUESTION_TIME);
   const [selected, setSelected] = useState(null);
   const [answers, setAnswers] = useState([]); // [{ id, chosen, correctIndex }]
+  const [correctSet, setCorrectSet] = useState(new Set()); // id ของข้อที่ถูกแล้ว
+
+  // แถบ progress เฉพาะ "ข้อ"
+  const progress = useRef(new Animated.Value(0)).current;
   const timerRef = useRef(null);
   const lockRef = useRef(false);
 
-  // Animated progress (แถบความคืบหน้าบนหัวข้อ)
-  const progress = useRef(new Animated.Value(0)).current;
+  const firstIncompleteIndex = useMemo(
+    () => completed.findIndex((v) => !v),
+    [completed]
+  );
+
   useEffect(() => {
     if (phase === "quiz") {
-      const target = (index + 1) / questions.length;
-      Animated.timing(progress, { toValue: target, duration: 280, useNativeDriver: false }).start();
+      Animated.timing(progress, { toValue: (index + 1) / questions.length, duration: 260, useNativeDriver: false }).start();
     } else {
       progress.setValue(0);
     }
   }, [index, phase, questions.length, progress]);
 
-  const current = questions[index];
-
-  // ปรับขนาดตัวอักษรเนื้อเรื่องตามความยาว
   const storyFontSize = useMemo(() => {
     const len = (story?.body || "").length;
     if (len > 900) return 16;
@@ -469,7 +483,7 @@ export default function StoryGame() {
     return 20;
   }, [story]);
 
-  // จัดการเวลา
+  /* TIMER */
   const resetTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     setTimeLeft(QUESTION_TIME);
@@ -484,26 +498,67 @@ export default function StoryGame() {
       });
     }, 1000);
   };
-
   useEffect(() => {
     if (phase === "quiz") resetTimer();
     return () => timerRef.current && clearInterval(timerRef.current);
   }, [phase, index]);
 
-  // เริ่มทำแบบทดสอบ
+  /* FLOW */
+  const prepareStory = (idx) => {
+    const s = STORIES[idx];
+    setQuestions(prepareRoundQuestions(s.qas));
+    setIndex(0);
+    setSelected(null);
+    setAnswers([]);
+    setCorrectSet(new Set());
+    setTimeLeft(QUESTION_TIME);
+  };
+
+  const startFromFirstIncomplete = () => {
+    if (allCleared) return;
+    const idx = firstIncompleteIndex === -1 ? 0 : firstIncompleteIndex;
+    setStoryIndex(idx);
+    prepareStory(idx);
+    setPhase("read");
+  };
+
+  const onPressTile = (i) => {
+    // แตะเรื่องบนกระดานคะแนน
+    if (completed[i]) {
+      // ผ่านแล้ว → ทำซ้ำได้
+      setStoryIndex(i);
+      prepareStory(i);
+      setPhase("read");
+      return;
+    }
+    // ยังไม่ผ่าน: อนุญาตเฉพาะ "เรื่องแรกที่ยังไม่ผ่าน"
+    if (i === firstIncompleteIndex) {
+      setStoryIndex(i);
+      prepareStory(i);
+      setPhase("read");
+    } else {
+      Alert.alert("ยังไม่ปลดล็อก", `กรุณาทำตามลำดับ (เริ่มจากเรื่อง ${firstIncompleteIndex + 1})`);
+    }
+  };
+
   const startQuiz = () => {
     setPhase("quiz");
     setIndex(0);
     setSelected(null);
     setAnswers([]);
-    setQuestions(prepareRoundQuestions(story.qas));
+    setQuestions(prepareRoundQuestions(story.qas)); // คงลำดับข้อ สุ่มเฉพาะตัวเลือก
   };
 
-  // จบคำถามหนึ่งข้อ
   const finishQuestion = (choiceIndex) => {
     lockRef.current = true;
+    const current = questions[index];
+
     setSelected(choiceIndex);
     setAnswers((prev) => [...prev, { id: current.id, chosen: choiceIndex, correctIndex: current.correctIndex }]);
+
+    if (choiceIndex === current.correctIndex) {
+      setCorrectSet((prev) => new Set([...prev, current.id]));
+    }
 
     setTimeout(() => {
       if (index < questions.length - 1) {
@@ -518,44 +573,75 @@ export default function StoryGame() {
     }, AUTO_NEXT_DELAY);
   };
 
-  // เลือกตัวเลือก
   const onChoose = (i) => {
     if (lockRef.current || selected !== null) return;
     finishQuestion(i);
   };
 
-  // สรุปคะแนน
-  const correctCount = useMemo(
-    () => answers.filter((a) => a.chosen === a.correctIndex).length,
-    [answers]
+  const wrongIds = useMemo(
+    () => story.qas.map((q) => q.id).filter((id) => !correctSet.has(id)),
+    [story, correctSet]
   );
 
-  // เล่นโจทย์เดิม
-  const replaySame = () => {
-    setPhase("read");
+  const isStoryCleared = useMemo(() => correctSet.size === story.qas.length, [correctSet, story]);
+
+  // เมื่อเข้าหน้า result → อัปเดตสถานะ attempted/completed + นับคะแนนทันที
+  useEffect(() => {
+    if (phase !== "result") return;
+    setAttempted((prev) => {
+      const next = [...prev];
+      next[storyIndex] = !isStoryCleared; // ถ้าผ่านแล้ว ก็ไม่นับเป็น attempted
+      return next;
+    });
+    if (isStoryCleared && !completed[storyIndex]) {
+      setCompleted((prev) => {
+        const next = [...prev];
+        next[storyIndex] = true;
+        return next;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  const retryWrongOnly = () => {
+    const ids = wrongIds;
+    if (ids.length === 0) {
+      setPhase("result");
+      return;
+    }
+    setQuestions(prepareRoundQuestions(story.qas, ids));
     setIndex(0);
     setSelected(null);
     setAnswers([]);
-    setQuestions(prepareRoundQuestions(story.qas));
-    setTimeLeft(QUESTION_TIME);
+    setPhase("quiz");
   };
 
-  // เปลี่ยนเรื่องใหม่
-  const replayNew = () => {
-    const next = STORIES[Math.floor(Math.random() * STORIES.length)];
-    setStory(next);
-    setQuestions(prepareRoundQuestions(next.qas));
-    setPhase("read");
-    setIndex(0);
-    setSelected(null);
-    setAnswers([]);
-    setTimeLeft(QUESTION_TIME);
+  const goNextStory = () => {
+    // ไปเรื่องถัดไปที่ยังไม่ผ่าน
+    const nextIdx = completed.findIndex((v, i) => !v && i > storyIndex);
+    if (nextIdx === -1) {
+      const firstIdx = completed.findIndex((v) => !v);
+      if (firstIdx === -1) {
+        setPhase("home");
+      } else {
+        setStoryIndex(firstIdx);
+        prepareStory(firstIdx);
+        setPhase("read");
+      }
+    } else {
+      setStoryIndex(nextIdx);
+      prepareStory(nextIdx);
+      setPhase("read");
+    }
   };
 
-  /** UI: ตัวเลือก */
+  const goHome = () => setPhase("home");
+
+  /* RENDER HELPERS */
   const Option = ({ label, i }) => {
+    const current = questions[index];
     const isChosen = selected === i;
-    const isCorrect = i === (current?.correctIndex ?? -1);
+    const isCorrect = i === current.correctIndex;
     const showGreen = selected !== null && isChosen && isCorrect;
     const showRed = selected !== null && isChosen && !isCorrect;
 
@@ -583,22 +669,76 @@ export default function StoryGame() {
     );
   };
 
-  const isQuizReady = phase === "quiz" && current;
+  const currentQ = phase === "quiz" ? questions[index] : null;
 
   return (
     <View style={styles.container}>
-      {/* READ PHASE */}
+      {/* ===== HOME / SCOREBOARD ===== */}
+      {phase === "home" && (
+        <>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>กระดานคะแนน</Text>
+            <Text style={styles.headerSub}>ทำถูกครบ 3 ข้อ = 1 คะแนน (เรียงตามลำดับ)</Text>
+          </View>
+
+          <View style={styles.scoreCard}>
+            <Text style={styles.scoreBig}>{totalScore} / {TOTAL}</Text>
+            <View style={styles.scoreBar}>
+              <View style={[styles.scoreFill, { width: `${(totalScore / TOTAL) * 100}%` }]} />
+            </View>
+            {allCleared && <Text style={styles.congratsText}>สุดยอด! คุณอ่านและทำครบทั้ง 30 เรื่องแล้ว</Text>}
+          </View>
+
+          <ScrollView contentContainerStyle={styles.gridWrap} showsVerticalScrollIndicator={false}>
+            <View style={styles.grid}>
+              {STORIES.map((s, i) => {
+                const done = completed[i];
+                const tried = attempted[i] && !done;
+                const locked = !done && !tried && i > (firstIncompleteIndex === -1 ? TOTAL : firstIncompleteIndex);
+                // กำหนดสไตล์ตามสถานะ
+                const itemStyle = locked
+                  ? [styles.gridItem, styles.gridLocked]
+                  : tried
+                  ? [styles.gridItem, styles.gridWarn]
+                  : done
+                  ? [styles.gridItem, styles.gridDone]
+                  : [styles.gridItem, styles.gridTodo];
+
+                return (
+                  <TouchableOpacity
+                    key={s.id}
+                    activeOpacity={0.9}
+                    onPress={() => onPressTile(i)}
+                    disabled={locked}
+                    style={itemStyle}
+                  >
+                    <Text style={styles.gridItemText}>
+                      {locked ? "🔒 " : ""}เรื่อง {i + 1}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          <View style={styles.homeActions}>
+            <PressableScale style={styles.primaryBtn} onPress={startFromFirstIncomplete} disabled={allCleared}>
+              <Text style={styles.primaryBtnText}>{allCleared ? "ทำครบแล้ว" : "เริ่มเกม"}</Text>
+            </PressableScale>
+          </View>
+        </>
+      )}
+
+      {/* ===== READ ===== */}
       {phase === "read" && (
         <>
           <View style={styles.topbar}>
+            <Text style={styles.topbarLeft}>เรื่อง {storyIndex + 1} / {TOTAL}</Text>
             <Text style={styles.topbarTitle}>อ่านเรื่อง</Text>
+            <View style={{ width: 90 }} />
           </View>
 
-          <ScrollView
-            style={styles.storyScroll}
-            contentContainerStyle={styles.storyWrap}
-            showsVerticalScrollIndicator={false}
-          >
+          <ScrollView style={styles.storyScroll} contentContainerStyle={styles.storyWrap} showsVerticalScrollIndicator={false}>
             <View style={styles.storyCard}>
               <Text style={styles.storyTitle}>{story.title}</Text>
               <View style={styles.divider} />
@@ -606,7 +746,7 @@ export default function StoryGame() {
             </View>
           </ScrollView>
 
-          <View style={styles.bottomBar}>
+          <View style={styles.bottomBarCenter}>
             <PressableScale style={styles.primaryBtn} onPress={startQuiz}>
               <Text style={styles.primaryBtnText}>เริ่มทำแบบทดสอบ</Text>
             </PressableScale>
@@ -614,26 +754,27 @@ export default function StoryGame() {
         </>
       )}
 
-      {/* QUIZ PHASE */}
-      {isQuizReady && (
+      {/* ===== QUIZ ===== */}
+      {phase === "quiz" && currentQ && (
         <>
           <View style={styles.quizHeader}>
             <View style={styles.timerPill}>
               <Text style={styles.timerLabel}>เวลา</Text>
-              <Text style={[styles.timerValue, timeLeft <= 10 && styles.timerUrgent]}>
-                {timeLeft} วินาที
-              </Text>
+              <Text style={[styles.timerValue, timeLeft <= 10 && styles.timerUrgent]}>{timeLeft} วินาที</Text>
             </View>
+            
+            <Text style={styles.quizTitleInline}>
+                
+              เรื่อง {storyIndex + 1}/{TOTAL} • ข้อ {index + 1}/{questions.length}
+            </Text>
 
             <View style={styles.progressBox}>
-              <Text style={styles.progressText}>
-                ข้อ {index + 1} / {questions.length}
-              </Text>
               <View style={styles.progressBar}>
                 <Animated.View
                   style={[
                     styles.progressFill,
-                    { width: progress.interpolate({
+                    {
+                      width: progress.interpolate({
                         inputRange: [0, 1],
                         outputRange: ["0%", "100%"],
                       }),
@@ -645,23 +786,18 @@ export default function StoryGame() {
           </View>
 
           <View style={styles.quizBody}>
-            <Text style={styles.question}>{current.prompt}</Text>
+            <Text style={styles.question}>{currentQ.prompt}</Text>
 
             <View style={{ rowGap: 14 }}>
-              {current.choices.map((c, i) => (
-                <Option key={`${current.id}-${i}-${c}`} label={c} i={i} />
+              {currentQ.choices.map((c, i) => (
+                <Option key={`${currentQ.id}-${i}-${c}`} label={c} i={i} />
               ))}
             </View>
 
             {selected !== null && (
               <View style={styles.feedback}>
-                <Text
-                  style={[
-                    styles.feedbackText,
-                    selected === current.correctIndex ? styles.feedbackOk : styles.feedbackNo,
-                  ]}
-                >
-                  {selected === current.correctIndex ? "ถูกต้อง" : "ไม่ถูกต้อง"}
+                <Text style={[styles.feedbackText, selected === currentQ.correctIndex ? styles.feedbackOk : styles.feedbackNo]}>
+                  {selected === currentQ.correctIndex ? "ถูกต้อง" : "ไม่ถูกต้อง"}
                 </Text>
               </View>
             )}
@@ -669,39 +805,62 @@ export default function StoryGame() {
         </>
       )}
 
-      {/* RESULT PHASE */}
+      {/* ===== RESULT ===== */}
       {phase === "result" && (
-        <ScrollView
-          contentContainerStyle={styles.resultWrap}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={styles.resultWrap} showsVerticalScrollIndicator={false}>
           <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>สรุปผล</Text>
+            <Text style={styles.resultTitle}>ผลลัพธ์เรื่อง {storyIndex + 1}</Text>
             <Text style={styles.resultScore}>
-              คะแนน {correctCount} / {questions.length}
+              ตอบถูกแล้ว {Array.from(correctSet).length} / 3 ข้อ
             </Text>
+            <View style={styles.resultBar}>
+              <View style={[styles.resultFill, { width: `${(Array.from(correctSet).length / 3) * 100}%` }]} />
+            </View>
+
+            {isStoryCleared ? (
+              <Text style={styles.resultMsgStrong}>ยอดเยี่ยม! คุณทำถูกครบทั้ง 3 ข้อของเรื่องนี้</Text>
+            ) : (
+              <Text style={styles.resultMsg}>ยังไม่ครบ 3 ข้อ — กรุณาแก้ข้อที่ผิดก่อนจึงจะไปเรื่องถัดไปได้</Text>
+            )}
           </View>
 
           <View style={styles.resultList}>
-            {answers.map((a, i) => (
-              <View key={`${a.id}-${i}`} style={styles.resultItem}>
-                <Text style={styles.resultIndex}>ข้อ {i + 1}</Text>
-                <View style={[styles.badge, a.chosen === a.correctIndex ? styles.badgeOk : styles.badgeNo]}>
-                  <Text style={styles.badgeText}>
-                    {a.chosen === a.correctIndex ? "ถูก" : "ผิด"}
-                  </Text>
+            {story.qas.map((q, i) => {
+              const ok = correctSet.has(q.id);
+              return (
+                <View key={q.id} style={styles.resultItem}>
+                  <Text style={styles.resultIndex}>ข้อ {i + 1}</Text>
+                  <View style={[styles.badge, ok ? styles.badgeOk : styles.badgeNo]}>
+                    <Text style={styles.badgeText}>{ok ? "ถูก" : "ผิด"}</Text>
+                  </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
 
-          <View style={styles.resultActions}>
-            <PressableScale style={styles.secondaryBtn} onPress={replaySame}>
-              <Text style={styles.secondaryBtnText}>เล่นโจทย์เดิม</Text>
-            </PressableScale>
-            <PressableScale style={styles.primaryBtn} onPress={replayNew}>
-              <Text style={styles.primaryBtnText}>เปลี่ยนโจทย์</Text>
-            </PressableScale>
+          <View style={styles.resultActionsCenter}>
+            {!isStoryCleared ? (
+              <>
+                <PressableScale style={styles.secondaryBtn} onPress={retryWrongOnly}>
+                  <Text style={styles.secondaryBtnText}>แก้ข้อผิด</Text>
+                </PressableScale>
+                <PressableScale style={[styles.primaryBtn, styles.primaryBtnDisabled]}>
+                  <Text style={styles.primaryBtnText}>ทำข้อต่อไป</Text>
+                </PressableScale>
+                <PressableScale style={styles.secondaryBtn} onPress={goHome}>
+                  <Text style={styles.ghostBtnText}>กลับหน้าหลัก</Text>
+                </PressableScale>
+              </>
+            ) : (
+              <>
+                <PressableScale style={styles.primaryBtn} onPress={goNextStory}>
+                  <Text style={styles.primaryBtnText}>ทำข้อต่อไป</Text>
+                </PressableScale>
+                <PressableScale style={styles.secondaryBtn} onPress={goHome}>
+                  <Text style={styles.secondaryBtnText}>กลับหน้าหลัก</Text>
+                </PressableScale>
+              </>
+            )}
           </View>
         </ScrollView>
       )}
@@ -709,49 +868,109 @@ export default function StoryGame() {
   );
 }
 
-/** =========================
- * STYLES
+/* =========================
+ * STYLES (โทนทางการ สะอาดตา)
  * ========================= */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7F9FB" },
+  container: { flex: 1, backgroundColor: "#F6F8FB" },
 
-  /** Read phase */
-  topbar: {
+  // HEADER / HOME
+  header: {
     paddingTop: 48,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E6E9EE",
+    paddingBottom: 12,
+    paddingHorizontal: 16,
     backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E9F0",
     alignItems: "center",
   },
-  topbarTitle: { fontSize: 20, fontWeight: "700", color: "#0F172A" },
+  headerTitle: { fontSize: 20, fontWeight: "800", color: "#0F172A" },
+  headerSub: { fontSize: 12, color: "#6B7280", marginTop: 4 },
 
-  storyScroll: { flex: 1 },
-  storyWrap: { padding: 20, paddingBottom: 110 },
-  storyCard: {
+  scoreCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E6E9EE",
+    borderColor: "#E5E9F0",
+    margin: 16,
+    padding: 16,
+    alignItems: "center",
   },
-  storyTitle: { fontSize: 22, fontWeight: "800", color: "#111827", textAlign: "center", marginBottom: 14 },
-  divider: { height: 1, backgroundColor: "#E6E9EE", marginBottom: 16 },
-  storyBody: { lineHeight: 30, color: "#374151" },
+  scoreBig: { fontSize: 24, fontWeight: "900", color: "#0F172A", marginBottom: 10 },
+  scoreBar: { width: "100%", height: 8, backgroundColor: "#E5E7EB", borderRadius: 6, overflow: "hidden" },
+  scoreFill: { height: "100%", backgroundColor: "#2563EB" },
+  congratsText: { marginTop: 10, color: "#065F46", fontWeight: "700" },
 
-  bottomBar: {
+  gridWrap: { paddingHorizontal: 12, paddingBottom: 110 },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    columnGap: 10,
+    rowGap: 10,
+    justifyContent: "space-between",
+  },
+  gridItem: {
+    width: "31.8%",
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: "center",
+  },
+  // สถานะช่องคะแนน
+  gridTodo: { backgroundColor: "#FFFFFF", borderColor: "#E2E8F0" }, // (กรณีเรื่องแรกที่ยังไม่ผ่านจะแสดงเป็นขาว)
+  gridWarn: { backgroundColor: "#FFF7ED", borderColor: "#FDBA74" }, // ทำแล้วแต่ยังไม่ผ่าน → ส้ม
+  gridDone: { backgroundColor: "#dcffdaff", borderColor: "#10B981" }, // ผ่านแล้ว → ขาวขอบเขียว
+  gridLocked: { backgroundColor: "#F1F5F9", borderColor: "#CBD5E1" }, // ยังไม่ปลดล็อก → เทา + 🔒
+  gridItemText: { fontSize: 14, fontWeight: "700", color: "#334155" },
+
+  homeActions: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
     borderTopWidth: 1,
-    borderTopColor: "#E6E9EE",
+    borderTopColor: "#E5E9F0",
     backgroundColor: "#FFFFFF",
     padding: 16,
     alignItems: "center",
   },
 
-  /** Buttons */
+  // TOPBAR (READ)
+  topbar: {
+    paddingTop: 48,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E9F0",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  topbarLeft: { fontSize: 14, color: "#334155", width: 90 },
+  topbarTitle: { fontSize: 16, fontWeight: "800", color: "#0F172A" },
+
+  // STORY
+  storyScroll: { flex: 1 },
+  storyWrap: { padding: 16, paddingBottom: 110 },
+  storyCard: { backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#E5E9F0", padding: 18 },
+  storyTitle: { fontSize: 20, fontWeight: "800", color: "#111827", textAlign: "center", marginBottom: 12 },
+  divider: { height: 1, backgroundColor: "#E5E9F0", marginBottom: 14 },
+  storyBody: { lineHeight: 28, color: "#374151" },
+
+  bottomBarCenter: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E9F0",
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    alignItems: "center",
+  },
+
+  // BUTTONS
   primaryBtn: {
     backgroundColor: "#0EA5E9",
     paddingVertical: 14,
@@ -760,6 +979,7 @@ const styles = StyleSheet.create({
     minWidth: 180,
     alignItems: "center",
   },
+  primaryBtnDisabled: { opacity: 0.5 },
   primaryBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
 
   secondaryBtn: {
@@ -774,17 +994,33 @@ const styles = StyleSheet.create({
   },
   secondaryBtnText: { color: "#0F172A", fontSize: 15, fontWeight: "700" },
 
-  /** Quiz header */
+  ghostBtn: {
+    backgroundColor: "transparent",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    minWidth: 160,
+    alignItems: "center",
+  },
+  ghostBtnText: { color: "#334155", fontSize: 15, fontWeight: "700" },
+
+  // QUIZ HEADER
   quizHeader: {
     paddingTop: 48,
-    paddingBottom: 14,
+    paddingBottom: 12,
     paddingHorizontal: 16,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#E6E9EE",
+    borderBottomColor: "#E5E9F0",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
+  },
+  quizTitleInline: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#0F172A",
   },
   timerPill: {
     backgroundColor: "#FEF2F2",
@@ -798,34 +1034,14 @@ const styles = StyleSheet.create({
   timerValue: { fontSize: 16, fontWeight: "800", color: "#EF4444" },
   timerUrgent: { color: "#DC2626" },
 
-  progressBox: { width: 160 },
-  progressText: { fontSize: 14, fontWeight: "700", color: "#334155", marginBottom: 6, textAlign: "right" },
-  progressBar: {
-    width: "100%",
-    height: 6,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 3,
-    overflow: "hidden",
-  },
+  progressBox: { width: 120 },
+  progressBar: { width: "100%", height: 6, backgroundColor: "#E5E7EB", borderRadius: 3, overflow: "hidden" },
   progressFill: { height: "100%", backgroundColor: "#2563EB", borderRadius: 3 },
 
-  /** Quiz body */
+  // QUIZ BODY
   quizBody: { flex: 1, padding: 16 },
-  question: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#0F172A",
-    marginBottom: 18,
-    textAlign: "center",
-    lineHeight: 28,
-  },
-  option: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#E2E8F0",
-    borderRadius: 14,
-    padding: 16,
-  },
+  question: { fontSize: 20, fontWeight: "700", color: "#0F172A", marginBottom: 18, textAlign: "center", lineHeight: 28 },
+  option: { backgroundColor: "#FFFFFF", borderWidth: 2, borderColor: "#E2E8F0", borderRadius: 14, padding: 16 },
   optionDisabled: { opacity: 0.85 },
   optionText: { fontSize: 16, fontWeight: "500", color: "#374151" },
   correct: { backgroundColor: "#ECFDF5", borderColor: "#10B981" },
@@ -838,26 +1054,30 @@ const styles = StyleSheet.create({
   feedbackOk: { color: "#10B981" },
   feedbackNo: { color: "#EF4444" },
 
-  /** Result */
+  // RESULT
   resultWrap: { padding: 16, paddingTop: 36, alignItems: "center" },
   resultCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#E6E9EE",
+    borderColor: "#E5E9F0",
     padding: 18,
     width: "100%",
     alignItems: "center",
     marginBottom: 14,
   },
-  resultTitle: { fontSize: 20, fontWeight: "800", color: "#0F172A", marginBottom: 6 },
-  resultScore: { fontSize: 16, color: "#334155" },
+  resultTitle: { fontSize: 18, fontWeight: "800", color: "#0F172A", marginBottom: 6 },
+  resultScore: { fontSize: 14, color: "#334155", marginBottom: 10 },
+  resultBar: { width: "100%", height: 8, backgroundColor: "#E5E7EB", borderRadius: 6, overflow: "hidden" },
+  resultFill: { height: "100%", backgroundColor: "#10B981" },
+  resultMsg: { marginTop: 12, color: "#7C3AED", fontWeight: "700", textAlign: "center" },
+  resultMsgStrong: { marginTop: 12, color: "#065F46", fontWeight: "800", textAlign: "center" },
 
   resultList: {
     backgroundColor: "#FFFFFF",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E6E9EE",
+    borderColor: "#E5E9F0",
     padding: 12,
     width: "100%",
     marginTop: 6,
@@ -877,5 +1097,9 @@ const styles = StyleSheet.create({
   badgeNo: { backgroundColor: "#FEF2F2" },
   badgeText: { fontSize: 13, fontWeight: "800", color: "#0F172A" },
 
-  resultActions: { flexDirection: "row", columnGap: 10, width: "100%" },
+  resultActionsCenter: {
+    width: "100%",
+    gap: 10,
+    alignItems: "center",
+  },
 });

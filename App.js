@@ -5,6 +5,7 @@ import { auth, db } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
+import SoundRecognize from "./screens/Gamescreen/SoundRecognize";
 import FastMath from "./screens/Gamescreen/FastMath";   // ✅ แก้ path ตรงนี้
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
@@ -51,6 +52,7 @@ export default function App() {
         />
         <Stack.Screen name="GameScreen" component={GameScreen} />
         <Stack.Screen name="FastMath" component={FastMath} />
+        <Stack.Screen name="SoundRecognize" component={SoundRecognize} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -8,6 +8,7 @@ import { doc, getDoc } from "firebase/firestore";
 
 import FastMath from "./screens/Gamescreen/FastMath";   // ✅ แก้ path ตรงนี้
 import SoundRecognize from "./screens/Gamescreen/SoundRecognize";
+import RelationMatch from "./screens/Gamescreen/RelationMatch";
 import StoryGame from "./screens/Gamescreen/StoryGame";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
@@ -56,6 +57,7 @@ export default function App() {
         <Stack.Screen name="FastMath" component={FastMath} />
         <Stack.Screen name="SoundRecognize" component={SoundRecognize} />
         <Stack.Screen name="StoryGame" component={StoryGame} />
+        <Stack.Screen name="RelationMatch" component={RelationMatch} />
       </Stack.Navigator>
     </NavigationContainer>
   );

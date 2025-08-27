@@ -371,7 +371,6 @@ const STORIES = [
   },
 ];
 
-
 /* ===== Utils ===== */
 const shuffleArray = (arr) => {
   const a = [...arr];
@@ -434,8 +433,8 @@ export default function StoryGame() {
 
   const storyFontSize = useMemo(() => {
     const len = (story?.body || "").length;
-    if (len > 700) return 16;
-    if (len > 400) return 18;
+    if (len > 700) return 18;
+    if (len > 400) return 19;
     return 20;
   }, [story]);
 
@@ -671,7 +670,7 @@ export default function StoryGame() {
   );
 }
 
-/* ===== Styles (โทนสะอาด สบายตา) ===== */
+/* ===== Styles (โทนสะอาด สบายตา — ฟอนต์ใหญ่ขึ้นแบบเดียวกับ MatchGame) ===== */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F6F8FB" },
 
@@ -680,12 +679,12 @@ const styles = StyleSheet.create({
     paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16,
     backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#E5E9F0", alignItems: "center",
   },
-  topbarTitle: { fontSize: 16, fontWeight: "800", color: "#0F172A" },
+  topbarTitle: { fontSize: 18, fontWeight: "800", color: "#0F172A" },
 
   storyWrap: { padding: 16, paddingBottom: 110 },
-  storyCard: { backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#E5E9F0", padding: 18 },
-  storyTitle: { fontSize: 20, fontWeight: "800", color: "#111827", textAlign: "center", marginBottom: 12 },
-  storyBody: { lineHeight: 28, color: "#374151" },
+  storyCard: { backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#E5E9F0", padding: 20 },
+  storyTitle: { fontSize: 22, fontWeight: "800", color: "#111827", textAlign: "center", marginBottom: 12 },
+  storyBody: { lineHeight: 30, color: "#374151", fontSize: 18 },
   divider: { height: 1, backgroundColor: "#E5E9F0", marginBottom: 14 },
 
   bottomBarCenter: {
@@ -702,35 +701,35 @@ const styles = StyleSheet.create({
   },
   timerPill: {
     backgroundColor: "#FEF2F2", borderWidth: 1, borderColor: "#FEE2E2",
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10,
   },
-  timerLabel: { fontSize: 12, color: "#6B7280", marginBottom: 2 },
-  timerValue: { fontSize: 16, fontWeight: "800", color: "#EF4444" },
+  timerLabel: { fontSize: 14, color: "#6B7280", marginBottom: 2 },
+  timerValue: { fontSize: 18, fontWeight: "800", color: "#EF4444" },
   timerUrgent: { color: "#DC2626" },
 
   quizTitlePill: {
-    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
     backgroundColor: "#F1F5F9", borderWidth: 1, borderColor: "#E5E7EB",
   },
-  quizTitleInline: { fontSize: 14, fontWeight: "800", color: "#0F172A" },
+  quizTitleInline: { fontSize: 16, fontWeight: "800", color: "#0F172A" },
 
-  progressBox: { width: 120 },
-  progressBar: { width: "100%", height: 6, backgroundColor: "#E5E7EB", borderRadius: 3, overflow: "hidden" },
-  progressFill: { height: "100%", backgroundColor: "#2563EB", borderRadius: 3 },
+  progressBox: { width: 140 },
+  progressBar: { width: "100%", height: 8, backgroundColor: "#E5E7EB", borderRadius: 4, overflow: "hidden" },
+  progressFill: { height: "100%", backgroundColor: "#2563EB", borderRadius: 4 },
 
   // QUIZ BODY
   quizBody: { flex: 1, padding: 16 },
-  question: { fontSize: 20, fontWeight: "700", color: "#0F172A", marginBottom: 18, textAlign: "center", lineHeight: 28 },
-  option: { backgroundColor: "#FFFFFF", borderWidth: 2, borderColor: "#E2E8F0", borderRadius: 14, padding: 16 },
+  question: { fontSize: 22, fontWeight: "800", color: "#0F172A", marginBottom: 18, textAlign: "center", lineHeight: 30 },
+  option: { backgroundColor: "#FFFFFF", borderWidth: 2, borderColor: "#E2E8F0", borderRadius: 14, padding: 18 },
   optionDisabled: { opacity: 0.85 },
-  optionText: { fontSize: 16, fontWeight: "500", color: "#374151" },
+  optionText: { fontSize: 18, fontWeight: "600", color: "#374151" },
   correct: { backgroundColor: "#ECFDF5", borderColor: "#10B981" },
   correctText: { color: "#065F46" },
   wrong: { backgroundColor: "#FEF2F2", borderColor: "#EF4444" },
   wrongText: { color: "#991B1B" },
 
   feedback: { alignItems: "center", marginTop: 14 },
-  feedbackText: { fontSize: 16, fontWeight: "700" },
+  feedbackText: { fontSize: 18, fontWeight: "800" },
   feedbackOk: { color: "#10B981" },
   feedbackNo: { color: "#EF4444" },
 
@@ -738,11 +737,11 @@ const styles = StyleSheet.create({
   resultWrap: { padding: 16, paddingTop: 36, alignItems: "center" },
   resultCard: {
     backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#E5E9F0",
-    padding: 18, width: "100%", alignItems: "center", marginBottom: 14,
+    padding: 20, width: "100%", alignItems: "center", marginBottom: 14,
   },
-  resultTitle: { fontSize: 18, fontWeight: "800", color: "#0F172A", marginBottom: 6 },
-  resultScore: { fontSize: 14, color: "#334155", marginBottom: 10 },
-  resultBar: { width: "100%", height: 8, backgroundColor: "#E5E7EB", borderRadius: 6, overflow: "hidden" },
+  resultTitle: { fontSize: 20, fontWeight: "900", color: "#0F172A", marginBottom: 6 },
+  resultScore: { fontSize: 16, color: "#334155", marginBottom: 12 },
+  resultBar: { width: "100%", height: 10, backgroundColor: "#E5E7EB", borderRadius: 6, overflow: "hidden" },
   resultFill: { height: "100%", backgroundColor: "#10B981" },
 
   resultList: {
@@ -751,29 +750,29 @@ const styles = StyleSheet.create({
   },
   resultItem: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    borderBottomWidth: 1, borderBottomColor: "#F1F5F9", paddingVertical: 10,
+    borderBottomWidth: 1, borderBottomColor: "#F1F5F9", paddingVertical: 12,
   },
-  resultIndex: { fontSize: 15, fontWeight: "700", color: "#334155" },
-  badge: { minWidth: 64, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, alignItems: "center" },
+  resultIndex: { fontSize: 17, fontWeight: "900", color: "#1F2937" },
+  badge: { minWidth: 72, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, alignItems: "center" },
   badgeOk: { backgroundColor: "#ECFDF5" },
-  badgeNo: { backgroundColor: "#FEF2F2" },
-  badgeText: { fontSize: 13, fontWeight: "800", color: "#0F172A" },
+  badgeNo: { backgroundColor: "#FEE2E2" },
+  badgeText: { fontSize: 15, fontWeight: "800", color: "#0F172A" },
 
   resultActionsCenter: { width: "100%", gap: 10, alignItems: "center" },
 
   // BUTTONS
   primaryBtn: {
-    backgroundColor: "#0EA5E9", paddingVertical: 14, paddingHorizontal: 22,
-    borderRadius: 12, minWidth: 180, alignItems: "center",
+    backgroundColor: "#0EA5E9", paddingVertical: 16, paddingHorizontal: 24,
+    borderRadius: 12, minWidth: 220, alignItems: "center",
   },
-  primaryBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  primaryBtnText: { color: "#FFFFFF", fontSize: 18, fontWeight: "800" },
 
   secondaryBtn: {
-    backgroundColor: "#EEF2F6", paddingVertical: 13, paddingHorizontal: 18,
-    borderRadius: 12, minWidth: 160, alignItems: "center", borderWidth: 1, borderColor: "#E2E8F0",
+    backgroundColor: "#EEF2F6", paddingVertical: 14, paddingHorizontal: 20,
+    borderRadius: 12, minWidth: 170, alignItems: "center", borderWidth: 1, borderColor: "#E2E8F0",
   },
-  secondaryBtnText: { color: "#0F172A", fontSize: 15, fontWeight: "700" },
+  secondaryBtnText: { color: "#0F172A", fontSize: 16, fontWeight: "800" },
 
-  ghostBtn: { backgroundColor: "transparent", paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, minWidth: 160, alignItems: "center" },
-  ghostBtnText: { color: "#334155", fontSize: 15, fontWeight: "700" },
+  ghostBtn: { backgroundColor: "transparent", paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10, minWidth: 160, alignItems: "center" },
+  ghostBtnText: { color: "#334155", fontSize: 16, fontWeight: "800" },
 });

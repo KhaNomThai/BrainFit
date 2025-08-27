@@ -5,8 +5,9 @@ import { auth, db } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-import FastMath from "./screens/Gamescreen/FastMath";
-import StoryGame from "./screens/Gamescreen/StoryGame";     // ✅ แก้ path ตรงนี้
+
+import FastMath from "./screens/Gamescreen/FastMath";   // ✅ แก้ path ตรงนี้
+import SoundRecognize from "./screens/Gamescreen/SoundRecognize";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import ProfileSetupScreen from "./screens/ProfileSetupScreen";
@@ -52,7 +53,7 @@ export default function App() {
         />
         <Stack.Screen name="GameScreen" component={GameScreen} />
         <Stack.Screen name="FastMath" component={FastMath} />
-        <Stack.Screen name="StoryGame" component={StoryGame} />
+        <Stack.Screen name="SoundRecognize" component={SoundRecognize} />
       </Stack.Navigator>
     </NavigationContainer>
   );

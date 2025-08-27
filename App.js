@@ -5,8 +5,9 @@ import { auth, db } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-import SoundRecognize from "./screens/Gamescreen/SoundRecognize";
+
 import FastMath from "./screens/Gamescreen/FastMath";   // ✅ แก้ path ตรงนี้
+import SoundRecognize from "./screens/Gamescreen/SoundRecognize";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import ProfileSetupScreen from "./screens/ProfileSetupScreen";

@@ -99,7 +99,7 @@ export default function GameScreen({ navigation }) {
             text="เกมเล่าเรื่องแล้วถาม"
             color="#E8E2FF"
             fontScale={fontScale}
-            onPress={() => navigation.navigate("StoryQA")}
+            onPress={() => navigation.navigate("StoryGame")}
           />
         </Section>
       </ScrollView>

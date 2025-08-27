@@ -1,25 +1,13 @@
 // screens/Gamescreen/StoryGame.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Animated,
-  Alert,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from "react-native";
 
-/* =========================
- * CONFIG
- * ========================= */
-const QUESTION_TIME = 30;     // วินาที/ข้อ
-const AUTO_NEXT_DELAY = 650;  // ms หลังเลือกระดับคำตอบ
-const SHUFFLE_CHOICES = true; // ไม่สุ่ม "ลำดับเรื่อง", สุ่มเฉพาะตัวเลือก
+/* ===== CONFIG ===== */
+const QUESTION_TIME = 30;     // วินาทีต่อข้อ
+const AUTO_NEXT_DELAY = 500;  // ms หลังตอบ
+const SHUFFLE_CHOICES = true; // สุ่มช้อยส์ทุกครั้ง
 
-/* =========================
- * STORIES (30 เรื่อง × 3 ข้อ)
- * ========================= */
+/* ===== DATA: 30 เรื่อง (ตามที่ให้มา) ===== */
 const STORIES = [
   {
     id: "1",
@@ -383,9 +371,8 @@ const STORIES = [
   },
 ];
 
-/* =========================
- * UTILS
- * ========================= */
+
+/* ===== Utils ===== */
 const shuffleArray = (arr) => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -394,10 +381,8 @@ const shuffleArray = (arr) => {
   }
   return a;
 };
-
-const prepareRoundQuestions = (qas, onlyIds = null) => {
-  const base = onlyIds ? qas.filter((q) => onlyIds.includes(q.id)) : qas; // ลำดับข้อคงเดิม
-  return base.map((q) => {
+const prepareRoundQuestions = (qas) =>
+  shuffleArray(qas).map((q) => {
     if (!SHUFFLE_CHOICES) return { ...q };
     const pairs = q.choices.map((c, i) => ({ c, i }));
     const shuffled = shuffleArray(pairs);
@@ -407,19 +392,16 @@ const prepareRoundQuestions = (qas, onlyIds = null) => {
       correctIndex: shuffled.findIndex((p) => p.i === q.correctIndex),
     };
   });
-};
 
-/* ปุ่มเด้งตอนกด */
+/* ปุ่มเด้งตอนกด (กดแล้ว scale นิด ๆ) */
 const PressableScale = ({ style, onPress, disabled, children }) => {
-  const scale = useRef(new Animated.Value(1)).current;
-  const onIn = () =>
-    Animated.spring(scale, { toValue: 0.98, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
-  const onOut = () =>
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
+  const v = useRef(new Animated.Value(1)).current;
+  const onIn = () => Animated.spring(v, { toValue: 0.98, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
+  const onOut = () => Animated.spring(v, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
+    <Animated.View style={{ transform: [{ scale: v }] }}>
       <TouchableOpacity
-        activeOpacity={0.8}
+        activeOpacity={0.85}
         onPressIn={onIn}
         onPressOut={onOut}
         onPress={onPress}
@@ -432,54 +414,28 @@ const PressableScale = ({ style, onPress, disabled, children }) => {
   );
 };
 
-/* =========================
- * MAIN (เฟส: home | read | quiz | result)
- * ========================= */
+/* ===== Screen: story | quiz | result ===== */
 export default function StoryGame() {
-  const TOTAL = STORIES.length;
-
-  // เฟส/เรื่องที่ทำอยู่
-  const [phase, setPhase] = useState("home");
-  const [storyIndex, setStoryIndex] = useState(0);
-  const story = STORIES[storyIndex];
-
-  // สถานะรวม
-  const [completed, setCompleted] = useState(Array(TOTAL).fill(false)); // ผ่านแล้ว (นับคะแนน)
-  const [attempted, setAttempted] = useState(Array(TOTAL).fill(false)); // เคยทำมาแล้วแต่ยังไม่ผ่าน
-  const totalScore = completed.filter(Boolean).length;
-  const allCleared = totalScore === TOTAL;
-
-  // สถานะของ "เรื่องปัจจุบัน"
+  const [phase, setPhase] = useState("story");
+  const [story, setStory] = useState(() => STORIES[Math.floor(Math.random() * STORIES.length)]);
   const [questions, setQuestions] = useState(() => prepareRoundQuestions(story.qas));
   const [index, setIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(QUESTION_TIME);
   const [selected, setSelected] = useState(null);
-  const [answers, setAnswers] = useState([]); // [{ id, chosen, correctIndex }]
-  const [correctSet, setCorrectSet] = useState(new Set()); // id ของข้อที่ถูกแล้ว
+  const [answers, setAnswers] = useState([]); // {id, chosen, correctIndex}
 
-  // แถบ progress เฉพาะ "ข้อ"
-  const progress = useRef(new Animated.Value(0)).current;
   const timerRef = useRef(null);
   const lockRef = useRef(false);
 
-  const firstIncompleteIndex = useMemo(
-    () => completed.findIndex((v) => !v),
-    [completed]
-  );
+  // progress ต่อข้อ (Animated 0 → 1)
+  const progress = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    if (phase === "quiz") {
-      Animated.timing(progress, { toValue: (index + 1) / questions.length, duration: 260, useNativeDriver: false }).start();
-    } else {
-      progress.setValue(0);
-    }
-  }, [index, phase, questions.length, progress]);
+  const current = questions[index];
 
   const storyFontSize = useMemo(() => {
     const len = (story?.body || "").length;
-    if (len > 900) return 16;
-    if (len > 600) return 17.5;
-    if (len > 400) return 18.5;
+    if (len > 700) return 16;
+    if (len > 400) return 18;
     return 20;
   }, [story]);
 
@@ -503,62 +459,29 @@ export default function StoryGame() {
     return () => timerRef.current && clearInterval(timerRef.current);
   }, [phase, index]);
 
-  /* FLOW */
-  const prepareStory = (idx) => {
-    const s = STORIES[idx];
-    setQuestions(prepareRoundQuestions(s.qas));
-    setIndex(0);
-    setSelected(null);
-    setAnswers([]);
-    setCorrectSet(new Set());
-    setTimeLeft(QUESTION_TIME);
-  };
-
-  const startFromFirstIncomplete = () => {
-    if (allCleared) return;
-    const idx = firstIncompleteIndex === -1 ? 0 : firstIncompleteIndex;
-    setStoryIndex(idx);
-    prepareStory(idx);
-    setPhase("read");
-  };
-
-  const onPressTile = (i) => {
-    // แตะเรื่องบนกระดานคะแนน
-    if (completed[i]) {
-      // ผ่านแล้ว → ทำซ้ำได้
-      setStoryIndex(i);
-      prepareStory(i);
-      setPhase("read");
+  /* PROGRESS ANIM */
+  useEffect(() => {
+    if (phase !== "quiz") {
+      progress.setValue(0);
       return;
     }
-    // ยังไม่ผ่าน: อนุญาตเฉพาะ "เรื่องแรกที่ยังไม่ผ่าน"
-    if (i === firstIncompleteIndex) {
-      setStoryIndex(i);
-      prepareStory(i);
-      setPhase("read");
-    } else {
-      Alert.alert("ยังไม่ปลดล็อก", `กรุณาทำตามลำดับ (เริ่มจากเรื่อง ${firstIncompleteIndex + 1})`);
-    }
-  };
+    const to = (index + 1) / questions.length;
+    Animated.timing(progress, { toValue: to, duration: 250, useNativeDriver: false }).start();
+  }, [index, phase, questions.length, progress]);
 
+  /* FLOW */
   const startQuiz = () => {
     setPhase("quiz");
     setIndex(0);
     setSelected(null);
     setAnswers([]);
-    setQuestions(prepareRoundQuestions(story.qas)); // คงลำดับข้อ สุ่มเฉพาะตัวเลือก
+    setQuestions(prepareRoundQuestions(story.qas)); // สุ่มลำดับข้อ + ช้อยส์
   };
 
   const finishQuestion = (choiceIndex) => {
     lockRef.current = true;
-    const current = questions[index];
-
     setSelected(choiceIndex);
     setAnswers((prev) => [...prev, { id: current.id, chosen: choiceIndex, correctIndex: current.correctIndex }]);
-
-    if (choiceIndex === current.correctIndex) {
-      setCorrectSet((prev) => new Set([...prev, current.id]));
-    }
 
     setTimeout(() => {
       if (index < questions.length - 1) {
@@ -578,68 +501,33 @@ export default function StoryGame() {
     finishQuestion(i);
   };
 
-  const wrongIds = useMemo(
-    () => story.qas.map((q) => q.id).filter((id) => !correctSet.has(id)),
-    [story, correctSet]
+  const correctCount = useMemo(
+    () => answers.filter((a) => a.chosen === a.correctIndex).length,
+    [answers]
   );
 
-  const isStoryCleared = useMemo(() => correctSet.size === story.qas.length, [correctSet, story]);
-
-  // เมื่อเข้าหน้า result → อัปเดตสถานะ attempted/completed + นับคะแนนทันที
-  useEffect(() => {
-    if (phase !== "result") return;
-    setAttempted((prev) => {
-      const next = [...prev];
-      next[storyIndex] = !isStoryCleared; // ถ้าผ่านแล้ว ก็ไม่นับเป็น attempted
-      return next;
-    });
-    if (isStoryCleared && !completed[storyIndex]) {
-      setCompleted((prev) => {
-        const next = [...prev];
-        next[storyIndex] = true;
-        return next;
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
-
-  const retryWrongOnly = () => {
-    const ids = wrongIds;
-    if (ids.length === 0) {
-      setPhase("result");
-      return;
-    }
-    setQuestions(prepareRoundQuestions(story.qas, ids));
+  const replaySame = () => {
+    setPhase("story");
     setIndex(0);
     setSelected(null);
     setAnswers([]);
-    setPhase("quiz");
+    setQuestions(prepareRoundQuestions(story.qas));
+    setTimeLeft(QUESTION_TIME);
   };
 
-  const goNextStory = () => {
-    // ไปเรื่องถัดไปที่ยังไม่ผ่าน
-    const nextIdx = completed.findIndex((v, i) => !v && i > storyIndex);
-    if (nextIdx === -1) {
-      const firstIdx = completed.findIndex((v) => !v);
-      if (firstIdx === -1) {
-        setPhase("home");
-      } else {
-        setStoryIndex(firstIdx);
-        prepareStory(firstIdx);
-        setPhase("read");
-      }
-    } else {
-      setStoryIndex(nextIdx);
-      prepareStory(nextIdx);
-      setPhase("read");
-    }
+  const replayNew = () => {
+    const next = STORIES[Math.floor(Math.random() * STORIES.length)];
+    setStory(next);
+    setQuestions(prepareRoundQuestions(next.qas));
+    setPhase("story");
+    setIndex(0);
+    setSelected(null);
+    setAnswers([]);
+    setTimeLeft(QUESTION_TIME);
   };
 
-  const goHome = () => setPhase("home");
-
-  /* RENDER HELPERS */
+  /* UI Subcomponents */
   const Option = ({ label, i }) => {
-    const current = questions[index];
     const isChosen = selected === i;
     const isCorrect = i === current.correctIndex;
     const showGreen = selected !== null && isChosen && isCorrect;
@@ -647,8 +535,8 @@ export default function StoryGame() {
 
     return (
       <PressableScale
-        onPress={() => onChoose(i)}
         disabled={selected !== null}
+        onPress={() => onChoose(i)}
         style={[
           styles.option,
           showGreen && styles.correct,
@@ -656,89 +544,21 @@ export default function StoryGame() {
           selected !== null && styles.optionDisabled,
         ]}
       >
-        <Text
-          style={[
-            styles.optionText,
-            showGreen && styles.correctText,
-            showRed && styles.wrongText,
-          ]}
-        >
-          {label}
-        </Text>
+        <Text style={[styles.optionText, showGreen && styles.correctText, showRed && styles.wrongText]}>{label}</Text>
       </PressableScale>
     );
   };
 
-  const currentQ = phase === "quiz" ? questions[index] : null;
-
   return (
     <View style={styles.container}>
-      {/* ===== HOME / SCOREBOARD ===== */}
-      {phase === "home" && (
-        <>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>กระดานคะแนน</Text>
-            <Text style={styles.headerSub}>ทำถูกครบ 3 ข้อ = 1 คะแนน (เรียงตามลำดับ)</Text>
-          </View>
-
-          <View style={styles.scoreCard}>
-            <Text style={styles.scoreBig}>{totalScore} / {TOTAL}</Text>
-            <View style={styles.scoreBar}>
-              <View style={[styles.scoreFill, { width: `${(totalScore / TOTAL) * 100}%` }]} />
-            </View>
-            {allCleared && <Text style={styles.congratsText}>สุดยอด! คุณอ่านและทำครบทั้ง 30 เรื่องแล้ว</Text>}
-          </View>
-
-          <ScrollView contentContainerStyle={styles.gridWrap} showsVerticalScrollIndicator={false}>
-            <View style={styles.grid}>
-              {STORIES.map((s, i) => {
-                const done = completed[i];
-                const tried = attempted[i] && !done;
-                const locked = !done && !tried && i > (firstIncompleteIndex === -1 ? TOTAL : firstIncompleteIndex);
-                // กำหนดสไตล์ตามสถานะ
-                const itemStyle = locked
-                  ? [styles.gridItem, styles.gridLocked]
-                  : tried
-                  ? [styles.gridItem, styles.gridWarn]
-                  : done
-                  ? [styles.gridItem, styles.gridDone]
-                  : [styles.gridItem, styles.gridTodo];
-
-                return (
-                  <TouchableOpacity
-                    key={s.id}
-                    activeOpacity={0.9}
-                    onPress={() => onPressTile(i)}
-                    disabled={locked}
-                    style={itemStyle}
-                  >
-                    <Text style={styles.gridItemText}>
-                      {locked ? "🔒 " : ""}เรื่อง {i + 1}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </ScrollView>
-
-          <View style={styles.homeActions}>
-            <PressableScale style={styles.primaryBtn} onPress={startFromFirstIncomplete} disabled={allCleared}>
-              <Text style={styles.primaryBtnText}>{allCleared ? "ทำครบแล้ว" : "เริ่มเกม"}</Text>
-            </PressableScale>
-          </View>
-        </>
-      )}
-
-      {/* ===== READ ===== */}
-      {phase === "read" && (
-        <>
+      {/* ===== STORY ===== */}
+      {phase === "story" && (
+        <View style={{ flex: 1 }}>
           <View style={styles.topbar}>
-            <Text style={styles.topbarLeft}>เรื่อง {storyIndex + 1} / {TOTAL}</Text>
             <Text style={styles.topbarTitle}>อ่านเรื่อง</Text>
-            <View style={{ width: 90 }} />
           </View>
 
-          <ScrollView style={styles.storyScroll} contentContainerStyle={styles.storyWrap} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={styles.storyWrap} showsVerticalScrollIndicator={false}>
             <View style={styles.storyCard}>
               <Text style={styles.storyTitle}>{story.title}</Text>
               <View style={styles.divider} />
@@ -750,23 +570,25 @@ export default function StoryGame() {
             <PressableScale style={styles.primaryBtn} onPress={startQuiz}>
               <Text style={styles.primaryBtnText}>เริ่มทำแบบทดสอบ</Text>
             </PressableScale>
+            <PressableScale style={styles.ghostBtn} onPress={replayNew}>
+              <Text style={styles.ghostBtnText}>สุ่มเรื่องใหม่</Text>
+            </PressableScale>
           </View>
-        </>
+        </View>
       )}
 
       {/* ===== QUIZ ===== */}
-      {phase === "quiz" && currentQ && (
-        <>
+      {phase === "quiz" && current && (
+        <View style={{ flex: 1 }}>
           <View style={styles.quizHeader}>
             <View style={styles.timerPill}>
               <Text style={styles.timerLabel}>เวลา</Text>
               <Text style={[styles.timerValue, timeLeft <= 10 && styles.timerUrgent]}>{timeLeft} วินาที</Text>
             </View>
-            
-            <Text style={styles.quizTitleInline}>
-                
-              เรื่อง {storyIndex + 1}/{TOTAL} • ข้อ {index + 1}/{questions.length}
-            </Text>
+
+            <PressableScale style={styles.quizTitlePill} onPress={() => {}}>
+              <Text style={styles.quizTitleInline}>ข้อ {index + 1} / {questions.length}</Text>
+            </PressableScale>
 
             <View style={styles.progressBox}>
               <View style={styles.progressBar}>
@@ -786,49 +608,46 @@ export default function StoryGame() {
           </View>
 
           <View style={styles.quizBody}>
-            <Text style={styles.question}>{currentQ.prompt}</Text>
+            <Text style={styles.question}>{current.prompt}</Text>
 
-            <View style={{ rowGap: 14 }}>
-              {currentQ.choices.map((c, i) => (
-                <Option key={`${currentQ.id}-${i}-${c}`} label={c} i={i} />
+            <View style={{ rowGap: 12 }}>
+              {current.choices.map((c, i) => (
+                <Option key={`${current.id}-${i}`} label={c} i={i} />
               ))}
             </View>
 
             {selected !== null && (
               <View style={styles.feedback}>
-                <Text style={[styles.feedbackText, selected === currentQ.correctIndex ? styles.feedbackOk : styles.feedbackNo]}>
-                  {selected === currentQ.correctIndex ? "ถูกต้อง" : "ไม่ถูกต้อง"}
+                <Text
+                  style={[
+                    styles.feedbackText,
+                    selected === current.correctIndex ? styles.feedbackOk : styles.feedbackNo,
+                  ]}
+                >
+                  {selected === current.correctIndex ? "ถูกต้อง" : "ไม่ถูกต้อง"}
                 </Text>
               </View>
             )}
           </View>
-        </>
+        </View>
       )}
 
       {/* ===== RESULT ===== */}
       {phase === "result" && (
         <ScrollView contentContainerStyle={styles.resultWrap} showsVerticalScrollIndicator={false}>
           <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>ผลลัพธ์เรื่อง {storyIndex + 1}</Text>
-            <Text style={styles.resultScore}>
-              ตอบถูกแล้ว {Array.from(correctSet).length} / 3 ข้อ
-            </Text>
+            <Text style={styles.resultTitle}>สรุปผล</Text>
+            <Text style={styles.resultScore}>ได้ {correctCount} / {questions.length} ข้อ</Text>
             <View style={styles.resultBar}>
-              <View style={[styles.resultFill, { width: `${(Array.from(correctSet).length / 3) * 100}%` }]} />
+              <View style={[styles.resultFill, { width: `${(correctCount / questions.length) * 100}%` }]} />
             </View>
-
-            {isStoryCleared ? (
-              <Text style={styles.resultMsgStrong}>ยอดเยี่ยม! คุณทำถูกครบทั้ง 3 ข้อของเรื่องนี้</Text>
-            ) : (
-              <Text style={styles.resultMsg}>ยังไม่ครบ 3 ข้อ — กรุณาแก้ข้อที่ผิดก่อนจึงจะไปเรื่องถัดไปได้</Text>
-            )}
           </View>
 
           <View style={styles.resultList}>
-            {story.qas.map((q, i) => {
-              const ok = correctSet.has(q.id);
+            {answers.map((a, i) => {
+              const ok = a.chosen === a.correctIndex;
               return (
-                <View key={q.id} style={styles.resultItem}>
+                <View key={i} style={styles.resultItem}>
                   <Text style={styles.resultIndex}>ข้อ {i + 1}</Text>
                   <View style={[styles.badge, ok ? styles.badgeOk : styles.badgeNo]}>
                     <Text style={styles.badgeText}>{ok ? "ถูก" : "ผิด"}</Text>
@@ -839,28 +658,12 @@ export default function StoryGame() {
           </View>
 
           <View style={styles.resultActionsCenter}>
-            {!isStoryCleared ? (
-              <>
-                <PressableScale style={styles.secondaryBtn} onPress={retryWrongOnly}>
-                  <Text style={styles.secondaryBtnText}>แก้ข้อผิด</Text>
-                </PressableScale>
-                <PressableScale style={[styles.primaryBtn, styles.primaryBtnDisabled]}>
-                  <Text style={styles.primaryBtnText}>ทำข้อต่อไป</Text>
-                </PressableScale>
-                <PressableScale style={styles.secondaryBtn} onPress={goHome}>
-                  <Text style={styles.ghostBtnText}>กลับหน้าหลัก</Text>
-                </PressableScale>
-              </>
-            ) : (
-              <>
-                <PressableScale style={styles.primaryBtn} onPress={goNextStory}>
-                  <Text style={styles.primaryBtnText}>ทำข้อต่อไป</Text>
-                </PressableScale>
-                <PressableScale style={styles.secondaryBtn} onPress={goHome}>
-                  <Text style={styles.secondaryBtnText}>กลับหน้าหลัก</Text>
-                </PressableScale>
-              </>
-            )}
+            <PressableScale style={styles.secondaryBtn} onPress={replaySame}>
+              <Text style={styles.secondaryBtnText}>เล่นเรื่องเดิม</Text>
+            </PressableScale>
+            <PressableScale style={styles.primaryBtn} onPress={replayNew}>
+              <Text style={styles.primaryBtnText}>สุ่มเรื่องใหม่</Text>
+            </PressableScale>
           </View>
         </ScrollView>
       )}
@@ -868,171 +671,48 @@ export default function StoryGame() {
   );
 }
 
-/* =========================
- * STYLES (โทนทางการ สะอาดตา)
- * ========================= */
+/* ===== Styles (โทนสะอาด สบายตา) ===== */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F6F8FB" },
 
-  // HEADER / HOME
-  header: {
-    paddingTop: 48,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E9F0",
-    alignItems: "center",
-  },
-  headerTitle: { fontSize: 20, fontWeight: "800", color: "#0F172A" },
-  headerSub: { fontSize: 12, color: "#6B7280", marginTop: 4 },
-
-  scoreCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#E5E9F0",
-    margin: 16,
-    padding: 16,
-    alignItems: "center",
-  },
-  scoreBig: { fontSize: 24, fontWeight: "900", color: "#0F172A", marginBottom: 10 },
-  scoreBar: { width: "100%", height: 8, backgroundColor: "#E5E7EB", borderRadius: 6, overflow: "hidden" },
-  scoreFill: { height: "100%", backgroundColor: "#2563EB" },
-  congratsText: { marginTop: 10, color: "#065F46", fontWeight: "700" },
-
-  gridWrap: { paddingHorizontal: 12, paddingBottom: 110 },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    columnGap: 10,
-    rowGap: 10,
-    justifyContent: "space-between",
-  },
-  gridItem: {
-    width: "31.8%",
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    alignItems: "center",
-  },
-  // สถานะช่องคะแนน
-  gridTodo: { backgroundColor: "#FFFFFF", borderColor: "#E2E8F0" }, // (กรณีเรื่องแรกที่ยังไม่ผ่านจะแสดงเป็นขาว)
-  gridWarn: { backgroundColor: "#FFF7ED", borderColor: "#FDBA74" }, // ทำแล้วแต่ยังไม่ผ่าน → ส้ม
-  gridDone: { backgroundColor: "#dcffdaff", borderColor: "#10B981" }, // ผ่านแล้ว → ขาวขอบเขียว
-  gridLocked: { backgroundColor: "#F1F5F9", borderColor: "#CBD5E1" }, // ยังไม่ปลดล็อก → เทา + 🔒
-  gridItemText: { fontSize: 14, fontWeight: "700", color: "#334155" },
-
-  homeActions: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E9F0",
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    alignItems: "center",
-  },
-
-  // TOPBAR (READ)
+  // STORY
   topbar: {
-    paddingTop: 48,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E9F0",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16,
+    backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#E5E9F0", alignItems: "center",
   },
-  topbarLeft: { fontSize: 14, color: "#334155", width: 90 },
   topbarTitle: { fontSize: 16, fontWeight: "800", color: "#0F172A" },
 
-  // STORY
-  storyScroll: { flex: 1 },
   storyWrap: { padding: 16, paddingBottom: 110 },
   storyCard: { backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#E5E9F0", padding: 18 },
   storyTitle: { fontSize: 20, fontWeight: "800", color: "#111827", textAlign: "center", marginBottom: 12 },
-  divider: { height: 1, backgroundColor: "#E5E9F0", marginBottom: 14 },
   storyBody: { lineHeight: 28, color: "#374151" },
+  divider: { height: 1, backgroundColor: "#E5E9F0", marginBottom: 14 },
 
   bottomBarCenter: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E9F0",
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    alignItems: "center",
+    position: "absolute", left: 0, right: 0, bottom: 0,
+    borderTopWidth: 1, borderTopColor: "#E5E9F0",
+    backgroundColor: "#FFFFFF", padding: 16, alignItems: "center", gap: 8,
   },
-
-  // BUTTONS
-  primaryBtn: {
-    backgroundColor: "#0EA5E9",
-    paddingVertical: 14,
-    paddingHorizontal: 22,
-    borderRadius: 12,
-    minWidth: 180,
-    alignItems: "center",
-  },
-  primaryBtnDisabled: { opacity: 0.5 },
-  primaryBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
-
-  secondaryBtn: {
-    backgroundColor: "#EEF2F6",
-    paddingVertical: 13,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    minWidth: 160,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  secondaryBtnText: { color: "#0F172A", fontSize: 15, fontWeight: "700" },
-
-  ghostBtn: {
-    backgroundColor: "transparent",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    minWidth: 160,
-    alignItems: "center",
-  },
-  ghostBtnText: { color: "#334155", fontSize: 15, fontWeight: "700" },
 
   // QUIZ HEADER
   quizHeader: {
-    paddingTop: 48,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E9F0",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 8,
-  },
-  quizTitleInline: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#0F172A",
+    paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16,
+    backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#E5E9F0",
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8,
   },
   timerPill: {
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-    borderColor: "#FEE2E2",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+    backgroundColor: "#FEF2F2", borderWidth: 1, borderColor: "#FEE2E2",
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
   },
   timerLabel: { fontSize: 12, color: "#6B7280", marginBottom: 2 },
   timerValue: { fontSize: 16, fontWeight: "800", color: "#EF4444" },
   timerUrgent: { color: "#DC2626" },
+
+  quizTitlePill: {
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+    backgroundColor: "#F1F5F9", borderWidth: 1, borderColor: "#E5E7EB",
+  },
+  quizTitleInline: { fontSize: 14, fontWeight: "800", color: "#0F172A" },
 
   progressBox: { width: 120 },
   progressBar: { width: "100%", height: 6, backgroundColor: "#E5E7EB", borderRadius: 3, overflow: "hidden" },
@@ -1057,39 +737,21 @@ const styles = StyleSheet.create({
   // RESULT
   resultWrap: { padding: 16, paddingTop: 36, alignItems: "center" },
   resultCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E5E9F0",
-    padding: 18,
-    width: "100%",
-    alignItems: "center",
-    marginBottom: 14,
+    backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#E5E9F0",
+    padding: 18, width: "100%", alignItems: "center", marginBottom: 14,
   },
   resultTitle: { fontSize: 18, fontWeight: "800", color: "#0F172A", marginBottom: 6 },
   resultScore: { fontSize: 14, color: "#334155", marginBottom: 10 },
   resultBar: { width: "100%", height: 8, backgroundColor: "#E5E7EB", borderRadius: 6, overflow: "hidden" },
   resultFill: { height: "100%", backgroundColor: "#10B981" },
-  resultMsg: { marginTop: 12, color: "#7C3AED", fontWeight: "700", textAlign: "center" },
-  resultMsgStrong: { marginTop: 12, color: "#065F46", fontWeight: "800", textAlign: "center" },
 
   resultList: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#E5E9F0",
-    padding: 12,
-    width: "100%",
-    marginTop: 6,
-    marginBottom: 16,
+    backgroundColor: "#FFFFFF", borderRadius: 14, borderWidth: 1, borderColor: "#E5E9F0",
+    padding: 12, width: "100%", marginTop: 6, marginBottom: 16,
   },
   resultItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-    paddingVertical: 10,
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    borderBottomWidth: 1, borderBottomColor: "#F1F5F9", paddingVertical: 10,
   },
   resultIndex: { fontSize: 15, fontWeight: "700", color: "#334155" },
   badge: { minWidth: 64, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, alignItems: "center" },
@@ -1097,9 +759,21 @@ const styles = StyleSheet.create({
   badgeNo: { backgroundColor: "#FEF2F2" },
   badgeText: { fontSize: 13, fontWeight: "800", color: "#0F172A" },
 
-  resultActionsCenter: {
-    width: "100%",
-    gap: 10,
-    alignItems: "center",
+  resultActionsCenter: { width: "100%", gap: 10, alignItems: "center" },
+
+  // BUTTONS
+  primaryBtn: {
+    backgroundColor: "#0EA5E9", paddingVertical: 14, paddingHorizontal: 22,
+    borderRadius: 12, minWidth: 180, alignItems: "center",
   },
+  primaryBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+
+  secondaryBtn: {
+    backgroundColor: "#EEF2F6", paddingVertical: 13, paddingHorizontal: 18,
+    borderRadius: 12, minWidth: 160, alignItems: "center", borderWidth: 1, borderColor: "#E2E8F0",
+  },
+  secondaryBtnText: { color: "#0F172A", fontSize: 15, fontWeight: "700" },
+
+  ghostBtn: { backgroundColor: "transparent", paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, minWidth: 160, alignItems: "center" },
+  ghostBtnText: { color: "#334155", fontSize: 15, fontWeight: "700" },
 });

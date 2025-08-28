@@ -8,7 +8,7 @@ import { doc, getDoc } from "firebase/firestore";
 //import File Game
 import FastMath from "./screens/Gamescreen/FastMath";
 import SoundRecognize from "./screens/Gamescreen/SoundRecognize";
-import Catchword from "./screens/Gamescreen/Catchword";
+import MatchingWord from "./screens/Gamescreen/MatchingWord";
 import StoryGame from "./screens/Gamescreen/StoryGame";
 
 import LoginScreen from "./screens/LoginScreen";
@@ -52,7 +52,7 @@ export default function App() {
         <Stack.Screen name="FastMath" component={FastMath} />
         <Stack.Screen name="SoundRecognize" component={SoundRecognize} />
         <Stack.Screen name="StoryGame" component={StoryGame} />
-        <Stack.Screen name="Catchword" component={Catchword} />
+        <Stack.Screen name="MatchingWord" component={MatchingWord} />
       </Stack.Navigator>
     </NavigationContainer>
   );

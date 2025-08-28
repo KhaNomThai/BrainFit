@@ -31,7 +31,7 @@ export default function MainTabs() {
           shadowRadius: 5,
           elevation: 5,
         },
-        tabBarActiveTintColor: "#008080", // ✅ สีหลักเมื่อ active
+        tabBarActiveTintColor: "#e4710dff", // ✅ สีหลักเมื่อ active
         tabBarInactiveTintColor: "#aaa",  // ✅ สีตอน inactive
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;

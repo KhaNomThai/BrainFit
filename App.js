@@ -5,9 +5,11 @@ import { auth, db } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-
-import FastMath from "./screens/Gamescreen/FastMath";   // ✅ แก้ path ตรงนี้
+//import File Game
+import FastMath from "./screens/Gamescreen/FastMath";
 import SoundRecognize from "./screens/Gamescreen/SoundRecognize";
+import Catchword from "./screens/Gamescreen/Catchword";
+
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import ProfileSetupScreen from "./screens/ProfileSetupScreen";
@@ -36,9 +38,7 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  if (!initialRoute) {
-    return null; // หรือ spinner โหลด
-  }
+  if (!initialRoute) return null; // หรือแสดง Spinner
 
   return (
     <NavigationContainer>
@@ -46,14 +46,11 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
-        <Stack.Screen
-          name="MainTabs"
-          component={MainTabs}
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
         <Stack.Screen name="GameScreen" component={GameScreen} />
         <Stack.Screen name="FastMath" component={FastMath} />
         <Stack.Screen name="SoundRecognize" component={SoundRecognize} />
+        <Stack.Screen name="Catchword" component={Catchword} />
       </Stack.Navigator>
     </NavigationContainer>
   );

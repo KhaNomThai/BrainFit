@@ -42,7 +42,7 @@ export default function GameScreen({ navigation }) {
             text="เกมจับคู่คำ"
             color="#DCE6FF"
             fontScale={fontScale}
-            onPress={() => navigation.navigate("WordCatch")}
+            onPress={() => navigation.navigate("Catchword")}
           />
           <GameItem
             icon="🪢"

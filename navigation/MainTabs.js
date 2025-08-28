@@ -39,7 +39,7 @@ export default function MainTabs() {
           if (route.name === "Home") {
             iconName = focused ? "home" : "home-outline";
           } else if (route.name === "6CIT") {
-            iconName = focused ? "brain" : "ellipse-outline"; // brain ไม่มีใน Ionicons
+            iconName = focused ? "body" : "body-outline";
           } else if (route.name === "Game") {
             iconName = focused ? "game-controller" : "game-controller-outline";
           } else if (route.name === "Menu") {

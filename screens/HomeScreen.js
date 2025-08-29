@@ -6,15 +6,27 @@ import {
   doc, setDoc, updateDoc, getDoc, increment, serverTimestamp
 } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context"; // ✅ ใช้ SafeArea
+import { SafeAreaView } from "react-native-safe-area-context";
 
-// ==== config ====
+// ===== สีแบบ fix: bg / border / icon =====
 const CHECKLIST_ITEMS = [
-  { key: "exercise", icon: "fitness-outline", label: "วันนี้ท่านได้ออกกำลังกาย" },
-  { key: "sleep",    icon: "moon-outline",    label: "วันนี้ท่านได้พักผ่อนพอ" },
-  { key: "social",   icon: "people-outline",  label: "วันนี้ท่านมีการพูดคุยปฏิสัมพันธ์" },
-  { key: "diet",     icon: "fast-food-outline", label: "วันนี้ท่านรับประทานอาหารครบ 5 หมู่" },
+  { key: "exercise", icon: "fitness-outline", label: "วันนี้ท่านได้ออกกำลังกาย",
+    colors: { bg: "#FFF0E6", border: "#FFD8A8", icon: "#E8590C" } }, // ส้มพาสเทล
+  { key: "social",   icon: "people-outline",  label: "วันนี้ท่านมีการพูดคุยปฏิสัมพันธ์",
+    colors: { bg: "#E7F5FF", border: "#BDE0FE", icon: "#1C7ED6" } }, // ฟ้าอ่อน
+  { key: "lunch",    icon: "fast-food-outline", label: "วันนี้ท่านรับประทานอาหารครบ 5 หมู่",
+    colors: { bg: "#FFF5F5", border: "#FFC9C9", icon: "#FA5252" } }, // ชมพูอ่อน
+  { key: "sleep",    icon: "moon-outline",    label: "วันนี้ท่านได้พักผ่อนพอ",
+    colors: { bg: "#E6FCF5", border: "#C3FAE8", icon: "#0CA678" } }, // เขียวมิ้นท์
 ];
+
+// helper: แปลง #RRGGBB เป็น rgba(r,g,b,a)
+const hexToRgba = (hex, a) => {
+  const h = hex.replace("#", "");
+  const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return `rgba(${r},${g},${b},${a})`;
+};
 
 const todayKey = () => {
   const d = new Date();
@@ -35,9 +47,10 @@ const lastNDaysKeys = (n = 7) => {
   return arr;
 };
 
-// ==== firestore helpers ====
+// Firestore refs
 const dailyRef = (uid, dateKey) => doc(db, "users", uid, "daily", dateKey);
-const statsRef = (uid) => doc(db, "users", uid, "stats");
+const statsRefDaily = (uid, dateKey) => doc(db, "users", uid, "stats", dateKey); // รายวัน
+const metaRef = (uid) => doc(db, "users", uid, "meta", "aggregate");             // รวมทั้งหมด
 
 export default function HomeScreen() {
   const [todayCount, setTodayCount] = useState(0);
@@ -49,7 +62,7 @@ export default function HomeScreen() {
   const last7 = useMemo(() => lastNDaysKeys(7), []);
   const today = todayKey();
 
-  // ====== โหลดครั้งแรก ======
+  // โหลดครั้งแรก
   useEffect(() => {
     (async () => {
       try {
@@ -74,29 +87,27 @@ export default function HomeScreen() {
     })();
   }, [today, last7]);
 
-  // ====== เพิ่ม usage เมื่อหน้าโฟกัส ======
+  // เพิ่ม usage เมื่อหน้าโฟกัส
   useFocusEffect(
     useCallback(() => {
       let canceled = false;
       (async () => {
         const user = auth.currentUser;
-        if (!user) {
-          setReady(true);
-          return;
-        }
+        if (!user) { setReady(true); return; }
         try {
           const dRef = dailyRef(user.uid, today);
           const dSnap = await getDoc(dRef);
           if (!dSnap.exists()) {
             await setDoc(dRef, {
               usageCount: 0,
-              checklist: { exercise: null, sleep: null, social: null, diet: null },
+              checklist: { exercise: null, sleep: null, social: null, lunch: null },
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
             });
           }
           await updateDoc(dRef, { usageCount: increment(1), updatedAt: serverTimestamp() });
-          await setDoc(statsRef(user.uid), { totalCount: increment(1) }, { merge: true });
+          await setDoc(statsRefDaily(user.uid, today), { count: increment(1), updatedAt: serverTimestamp() }, { merge: true });
+          await setDoc(metaRef(user.uid), { totalCount: increment(1), updatedAt: serverTimestamp() }, { merge: true });
 
           if (!canceled) {
             await Promise.all([
@@ -115,13 +126,12 @@ export default function HomeScreen() {
     }, [today, last7])
   );
 
-  // ====== update checklist ======
+  // อัปเดต checklist
   const onUpdateChecklist = async (key, val) => {
     try {
       const user = auth.currentUser;
       if (!user) return;
       const dRef = dailyRef(user.uid, today);
-      await setDoc(dRef, { checklist: {}, createdAt: serverTimestamp() }, { merge: true });
       await setDoc(
         dRef,
         { checklist: { ...checklist, [key]: val }, updatedAt: serverTimestamp() },
@@ -133,23 +143,18 @@ export default function HomeScreen() {
     }
   };
 
-  // ====== UI ======
+  // Loading
   if (!ready) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.loadingWrap}>
-          <Text style={styles.loadingText}>กำลังโหลด...</Text>
-        </View>
+        <View style={styles.loadingWrap}><Text style={styles.loadingText}>กำลังโหลด...</Text></View>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        style={styles.screen}
-        contentContainerStyle={[styles.content, { paddingTop: 8 }]} // ✅ กันชน notch + padding เพิ่ม
-      >
+      <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: 8 }]}>
         <Text style={styles.header}>กิจกรรมประจำวัน</Text>
 
         {/* การ์ดสถิติ */}
@@ -179,18 +184,24 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* เช็กลิสต์ */}
+        {/* เช็กลิสต์ (bg อ่อน + กรอบ + ไอคอนมีสี) */}
         {CHECKLIST_ITEMS.map((item) => {
           const value = checklist?.[item.key];
           return (
-            <View key={item.key} style={styles.listCard}>
+            <View
+              key={item.key}
+              style={[
+                styles.listCard,
+                { backgroundColor: item.colors.bg, borderColor: item.colors.border, borderWidth: 1 }
+              ]}
+            >
               <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                <Ionicons name={item.icon} size={24} color={ORANGE} style={styles.listIcon} />
+                <Ionicons name={item.icon} size={24} color={item.colors.icon} style={styles.listIcon} />
                 <Text style={styles.listText}>{item.label}</Text>
               </View>
               <View style={styles.pillRow}>
-                <Pill label="ใช่" active={value === true} onPress={() => onUpdateChecklist(item.key, true)} />
-                <Pill label="ไม่ใช่" active={value === false} onPress={() => onUpdateChecklist(item.key, false)} />
+                <Pill label="ใช่"    active={value === true}  onPress={() => onUpdateChecklist(item.key, true)}  color={item.colors.icon} />
+                <Pill label="ไม่ใช่" active={value === false} onPress={() => onUpdateChecklist(item.key, false)} color={item.colors.icon} />
               </View>
             </View>
           );
@@ -215,7 +226,7 @@ async function loadToday(uid, dateKey, setCount, setChecklist) {
   }
 }
 async function loadStats(uid, setTotalCount) {
-  const sSnap = await getDoc(statsRef(uid));
+  const sSnap = await getDoc(metaRef(uid));
   setTotalCount(sSnap.exists() ? (sSnap.data().totalCount || 0) : 0);
 }
 async function load7Days(uid, keys, setBars) {
@@ -230,10 +241,18 @@ async function load7Days(uid, keys, setBars) {
 }
 
 // ===== UI atoms =====
-function Pill({ label, active, onPress }) {
+function Pill({ label, active, onPress, color }) {
+  const bgActive = hexToRgba(color, 0.18); // พื้นจางเมื่อเลือก
   return (
-    <TouchableOpacity onPress={onPress} style={[styles.pill, active ? styles.pillActive : null]}>
-      <Text style={[styles.pillText, active ? styles.pillTextActive : null]}>{label}</Text>
+    <TouchableOpacity
+      onPress={onPress}
+      style={[
+        styles.pill,
+        { borderColor: color },
+        active ? { backgroundColor: bgActive } : null
+      ]}
+    >
+      <Text style={[styles.pillText, active ? { color: "#111827" } : { color: "#374151" }]}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -244,14 +263,14 @@ const ORANGE_LIGHT = "#FFEDD5";
 const GRAY = "#6B7280";
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#fff" }, // ✅ SafeArea ป้องกันชน notch
+  safe: { flex: 1, backgroundColor: "#fff" },
   screen: { flex: 1, backgroundColor: "#fff" },
   content: { padding: 16, paddingBottom: 32 },
   header: { fontSize: 22, fontWeight: "700", marginBottom: 12, color: "#111827" },
 
   card: {
     backgroundColor: "#fff",
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     shadowColor: "#000",
     shadowOpacity: 0.06,
@@ -286,35 +305,32 @@ const styles = StyleSheet.create({
   bar: { width: 22, borderRadius: 8, backgroundColor: ORANGE },
   barLabel: { fontSize: 11, color: GRAY, marginTop: 6 },
 
+  // Checklist
   listCard: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
+    borderRadius: 18,
     paddingVertical: 14,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
     shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
   },
   listIcon: { marginRight: 10 },
-  listText: { flex: 1, fontSize: 16, fontWeight: "600", color: "#111827" },
+  listText: { flex: 1, fontSize: 16, fontWeight: "700", color: "#111827" },
 
   pillRow: { flexDirection: "row", gap: 8, marginLeft: 12 },
   pill: {
     borderWidth: 1,
-    borderColor: ORANGE,
     paddingVertical: 6,
     paddingHorizontal: 16,
     borderRadius: 999,
-    backgroundColor: "#fff",
+    backgroundColor: "transparent",
   },
-  pillActive: { backgroundColor: ORANGE_LIGHT, borderColor: ORANGE },
-  pillText: { fontSize: 14, color: ORANGE, fontWeight: "600" },
-  pillTextActive: { color: "#EA580C" },
+  pillText: { fontSize: 14, fontWeight: "700" },
 
   loadingWrap: { flex: 1, justifyContent: "center", alignItems: "center" },
   loadingText: { fontSize: 16, color: GRAY },

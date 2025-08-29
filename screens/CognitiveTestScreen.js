@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Platform, BackHandler, Alert, SafeAreaView, StatusBar, } from "react-native";
+import {
+  View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Platform,
+  BackHandler, Alert, SafeAreaView, StatusBar,
+} from "react-native";
 import { auth, db } from "../firebase";
 import { setDoc, doc, serverTimestamp } from "firebase/firestore";
 
@@ -47,48 +50,18 @@ export default function CognitiveTestScreen({ navigation }) {
   const monthMaps = useMemo(() => {
     const map = new Map();
     const th = [
-      "มกราคม",
-      "กุมภาพันธ์",
-      "มีนาคม",
-      "เมษายน",
-      "พฤษภาคม",
-      "มิถุนายน",
-      "กรกฎาคม",
-      "สิงหาคม",
-      "กันยายน",
-      "ตุลาคม",
-      "พฤศจิกายน",
-      "ธันวาคม",
+      "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
+      "กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม",
     ];
     const thAbbr = [
-      "ม.ค.",
-      "ก.พ.",
-      "มี.ค.",
-      "เม.ย.",
-      "พ.ค.",
-      "มิ.ย.",
-      "ก.ค.",
-      "ส.ค.",
-      "ก.ย.",
-      "ต.ค.",
-      "พ.ย.",
-      "ธ.ค.",
+      "ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.",
+      "ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค.",
     ];
     const en = [
-      "january",
-      "february",
-      "march",
-      "april",
-      "may",
-      "june",
-      "july",
-      "august",
-      "september",
-      "october",
-      "november",
-      "december",
+      "january","february","march","april","may","june",
+      "july","august","september","october","november","december",
     ];
-    const enAbbr = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    const enAbbr = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
     for (let i = 0; i < 12; i++) {
       const idx = i + 1;
       map.set(th[i].toLowerCase(), idx);
@@ -100,18 +73,8 @@ export default function CognitiveTestScreen({ navigation }) {
     return map;
   }, []);
   const monthNamesTh = [
-    "มกราคม",
-    "กุมภาพันธ์",
-    "มีนาคม",
-    "เมษายน",
-    "พฤษภาคม",
-    "มิถุนายน",
-    "กรกฎาคม",
-    "สิงหาคม",
-    "กันยายน",
-    "ตุลาคม",
-    "พฤศจิกายน",
-    "ธันวาคม",
+    "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
+    "กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม",
   ];
 
   // ฟังก์ชันช่วยทำความสะอาด input
@@ -292,21 +255,8 @@ export default function CognitiveTestScreen({ navigation }) {
 
   /** ----------------------- การนำทางระหว่างขั้นตอน + Progress ----------------------- */
   const steps = [
-    "intro",
-    "q1",
-    "q2",
-    "q3",
-    "q4a",
-    "q4b",
-    "q4c",
-    "q4d",
-    "q5a",
-    "q5b",
-    "q5c",
-    "q5d",
-    "q6_read",
-    "q6_answer",
-    "review",
+    "intro","q1","q2","q3","q4a","q4b","q4c","q4d",
+    "q5a","q5b","q5c","q5d","q6_read","q6_answer","review",
   ];
   const lastProgressStep = steps.indexOf("q6_answer"); // ใช้ค่านี้ทำ progress 0..1
   const goNext = () => {
@@ -324,22 +274,10 @@ export default function CognitiveTestScreen({ navigation }) {
   /** ----------------------- เริ่มรอบใหม่ (รีเซ็ต + สุ่มโจทย์ใหม่) ----------------------- */
   const resetRound = () => {
     setAnswers({
-      q1: "",
-      q2: "",
-      q3: "",
-      q4a: "",
-      q4b: "",
-      q4c: "",
-      q4d: "",
-      q5a: "",
-      q5b: "",
-      q5c: "",
-      q5d: "",
-      q6_name: "",
-      q6_surname: "",
-      q6_number: "",
-      q6_street: "",
-      q6_province: "",
+      q1: "", q2: "", q3: "",
+      q4a: "", q4b: "", q4c: "", q4d: "",
+      q5a: "", q5b: "", q5c: "", q5d: "",
+      q6_name: "", q6_surname: "", q6_number: "", q6_street: "", q6_province: "",
     });
     setScores({ q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0 });
     setTotal(0);
@@ -370,7 +308,9 @@ export default function CognitiveTestScreen({ navigation }) {
                 6CIT (Six-Item Cognitive Impairment Test) เป็นแบบคัดกรองความบกพร่องทางสติปัญญาอย่างรวดเร็ว
                 แบบทดสอบมี 6 ข้อ คะแนนรวมยิ่งมาก แปลว่ามีโอกาสบกพร่องมากขึ้น
               </Text>
-              <Text style={styles.p}>เมื่อพร้อมแล้วกด “เริ่มทำแบบทดสอบ” บางข้อจะอ้างอิงวัน และเวลาปัจจุบันโดยอัตโนมัติ</Text>
+              <Text style={styles.p}>
+                เมื่อพร้อมแล้วกด “เริ่มทำแบบทดสอบ” บางข้อจะอ้างอิงวัน และเวลาปัจจุบันโดยอัตโนมัติ
+              </Text>
               <PrimaryButton label="เริ่มทำแบบทดสอบ" onPress={() => setStep("q1")} />
             </View>
           )}
@@ -673,7 +613,7 @@ function QuestionBlock({ title, hint, children, onPrev, onNext }) {
   );
 }
 
-// ปุ่มหลัก (น้ำเงิน) โทนเข้ม/มุมโค้ง/เงาเล็ก ๆ
+// ปุ่มหลัก (โทนส้ม) โทนเข้ม/มุมโค้ง/เงาเล็ก ๆ
 function PrimaryButton({ label, onPress, style }) {
   return (
     <TouchableOpacity style={[styles.primaryBtn, style]} onPress={onPress} activeOpacity={0.9}>
@@ -682,7 +622,7 @@ function PrimaryButton({ label, onPress, style }) {
   );
 }
 
-// ปุ่มรอง (พื้นอ่อน) มุมโค้ง/เงาเบา ๆ
+// ปุ่มรอง (พื้นส้มอ่อน) มุมโค้ง/เส้นขอบอุ่นตา
 function SecondaryButton({ label, onPress, style }) {
   return (
     <TouchableOpacity style={[styles.secondaryBtn, style]} onPress={onPress} activeOpacity={0.9}>
@@ -691,12 +631,12 @@ function SecondaryButton({ label, onPress, style }) {
   );
 }
 
-/** ----------------------- Styles ----------------------- */
+/** ----------------------- Styles (Orange Theme) ----------------------- */
 const styles = StyleSheet.create({
   // ฉากหลังปลอดภัย ไม่ชนแถบด้านบนของเครื่อง
   safeArea: {
     flex: 1,
-    backgroundColor: "#F3F4F6", // gray-100
+    backgroundColor: "#FFF", // orange-50
   },
 
   // ช่องว่างส่วนหัว (เผื่อกรณีบางเครื่อง safe area ยังติด)
@@ -729,7 +669,7 @@ const styles = StyleSheet.create({
       android: {
         elevation: 4,
         borderWidth: 1,
-        borderColor: "#eef2f7",
+        borderColor: "#FFE4D6", // orange-200
       },
     }),
   },
@@ -740,7 +680,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: "center",
     fontWeight: "800",
-    color: "#0F172A", // slate-900
+    color: "#7C2D12", // orange-900
   },
 
   // ข้อความย่อหน้า
@@ -750,49 +690,49 @@ const styles = StyleSheet.create({
   qTitle: { fontSize: 18, fontWeight: "700", marginBottom: 8, color: "#111827" },
 
   // คำใบ้
-  hint: { fontSize: 13, color: "#6b7280", marginBottom: 8 },
+  hint: { fontSize: 13, color: "#9A3412", marginBottom: 8 }, // orange-800
 
   // ช่องกรอก
   input: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#FED7AA", // orange-200
     padding: 12,
     borderRadius: 12,
     marginBottom: 12,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#FFFBEB", // amber-50 (นุ่มตา)
   },
 
   // แถวปุ่มย้อน/ถัดไป
   row: { flexDirection: "row", width: "100%", marginTop: 4 },
 
-  // ปุ่มหลัก
+  // ปุ่มหลัก (ส้ม)
   primaryBtn: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#F97316", // orange-500
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",
     ...Platform.select({
-      ios: { shadowColor: "#2563EB", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+      ios: { shadowColor: "#F97316", shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 2 },
     }),
   },
   primaryBtnText: { color: "white", fontWeight: "800", fontSize: 16 },
 
-  // ปุ่มรอง
+  // ปุ่มรอง (ส้มอ่อน)
   secondaryBtn: {
-    backgroundColor: "#EEF2FF",
+    backgroundColor: "#FFF7ED", // orange-50
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E0E7FF",
+    borderColor: "#FED7AA", // orange-200
   },
-  secondaryBtnText: { color: "#1E3A8A", fontWeight: "800", fontSize: 16 },
+  secondaryBtnText: { color: "#9A3412", fontWeight: "800", fontSize: 16 }, // orange-800
 
   // กล่องคำพูด/บทความ
   quote: {
     borderLeftWidth: 4,
-    borderLeftColor: "#93C5FD",
+    borderLeftColor: "#FDBA74", // orange-300
     paddingLeft: 10,
     fontSize: 16,
     marginBottom: 10,
@@ -802,33 +742,33 @@ const styles = StyleSheet.create({
   // Progress bar
   progressBarBg: {
     height: 10,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#FFE4D6", // orange-200
     borderRadius: 999,
     overflow: "hidden",
     marginBottom: 14,
   },
   progressBarFill: {
     height: "100%",
-    backgroundColor: "#60A5FA",
+    backgroundColor: "#FB923C", // orange-400
   },
 
   // กล่องสรุปผล
   resultCard: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFFAF5", // ส้มอ่อนมาก
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#FFE4D6", // orange-200
   },
   divider: {
     height: 1,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#FDEAD7", // orange-100/200
     marginVertical: 10,
   },
   resultLine: { fontSize: 16, marginBottom: 6, color: "#111827" },
   totalText: { fontSize: 18, marginBottom: 8, color: "#111827" },
 
-  // ป้ายระดับผล
+  // ป้ายระดับผล (คงสี semantic เดิม: เขียว/ส้ม/แดง)
   badge: {
     alignSelf: "flex-start",
     paddingVertical: 6,

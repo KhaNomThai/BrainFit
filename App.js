@@ -10,6 +10,7 @@ import FastMath from "./screens/Gamescreen/FastMath";
 import SoundRecognize from "./screens/Gamescreen/SoundRecognize";
 import MatchingWord from "./screens/Gamescreen/MatchingWord";
 import StoryGame from "./screens/Gamescreen/StoryGame";
+import RelationMatch from "./screens/Gamescreen/RelationMatch";
 import MemoryGame from "./screens/Gamescreen/MemoryGame";
 
 import LoginScreen from "./screens/LoginScreen";
@@ -54,6 +55,7 @@ export default function App() {
         <Stack.Screen name="SoundRecognize" component={SoundRecognize} />
         <Stack.Screen name="StoryGame" component={StoryGame} />
         <Stack.Screen name="MatchingWord" component={MatchingWord} />
+        <Stack.Screen name="RelationMatch" component={RelationMatch} />
         <Stack.Screen name="MemoryGame" component={MemoryGame} />
       </Stack.Navigator>
     </NavigationContainer>

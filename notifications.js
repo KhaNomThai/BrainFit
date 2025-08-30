@@ -1,38 +1,69 @@
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// ให้แจ้งเตือนตอนแอพอยู่ foreground ด้วย (เลือกได้)
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true, // เด้ง banner ตอนแอพอยู่ foreground (iOS)
+    shouldShowList: true,   // เก็บเข้า Notification Center (iOS)
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
 export const requestPermissions = async () => {
   const { status } = await Notifications.requestPermissionsAsync();
   if (status !== 'granted') alert('อนุญาตแจ้งเตือนด้วยครับ!');
 };
 
-// helper สำหรับ schedule การแจ้งเตือนที่เวลาเดียวทุกวัน
-const scheduleDailyNotification = async (hour, minute, title, body, key) => {
-  const now = new Date();
-  const trigger = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
-  if (trigger <= now) trigger.setDate(trigger.getDate() + 1);
+/** เก็บ/อ่าน id ของนัด (ต่อ key) เพื่อยกเลิกเฉพาะตัวเอง */
+const storeId = async (key, id) => AsyncStorage.setItem(`${key}:id`, id);
+const loadId  = async (key) => AsyncStorage.getItem(`${key}:id`);
+const setEnabled = async (key, v) => AsyncStorage.setItem(key, v ? 'true' : 'false');
+const getEnabled = async (key) => (await AsyncStorage.getItem(key)) === 'true';
 
-  await Notifications.scheduleNotificationAsync({
+/** สร้างนัดแบบซ้ำทุกวันเวลาเดิม (ใช้รูปแบบใหม่ ไม่ Deprecated) */
+const scheduleDailyRepeat = async (hour, minute, title, body, key) => {
+  // ถ้ามีของเก่าอยู่ ยกเลิกก่อน (กันซ้อน)
+  await cancelByKey(key);
+
+  const id = await Notifications.scheduleNotificationAsync({
     content: { title, body },
-    trigger,
+    // ✅ รูปแบบใหม่: repeat รายวัน
+    trigger: { hour, minute, repeats: true },
   });
 
-  await AsyncStorage.setItem(key, 'true');
+  await storeId(key, id);
+  await setEnabled(key, true);
 };
 
-const cancelNotification = async (key) => {
-  await Notifications.cancelAllScheduledNotificationsAsync();
-  await AsyncStorage.setItem(key, 'false');
+/** สร้างนัดครั้งเดียว ณ วันที่/เวลาเป้าหมาย (ตัวอย่างเผื่ออยากใช้) */
+const scheduleOnceAt = async (date, title, body, key) => {
+  await cancelByKey(key);
+  const id = await Notifications.scheduleNotificationAsync({
+    content: { title, body },
+    // ✅ รูปแบบใหม่: ระบุชนิด 'date'
+    trigger: { type: 'date', date },
+  });
+  await storeId(key, id);
+  await setEnabled(key, true);
 };
 
-const getNotificationStatus = async (key) => {
-  const status = await AsyncStorage.getItem(key);
-  return status === 'true';
+/** ยกเลิกเฉพาะนัดของ key นั้น ๆ */
+const cancelByKey = async (key) => {
+  const id = await loadId(key);
+  if (id) {
+    try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
+  }
+  await setEnabled(key, false);
+  await AsyncStorage.removeItem(`${key}:id`);
 };
 
-// --- Sleep Notification ---
+const getStatusByKey = async (key) => getEnabled(key);
+
+// --- Sleep Notification (22:00 ทุกวัน) ---
 export const scheduleSleepNotification = async () => {
-  await scheduleDailyNotification(
+  await scheduleDailyRepeat(
     22, 0,
     '💤 ถึงเวลาเข้านอนแล้ว',
     'พักผ่อนให้เพียงพอ เพื่อสุขภาพที่ดีครับ!',
@@ -41,16 +72,16 @@ export const scheduleSleepNotification = async () => {
 };
 
 export const cancelSleepNotification = async () => {
-  await cancelNotification('sleepNotificationEnabled');
+  await cancelByKey('sleepNotificationEnabled');
 };
 
 export const getSleepNotificationStatus = async () => {
-  return await getNotificationStatus('sleepNotificationEnabled');
+  return await getStatusByKey('sleepNotificationEnabled');
 };
 
-// --- Exercise Notification ---
+// --- Exercise Notification (07:00 ทุกวัน) ---
 export const scheduleExerciseNotification = async () => {
-  await scheduleDailyNotification(
+  await scheduleDailyRepeat(
     7, 0,
     '🏃‍♂️ ได้เวลาขยับร่างกาย!',
     'ลุกขึ้นมายืดเส้นยืดสายกันหน่อย!',
@@ -59,16 +90,16 @@ export const scheduleExerciseNotification = async () => {
 };
 
 export const cancelExerciseNotification = async () => {
-  await cancelNotification('exerciseNotificationEnabled');
+  await cancelByKey('exerciseNotificationEnabled');
 };
 
 export const getExerciseNotificationStatus = async () => {
-  return await getNotificationStatus('exerciseNotificationEnabled');
+  return await getStatusByKey('exerciseNotificationEnabled');
 };
 
-// --- Social Notification ---
+// --- Social Notification (10:00 ทุกวัน) ---
 export const scheduleSocialNotification = async () => {
-  await scheduleDailyNotification(
+  await scheduleDailyRepeat(
     10, 0,
     '🗣 อย่าลืมพูดคุยกับคนรอบข้าง',
     'ลองทักทายหรือพูดคุยกับใครสักคนสิ!',
@@ -77,16 +108,16 @@ export const scheduleSocialNotification = async () => {
 };
 
 export const cancelSocialNotification = async () => {
-  await cancelNotification('socialNotificationEnabled');
+  await cancelByKey('socialNotificationEnabled');
 };
 
 export const getSocialNotificationStatus = async () => {
-  return await getNotificationStatus('socialNotificationEnabled');
+  return await getStatusByKey('socialNotificationEnabled');
 };
 
-// --- Lunch Notification ---
+// --- Lunch Notification (12:00 ทุกวัน) ---
 export const scheduleLunchNotification = async () => {
-  await scheduleDailyNotification(
+  await scheduleDailyRepeat(
     12, 0,
     '🍚 ได้เวลากินข้าวเที่ยงแล้ว!',
     'พักทานอาหารบ้างนะครับ สุขภาพสำคัญ!',
@@ -95,9 +126,9 @@ export const scheduleLunchNotification = async () => {
 };
 
 export const cancelLunchNotification = async () => {
-  await cancelNotification('lunchNotificationEnabled');
+  await cancelByKey('lunchNotificationEnabled');
 };
 
 export const getLunchNotificationStatus = async () => {
-  return await getNotificationStatus('lunchNotificationEnabled');
+  return await getStatusByKey('lunchNotificationEnabled');
 };

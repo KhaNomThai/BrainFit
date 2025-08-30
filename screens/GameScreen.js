@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Platform,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons"; // ✅ ใช้ไอคอนชุด Ionicons
 
 export default function GameScreen({ navigation }) {
   const { width } = useWindowDimensions();
@@ -20,7 +21,6 @@ export default function GameScreen({ navigation }) {
 
   const isSmall = width < 360;
   const isTablet = width >= 768;
-
   const fontScale = isTablet ? 1.15 : isSmall ? 0.92 : 1;
 
   return (
@@ -32,27 +32,27 @@ export default function GameScreen({ navigation }) {
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { fontSize: 22 * fontScale }]}>เกมฝึกสมอง</Text>
-          <Text style={[styles.headerSub, { fontSize: 14 * fontScale }]}> เลือกเกมที่ต้องการเล่น</Text>
+          <Text style={[styles.headerSub, { fontSize: 14 * fontScale }]}>เลือกเกมที่ต้องการเล่น</Text>
         </View>
 
         {/* Section: Registration */}
         <Section title="Registration" width={CARD_WIDTH} fontScale={fontScale}>
           <GameItem
-            icon="🔤"
+            icon="text" // 🔤
             text="เกมจับคู่คำ"
             color="#DCE6FF"
             fontScale={fontScale}
             onPress={() => navigation.navigate("MatchingWord")}
           />
           <GameItem
-            icon="🪢"
+            icon="git-branch-outline" // 🪢 (แทนความสัมพันธ์)
             text="เกมจับคู่ความสัมพันธ์"
             color="#E7E9FF"
             fontScale={fontScale}
             onPress={() => navigation.navigate("RelationMatch")}
           />
           <GameItem
-            icon="🎧"
+            icon="ear-outline" // 🎧
             text="เกมฟังเสียง"
             color="#EADAF0"
             fontScale={fontScale}
@@ -63,21 +63,21 @@ export default function GameScreen({ navigation }) {
         {/* Section: Attention or Calculation */}
         <Section title="Attention or Calculation" width={CARD_WIDTH} fontScale={fontScale}>
           <GameItem
-            icon="🔍"
+            icon="search" // 🔍
             text="เกมหาของในภาพ"
             color="#DFF7E5"
             fontScale={fontScale}
             onPress={() => navigation.navigate("MemoryGame")}
           />
           <GameItem
-            icon="🧮"
+            icon="calculator" // 🧮
             text="เกมคณิตคิดเร็ว"
             color="#FFE3CF"
             fontScale={fontScale}
             onPress={() => navigation.navigate("FastMath")}
           />
           <GameItem
-            icon="🔢"
+            icon="images-outline" // 🔢 (สื่อการจับคู่จำนวนกับภาพ)
             text="เกมจับคู่จำนวนกับภาพ"
             color="#FFF1C9"
             fontScale={fontScale}
@@ -88,14 +88,14 @@ export default function GameScreen({ navigation }) {
         {/* Section: Recall */}
         <Section title="Recall" width={CARD_WIDTH} fontScale={fontScale}>
           <GameItem
-            icon="🖼️"
+            icon="image-outline" // 🖼️
             text="เกมจำภาพ"
             color="#FAD7E2"
             fontScale={fontScale}
             onPress={() => navigation.navigate("ImageMemory")}
           />
           <GameItem
-            icon="📖"
+            icon="book-outline" // 📖
             text="เกมเล่าเรื่องแล้วถาม"
             color="#E8E2FF"
             fontScale={fontScale}
@@ -124,10 +124,10 @@ function GameItem({ icon, text, color, onPress, fontScale }) {
   return (
     <Pressable onPress={onPress} style={[styles.item, { backgroundColor: color }]}>
       <View style={styles.itemLeft}>
-        <Text style={[styles.itemIcon, { fontSize: 18 * fontScale }]}>{icon}</Text>
+        <Ionicons name={icon} size={22 * fontScale} color="#222" />
         <Text style={[styles.itemText, { fontSize: 16 * fontScale }]}>{text}</Text>
       </View>
-      <Text style={[styles.itemArrow, { fontSize: 16 * fontScale }]}>▶</Text>
+      <Ionicons name="chevron-forward" size={20 * fontScale} color="#22313F99" />
     </Pressable>
   );
 }
@@ -137,12 +137,12 @@ function GameItem({ icon, text, color, onPress, fontScale }) {
 const styles = StyleSheet.create({
   bg: { flex: 1, backgroundColor: "#FFFFFF" },
   container: {
-    alignItems: "center",              // ทำให้ section อยู่กลางจอ
+    alignItems: "center",
     paddingTop: 10,
     paddingBottom: 28,
   },
 
-  header: { alignItems: "center", marginBottom: 30},
+  header: { alignItems: "center", marginBottom: 20 ,marginTop: 20},
   headerTitle: { fontWeight: "800", color: "#222", marginTop: Platform.OS === "ios" ? 24 : 36 },
   headerSub: { color: "#667085", marginTop: 4 },
 
@@ -179,7 +179,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.04)",
   },
   itemLeft: { flexDirection: "row", alignItems: "center", columnGap: 10 },
-  itemIcon: { },
-  itemText: { fontSize: 20 , fontWeight: "600", color: "#22313F" },
-  itemArrow: { color: "#22313F99" },
+  itemText: { fontSize: 20, fontWeight: "600", color: "#22313F" },
 });
+

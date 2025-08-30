@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,10 @@ import {
   Keyboard,
 } from "react-native";
 
+const ORANGE = "#ff7f32";
+const GREEN = "#2ecc71";
+const RED = "#e74c3c";
+
 export default function FastMathScreen({ navigation }) {
   const [timeLeft, setTimeLeft] = useState(20);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -16,21 +20,28 @@ export default function FastMathScreen({ navigation }) {
   const [gameOver, setGameOver] = useState(false);
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState(null);
+  const [answerState, setAnswerState] = useState(null); // "correct" | "wrong" | null
 
-  // ✅ สร้างโจทย์ 20 ข้อ
+  // ✅ สร้างโจทย์ 20 ข้อ (ห้ามผลลัพธ์ติดลบ)
   useEffect(() => {
-    let q = [];
+    const q = [];
     for (let i = 0; i < 20; i++) {
-      let a = Math.floor(Math.random() * 20) + 1;
-      let b = Math.floor(Math.random() * 20) + 1;
-      let op = Math.random() > 0.5 ? "+" : "-";
-      let ans = op === "+" ? a + b : a - b;
+      let a = Math.floor(Math.random() * 20) + 1; // 1..20
+      let b = Math.floor(Math.random() * 20) + 1; // 1..20
+      const op = Math.random() > 0.5 ? "+" : "-";
+
+      // ถ้าเป็นลบแล้ว a < b → สลับเพื่อให้ผลลัพธ์ไม่ติดลบ
+      if (op === "-" && a < b) {
+        [a, b] = [b, a];
+      }
+
+      const ans = op === "+" ? a + b : a - b;
       q.push({ a, b, op, ans });
     }
     setQuestions(q);
   }, []);
 
-  // ✅ จับเวลา
+  // ⏱️ จับเวลา 20 วิ/ข้อ
   useEffect(() => {
     if (questionIndex >= 20) {
       setGameOver(true);
@@ -41,27 +52,27 @@ export default function FastMathScreen({ navigation }) {
       setTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(timer);
-          goNext();
+          goNext(); // หมดเวลาไปข้อถัดไป
         }
         return t - 1;
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, [questionIndex]);
 
+  const total = useMemo(() => 20, []);
+
   const goNext = () => {
-    // ✅ ถ้าครบทุกข้อ → จบเกม
-    if (questionIndex + 1 >= questions.length) {
+    if (questionIndex + 1 >= total) {
       setGameOver(true);
       return;
     }
-
     setTimeout(() => {
       setAnswer("");
       setFeedback(null);
+      setAnswerState(null);
       setQuestionIndex((prev) => prev + 1);
-    }, 1000);
+    }, 800);
   };
 
   const handleSubmit = () => {
@@ -71,91 +82,210 @@ export default function FastMathScreen({ navigation }) {
     const current = questions[questionIndex];
     if (!current) return;
 
-    if (parseInt(answer) === current.ans) {
+    if (Number(answer) === current.ans) {
       setScore((s) => s + 1);
-      setFeedback("✅ ถูกต้อง!");
+      setFeedback("✓ ถูกต้อง");
+      setAnswerState("correct");
     } else {
-      setFeedback(`❌ ผิด! คำตอบคือ ${current.ans}`);
+      setFeedback(`✗ ผิด (คำตอบคือ ${current.ans})`);
+      setAnswerState("wrong");
     }
     goNext();
   };
 
-  // ✅ จบเกม
+  // ✅ หน้าสรุป
   if (gameOver) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>✅ จบเกม!</Text>
-        <Text style={styles.score}>คุณได้ {score} / 20 คะแนน</Text>
+        <Text style={styles.title}>จบเกม</Text>
+        <Text style={styles.score}>
+          คุณได้ {score} / {total} คะแนน
+        </Text>
+
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, styles.buttonPrimary]}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.buttonText}>🔙 กลับเมนูเกม</Text>
+          <Text style={styles.buttonText}>กลับเมนูเกม</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  // ✅ กัน error index เกิน
-  if (questions.length === 0 || questionIndex >= questions.length) return null;
+  if (questions.length === 0 || questionIndex >= questions.length) {
+    return <View style={styles.container} />;
+  }
 
   const q = questions[questionIndex];
 
   return (
     <View style={styles.container}>
-      <Text style={styles.timer}>⏳ เวลา: {timeLeft} วิ</Text>
-      <Text style={styles.question}>
-        {q.a} {q.op} {q.b} = ?
-      </Text>
+      {/* หัวเรื่อง */}
+      <View style={styles.headerRow}>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>
+            ข้อ {questionIndex + 1}/{total}
+          </Text>
+        </View>
+        <View style={styles.badgeOutline}>
+          <Text style={styles.badgeOutlineText}>คะแนน {score}</Text>
+        </View>
+      </View>
 
+      {/* เวลา */}
+      <Text style={styles.timerText}>เวลา {timeLeft} วิ</Text>
+
+      {/* กล่องโจทย์ (เปลี่ยนสีตามผลลัพธ์) */}
+      <View
+        style={[
+          styles.questionBox,
+          answerState === "correct" && {
+            borderColor: GREEN,
+            backgroundColor: "#d4f8e8",
+          },
+          answerState === "wrong" && {
+            borderColor: RED,
+            backgroundColor: "#ffe3e3",
+          },
+        ]}
+      >
+        <Text style={styles.question}>
+          {q.a} {q.op} {q.b} = ?
+        </Text>
+      </View>
+
+      {/* กล่องคำตอบ */}
       <TextInput
         style={styles.input}
         keyboardType="numeric"
         value={answer}
         onChangeText={setAnswer}
         placeholder="พิมพ์คำตอบที่นี่"
-        placeholderTextColor="#aaa"
+        placeholderTextColor="#b3b3b3"
+        returnKeyType="done"
+        onSubmitEditing={handleSubmit}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+      {/* ปุ่มยืนยัน */}
+      <TouchableOpacity
+        style={[
+          styles.button,
+          styles.buttonPrimary,
+          answer.trim() === "" && styles.buttonDisabled,
+        ]}
+        onPress={handleSubmit}
+        disabled={answer.trim() === ""}
+      >
         <Text style={styles.buttonText}>ยืนยันคำตอบ</Text>
       </TouchableOpacity>
 
-      {feedback && <Text style={styles.feedback}>{feedback}</Text>}
+      {/* Feedback */}
+      {!!feedback && (
+        <Text
+          style={[
+            styles.feedback,
+            answerState === "correct" && { color: GREEN },
+            answerState === "wrong" && { color: RED },
+          ]}
+        >
+          {feedback}
+        </Text>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  // พื้นหลังขาว โทนส้ม
   container: {
     flex: 1,
-    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 24,
+    paddingTop: 28,
     alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 20,
   },
-  title: { fontSize: 32, fontWeight: "bold", marginBottom: 20 },
-  score: { fontSize: 26, marginBottom: 20 },
-  timer: { fontSize: 26, fontWeight: "bold", color: "red", marginBottom: 20 },
-  question: { fontSize: 40, fontWeight: "bold", marginBottom: 30 },
-  input: {
+
+  headerRow: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  badge: {
+    backgroundColor: ORANGE,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  badgeText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  badgeOutline: {
     borderWidth: 2,
-    borderColor: "#008080",
+    borderColor: ORANGE,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 12,
-    width: "70%",
-    padding: 15,
+  },
+  badgeOutlineText: { color: ORANGE, fontWeight: "700", fontSize: 16 },
+
+  timerText: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: ORANGE,
+    marginVertical: 20,
+  },
+
+  title: {
     fontSize: 28,
-    textAlign: "center",
+    fontWeight: "800",
+    color: ORANGE,
+    marginBottom: 8,
+  },
+  score: { fontSize: 22, color: "#333", marginBottom: 24 },
+
+  questionBox: {
+    borderWidth: 3,
+    borderColor: ORANGE,
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 20,
+    backgroundColor: "#fff",
+    width: "100%",
   },
+  question: {
+    fontSize: 42,
+    fontWeight: "800",
+    color: "#222",
+    textAlign: "center",
+  },
+
+  input: {
+    width: "100%",
+    borderWidth: 2,
+    borderColor: ORANGE,
+    borderRadius: 14,
+    paddingVertical: 14,
+    fontSize: 24,
+    textAlign: "center",
+    color: "#222",
+    marginBottom: 14,
+    backgroundColor: "#fff",
+  },
+
   button: {
-    backgroundColor: "#008080",
-    padding: 18,
-    borderRadius: 12,
-    marginVertical: 10,
-    width: "70%",
+    width: "100%",
+    paddingVertical: 16,
+    borderRadius: 14,
     alignItems: "center",
+    marginTop: 4,
   },
-  buttonText: { color: "#fff", fontSize: 22, fontWeight: "bold" },
-  feedback: { fontSize: 24, fontWeight: "bold", marginTop: 15 },
+  buttonPrimary: { backgroundColor: ORANGE },
+  buttonDisabled: { opacity: 0.5 },
+  buttonText: { color: "#fff", fontSize: 18, fontWeight: "800" },
+
+  feedback: {
+    marginTop: 16,
+    fontSize: 20,
+    fontWeight: "700",
+    color: ORANGE,
+  },
 });

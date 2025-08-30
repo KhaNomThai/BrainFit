@@ -1,13 +1,38 @@
 // screens/Gamescreen/StoryGame.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, Platform } from "react-native";
+
+/* ===== THEME (โทนส้มให้ตรงกับโปรเจค) ===== */
+const ORANGE = {
+  primary: "#FF922B",
+  light:   "#FFECD1",
+  pale:    "#FFF5EA",
+  border:  "#FFD8A8",
+  textMain:"#2F2A26",
+  textSub: "#5C3D2E",
+};
+const NEUTRAL = {
+  bg: "#F7F7FA",
+  line: "#EAEAEA",
+  card: "#FFFFFF",
+  ink: "#0F172A",
+  sub: "#475569",
+};
+const STATE = {
+  okBg: "#ECFDF5",
+  okBd: "#10B981",
+  okTx: "#065F46",
+  noBg: "#FEF2F2",
+  noBd: "#EF4444",
+  noTx: "#991B1B",
+};
 
 /* ===== CONFIG ===== */
 const QUESTION_TIME = 30;     // วินาทีต่อข้อ
 const AUTO_NEXT_DELAY = 500;  // ms หลังตอบ
 const SHUFFLE_CHOICES = true; // สุ่มช้อยส์ทุกครั้ง
 
-/* ===== DATA: 30 เรื่อง (ตามที่ให้มา) ===== */
+/* ===== DATA: 30 เรื่อง ===== */
 const STORIES = [
   {
     id: "1",
@@ -370,7 +395,6 @@ const STORIES = [
     ],
   },
 ];
-
 /* ===== Utils ===== */
 const shuffleArray = (arr) => {
   const a = [...arr];
@@ -395,8 +419,10 @@ const prepareRoundQuestions = (qas) =>
 /* ปุ่มเด้งตอนกด (กดแล้ว scale นิด ๆ) */
 const PressableScale = ({ style, onPress, disabled, children }) => {
   const v = useRef(new Animated.Value(1)).current;
-  const onIn = () => Animated.spring(v, { toValue: 0.98, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
-  const onOut = () => Animated.spring(v, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
+  const onIn = () =>
+    Animated.spring(v, { toValue: 0.98, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
+  const onOut = () =>
+    Animated.spring(v, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
   return (
     <Animated.View style={{ transform: [{ scale: v }] }}>
       <TouchableOpacity
@@ -585,9 +611,9 @@ export default function StoryGame() {
               <Text style={[styles.timerValue, timeLeft <= 10 && styles.timerUrgent]}>{timeLeft} วินาที</Text>
             </View>
 
-            <PressableScale style={styles.quizTitlePill} onPress={() => {}}>
+            <View style={styles.quizTitlePill}>
               <Text style={styles.quizTitleInline}>ข้อ {index + 1} / {questions.length}</Text>
-            </PressableScale>
+            </View>
 
             <View style={styles.progressBox}>
               <View style={styles.progressBar}>
@@ -670,109 +696,130 @@ export default function StoryGame() {
   );
 }
 
-/* ===== Styles (โทนสะอาด สบายตา — ฟอนต์ใหญ่ขึ้นแบบเดียวกับ MatchGame) ===== */
+/* ===== Styles: โทนส้ม + เงาบัตร + อ่านง่าย ===== */
+const cardShadow = Platform.select({
+  ios: { shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
+  android: { elevation: 2 },
+  default: {},
+});
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F6F8FB" },
+  container: { flex: 1, backgroundColor: NEUTRAL.bg },
 
   // STORY
   topbar: {
-    paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#E5E9F0", alignItems: "center",
+    paddingTop: 12, paddingBottom: 12, paddingHorizontal: 16,
+    backgroundColor: NEUTRAL.card, borderBottomWidth: 1, borderBottomColor: NEUTRAL.line, alignItems: "center",
   },
-  topbarTitle: { fontSize: 18, fontWeight: "800", color: "#0F172A" },
+  topbarTitle: { fontSize: 24, fontWeight: "800", color: ORANGE.textMain },
 
   storyWrap: { padding: 16, paddingBottom: 110 },
-  storyCard: { backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#E5E9F0", padding: 20 },
-  storyTitle: { fontSize: 22, fontWeight: "800", color: "#111827", textAlign: "center", marginBottom: 12 },
-  storyBody: { lineHeight: 30, color: "#374151", fontSize: 18 },
-  divider: { height: 1, backgroundColor: "#E5E9F0", marginBottom: 14 },
+  storyCard: {
+    backgroundColor: NEUTRAL.card, borderRadius: 16, borderWidth: 1, borderColor: ORANGE.border, padding: 20,
+    ...cardShadow,
+  },
+  storyTitle: { fontSize: 22, fontWeight: "800", color: ORANGE.textMain, textAlign: "center", marginBottom: 12 },
+  storyBody: { lineHeight: 30, color: ORANGE.textSub, fontSize: 18 },
+  divider: { height: 1, backgroundColor: ORANGE.border, marginBottom: 14, opacity: 0.8 },
 
   bottomBarCenter: {
     position: "absolute", left: 0, right: 0, bottom: 0,
-    borderTopWidth: 1, borderTopColor: "#E5E9F0",
-    backgroundColor: "#FFFFFF", padding: 16, alignItems: "center", gap: 8,
+    borderTopWidth: 1, borderTopColor: NEUTRAL.line,
+    backgroundColor: NEUTRAL.card, padding: 16, alignItems: "center", gap: 8,
   },
 
   // QUIZ HEADER
   quizHeader: {
     paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#E5E9F0",
+    backgroundColor: NEUTRAL.card, borderBottomWidth: 1, borderBottomColor: NEUTRAL.line,
     flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8,
   },
   timerPill: {
-    backgroundColor: "#FEF2F2", borderWidth: 1, borderColor: "#FEE2E2",
+    backgroundColor: ORANGE.pale, borderWidth: 1, borderColor: ORANGE.border,
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10,
   },
-  timerLabel: { fontSize: 14, color: "#6B7280", marginBottom: 2 },
-  timerValue: { fontSize: 18, fontWeight: "800", color: "#EF4444" },
+  timerLabel: { fontSize: 12, color: ORANGE.textSub, marginBottom: 2, fontWeight: "700" },
+  timerValue: { fontSize: 18, fontWeight: "900", color: ORANGE.primary },
   timerUrgent: { color: "#DC2626" },
 
   quizTitlePill: {
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
-    backgroundColor: "#F1F5F9", borderWidth: 1, borderColor: "#E5E7EB",
+    backgroundColor: ORANGE.light, borderWidth: 1, borderColor: ORANGE.border,
   },
-  quizTitleInline: { fontSize: 16, fontWeight: "800", color: "#0F172A" },
+  quizTitleInline: { fontSize: 16, fontWeight: "900", color: ORANGE.textMain },
 
   progressBox: { width: 140 },
-  progressBar: { width: "100%", height: 8, backgroundColor: "#E5E7EB", borderRadius: 4, overflow: "hidden" },
-  progressFill: { height: "100%", backgroundColor: "#2563EB", borderRadius: 4 },
+  progressBar: { width: "100%", height: 8, backgroundColor: ORANGE.pale, borderRadius: 999, overflow: "hidden" },
+  progressFill: { height: "100%", backgroundColor: ORANGE.primary, borderRadius: 999 },
 
   // QUIZ BODY
   quizBody: { flex: 1, padding: 16 },
-  question: { fontSize: 22, fontWeight: "800", color: "#0F172A", marginBottom: 18, textAlign: "center", lineHeight: 30 },
-  option: { backgroundColor: "#FFFFFF", borderWidth: 2, borderColor: "#E2E8F0", borderRadius: 14, padding: 18 },
-  optionDisabled: { opacity: 0.85 },
-  optionText: { fontSize: 18, fontWeight: "600", color: "#374151" },
-  correct: { backgroundColor: "#ECFDF5", borderColor: "#10B981" },
-  correctText: { color: "#065F46" },
-  wrong: { backgroundColor: "#FEF2F2", borderColor: "#EF4444" },
-  wrongText: { color: "#991B1B" },
+  question: {
+    fontSize: 22, fontWeight: "900", color: ORANGE.textMain,
+    marginBottom: 18, textAlign: "center", lineHeight: 30,
+  },
+  option: {
+    backgroundColor: NEUTRAL.card,
+    borderWidth: 2, borderColor: "#E2E8F0", borderRadius: 14, padding: 18,
+    ...cardShadow,
+  },
+  optionDisabled: { opacity: 0.9 },
+  optionText: { fontSize: 18, fontWeight: "700", color: ORANGE.textSub },
+  correct: { backgroundColor: STATE.okBg, borderColor: STATE.okBd },
+  correctText: { color: STATE.okTx },
+  wrong: { backgroundColor: STATE.noBg, borderColor: STATE.noBd },
+  wrongText: { color: STATE.noTx },
 
   feedback: { alignItems: "center", marginTop: 14 },
-  feedbackText: { fontSize: 18, fontWeight: "800" },
-  feedbackOk: { color: "#10B981" },
-  feedbackNo: { color: "#EF4444" },
+  feedbackText: { fontSize: 18, fontWeight: "900" },
+  feedbackOk: { color: STATE.okBd },
+  feedbackNo: { color: STATE.noBd },
 
   // RESULT
   resultWrap: { padding: 16, paddingTop: 36, alignItems: "center" },
   resultCard: {
-    backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#E5E9F0",
-    padding: 20, width: "100%", alignItems: "center", marginBottom: 14,
+    backgroundColor: NEUTRAL.card, borderRadius: 16, borderWidth: 1, borderColor: ORANGE.border,
+    padding: 20, width: "100%", alignItems: "center", marginBottom: 14, ...cardShadow,
   },
-  resultTitle: { fontSize: 20, fontWeight: "900", color: "#0F172A", marginBottom: 6 },
-  resultScore: { fontSize: 16, color: "#334155", marginBottom: 12 },
-  resultBar: { width: "100%", height: 10, backgroundColor: "#E5E7EB", borderRadius: 6, overflow: "hidden" },
-  resultFill: { height: "100%", backgroundColor: "#10B981" },
+  resultTitle: { fontSize: 20, fontWeight: "900", color: ORANGE.textMain, marginBottom: 6 },
+  resultScore: { fontSize: 16, color: ORANGE.textSub, marginBottom: 12 },
+  resultBar: { width: "100%", height: 10, backgroundColor: ORANGE.pale, borderRadius: 999, overflow: "hidden" },
+  resultFill: { height: "100%", backgroundColor: STATE.okBd },
 
   resultList: {
-    backgroundColor: "#FFFFFF", borderRadius: 14, borderWidth: 1, borderColor: "#E5E9F0",
-    padding: 12, width: "100%", marginTop: 6, marginBottom: 16,
+    backgroundColor: NEUTRAL.card, borderRadius: 14, borderWidth: 1, borderColor: NEUTRAL.line,
+    padding: 12, width: "100%", marginTop: 6, marginBottom: 16, ...cardShadow,
   },
   resultItem: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     borderBottomWidth: 1, borderBottomColor: "#F1F5F9", paddingVertical: 12,
   },
-  resultIndex: { fontSize: 17, fontWeight: "900", color: "#1F2937" },
+  resultIndex: { fontSize: 17, fontWeight: "900", color: ORANGE.textMain },
   badge: { minWidth: 72, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, alignItems: "center" },
-  badgeOk: { backgroundColor: "#ECFDF5" },
-  badgeNo: { backgroundColor: "#FEE2E2" },
-  badgeText: { fontSize: 15, fontWeight: "800", color: "#0F172A" },
+  badgeOk: { backgroundColor: STATE.okBg },
+  badgeNo: { backgroundColor: STATE.noBg },
+  badgeText: { fontSize: 15, fontWeight: "900", color: ORANGE.textMain },
 
   resultActionsCenter: { width: "100%", gap: 10, alignItems: "center" },
 
   // BUTTONS
   primaryBtn: {
-    backgroundColor: "#0EA5E9", paddingVertical: 16, paddingHorizontal: 24,
+    backgroundColor: ORANGE.primary, paddingVertical: 16, paddingHorizontal: 24,
     borderRadius: 12, minWidth: 220, alignItems: "center",
+    ...cardShadow,
   },
-  primaryBtnText: { color: "#FFFFFF", fontSize: 18, fontWeight: "800" },
+  primaryBtnText: { color: "#FFFFFF", fontSize: 18, fontWeight: "900" },
 
   secondaryBtn: {
-    backgroundColor: "#EEF2F6", paddingVertical: 14, paddingHorizontal: 20,
-    borderRadius: 12, minWidth: 170, alignItems: "center", borderWidth: 1, borderColor: "#E2E8F0",
+    backgroundColor: ORANGE.pale, paddingVertical: 14, paddingHorizontal: 20,
+    borderRadius: 12, minWidth: 170, alignItems: "center",
+    borderWidth: 1, borderColor: ORANGE.border, ...cardShadow,
   },
-  secondaryBtnText: { color: "#0F172A", fontSize: 16, fontWeight: "800" },
+  secondaryBtnText: { color: ORANGE.textMain, fontSize: 16, fontWeight: "900" },
 
-  ghostBtn: { backgroundColor: "transparent", paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10, minWidth: 160, alignItems: "center" },
-  ghostBtnText: { color: "#334155", fontSize: 16, fontWeight: "800" },
+  ghostBtn: {
+    backgroundColor: "transparent", paddingVertical: 12, paddingHorizontal: 12,
+    borderRadius: 10, minWidth: 160, alignItems: "center",
+  },
+  ghostBtnText: { color: ORANGE.textSub, fontSize: 16, fontWeight: "900" },
 });

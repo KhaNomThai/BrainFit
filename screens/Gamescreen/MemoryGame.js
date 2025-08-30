@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ImageBackground, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function HiddenObjectGame() {
+  // --- theme สีส้ม ---
+  const ORANGE = {
+    primary: "#FF922B",
+    border: "#FFD8A8",
+    pale: "#FFF5EA",
+    text: "#2F2A26",
+    success: "#0CA678",
+    gray: "#666",
+  };
+
   // --- pool สิ่งของทั้งหมดในด่านนี้ ---
   const allItems = [
     { id: "ชายชุดดำ", top: "11%", left: "90%", width: "10%", height: "14%" },
@@ -13,27 +24,22 @@ export default function HiddenObjectGame() {
     { id: "แยม", top: "35%", left: "2%", width: "9%", height: "7%" },
     { id: "หมวก", top: "63%", left: "39%", width: "13%", height: "8%" },
     { id: "ไส้เดือน", top: "52%", left: "60%", width: "22%", height: "10%" },
-
   ];
 
-  // state สำหรับ items ที่สุ่มมา
   const [items, setItems] = useState([]);
 
-  // --- ฟังก์ชันสุ่ม items ---
   const shuffleItems = () => {
     const shuffled = [...allItems]
-      .sort(() => 0.5 - Math.random()) // สุ่มเรียงใหม่
-      .slice(0, 3) // เลือกมา 3 ชิ้น
-      .map((item) => ({ ...item, found: false })); // เซ็ต found เป็น false
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 3)
+      .map((item) => ({ ...item, found: false }));
     setItems(shuffled);
   };
 
-  // สุ่มตอนเริ่มเกม
   useEffect(() => {
     shuffleItems();
   }, []);
 
-  // --- ฟังก์ชันกดหา ---
   const handleFind = (id) => {
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, found: true } : item))
@@ -44,13 +50,15 @@ export default function HiddenObjectGame() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🔎 หาของที่ซ่อนอยู่ในภาพ!</Text>
+      <View style={styles.headerRow}>
+        <Ionicons name="search" size={24} color={ORANGE.primary} />
+        <Text style={[styles.title, { color: ORANGE.text }]}>หาของที่ซ่อนอยู่ในภาพ</Text>
+      </View>
 
       <ImageBackground
         source={require("../../assets/FindPic.png")}
         style={styles.background}
       >
-        {/* hitbox ของสิ่งของ */}
         {items.map((item) => (
           <TouchableOpacity
             key={item.id}
@@ -62,7 +70,7 @@ export default function HiddenObjectGame() {
                 width: item.width,
                 height: item.height,
                 borderWidth: item.found ? 3 : 0,
-                borderColor: item.found ? "limegreen" : "transparent",
+                borderColor: item.found ? ORANGE.success : "transparent",
               },
             ]}
             onPress={() => handleFind(item.id)}
@@ -70,27 +78,45 @@ export default function HiddenObjectGame() {
         ))}
       </ImageBackground>
 
-      {/* รายการสิ่งของที่ต้องหา */}
-      <View style={styles.list}>
+      {/* รายการสิ่งของ */}
+      <View style={[styles.list, { marginTop: -120 }]}>
         {items.map((item) => (
-          <Text
+          <View
             key={item.id}
             style={[
-              styles.listItem,
-              item.found && { textDecorationLine: "line-through", color: "gray" },
+              styles.chip,
+              { borderColor: item.found ? ORANGE.success : ORANGE.border, backgroundColor: ORANGE.pale },
             ]}
           >
-            {item.id}
-          </Text>
+            <Ionicons
+              name={item.found ? "checkmark-circle" : "ellipse-outline"}
+              size={18}
+              color={item.found ? ORANGE.success : ORANGE.text}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={[
+                styles.listItem,
+                item.found && { textDecorationLine: "line-through", color: ORANGE.gray },
+              ]}
+            >
+              {item.id}
+            </Text>
+          </View>
         ))}
       </View>
 
-      {/* จบเกม + ปุ่มเริ่มใหม่ */}
+
+      {/* จบเกม */}
       {allFound && (
-        <View style={{ alignItems: "center" }}>
-          <Text style={styles.winText}>🎉 You found everything! 🎉</Text>
-          <TouchableOpacity onPress={shuffleItems}>
-            <Text style={styles.restart}>🔄 เริ่มใหม่</Text>
+        <View style={{ alignItems: "center", marginTop: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons name="trophy" size={22} color={ORANGE.primary} />
+            <Text style={[styles.winText, { color: ORANGE.primary }]}> เก่งมาก! เจอครบแล้ว</Text>
+          </View>
+          <TouchableOpacity onPress={shuffleItems} style={styles.restartBtn}>
+            <Ionicons name="refresh" size={18} color="#fff" />
+            <Text style={styles.restartText}>เริ่มใหม่</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -100,16 +126,41 @@ export default function HiddenObjectGame() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", alignItems: "center", justifyContent: "flex-start" },
-  title: { fontSize: 22, fontWeight: "bold", margin: 10 },
-  background: { width: "100%", height: "70%", resizeMode: "cover", marginTop: 50, justifyContent: "flex-start" },
+  headerRow: { flexDirection: "row", alignItems: "center", margin: 10 },
+  title: { fontSize: 22, fontWeight: "bold", marginLeft: 6 },
+
+  background: { width: "100%", height: "70%", marginTop: 20 },
+
   hitbox: { position: "absolute" },
+
   list: {
-    marginTop: 10,
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
   },
-  listItem: { fontSize: 22, marginHorizontal: 10, marginTop: -150 },
-  winText: { fontSize: 20, fontWeight: "bold", color: "green", marginTop: -20 },
-  restart: { fontSize: 18, color: "black", marginTop: 10 },
+
+
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    margin: 4,
+  },
+  listItem: { fontSize: 18 },
+
+  winText: { fontSize: 18, fontWeight: "bold", marginLeft: 4 },
+
+  restartBtn: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FF922B",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  restartText: { color: "#fff", fontSize: 16, fontWeight: "bold", marginLeft: 6 },
 });

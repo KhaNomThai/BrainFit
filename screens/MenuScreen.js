@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Switch, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, Switch, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../firebase";
@@ -29,26 +29,34 @@ const ORANGE = {
   textSub: "#5C3D2E",
 };
 
-// โทนสีของแต่ละบล็อค (สไตล์เดียวกับหน้า Home: หลายสี พาสเทล)
+// โทนสีของแต่ละบล็อค (หลายสีแบบหน้า Home)
 const TILE_PALETTE = {
-  exercise: { bg: "#FFF0E6", border: "#FFD8A8", icon: "#E8590C" },  // ส้มพาสเทล
-  social:   { bg: "#E7F5FF", border: "#BDE0FE", icon: "#1C7ED6" },  // ฟ้าอ่อน
-  lunch:    { bg: "#FFF5F5", border: "#FFC9C9", icon: "#FA5252" },  // ชมพูอ่อน
-  sleep:    { bg: "#E6FCF5", border: "#C3FAE8", icon: "#0CA678" },  // เขียวมิ้นท์
+  exercise: { bg: "#FFF0E6", border: "#FFD8A8", icon: "#E8590C" }, // ส้มพาสเทล
+  social:   { bg: "#E7F5FF", border: "#BDE0FE", icon: "#1C7ED6" }, // ฟ้าอ่อน
+  lunch:    { bg: "#FFF5F5", border: "#FFC9C9", icon: "#FA5252" }, // ชมพูอ่อน
+  sleep:    { bg: "#E6FCF5", border: "#C3FAE8", icon: "#0CA678" }, // เขียวมิ้นท์
 };
 
 export default function MenuScreen({ navigation }) {
   const [userData, setUserData] = useState(null);
+
+  // สถานะเปิด/ปิด
   const [sleepEnabled, setSleepEnabled] = useState(false);
   const [exerciseEnabled, setExerciseEnabled] = useState(false);
   const [socialEnabled, setSocialEnabled] = useState(false);
   const [lunchEnabled, setLunchEnabled] = useState(false);
 
+  // กันกดรัว ๆ ระหว่าง await
+  const [sleepBusy, setSleepBusy] = useState(false);
+  const [exerciseBusy, setExerciseBusy] = useState(false);
+  const [socialBusy, setSocialBusy] = useState(false);
+  const [lunchBusy, setLunchBusy] = useState(false);
+
   useEffect(() => {
     const fetchUser = async () => {
       const docRef = doc(db, "users", auth.currentUser.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) setUserData(docSnap.data());
+      const snap = await getDoc(docRef);
+      if (snap.exists()) setUserData(snap.data());
     };
     fetchUser();
 
@@ -60,28 +68,69 @@ export default function MenuScreen({ navigation }) {
     })();
   }, []);
 
-  const toggleSleep = async () => {
-    if (sleepEnabled) await cancelSleepNotification();
-    else await scheduleSleepNotification();
-    setSleepEnabled(!sleepEnabled);
+  // ใช้ nextVal จาก Switch โดยตรง + try/catch + busy flag
+  const toggleSleep = async (nextVal) => {
+    if (sleepBusy) return;
+    setSleepBusy(true);
+    const prev = sleepEnabled;
+    setSleepEnabled(nextVal);
+    try {
+      if (nextVal) await scheduleSleepNotification();
+      else await cancelSleepNotification();
+    } catch (e) {
+      setSleepEnabled(prev);
+      Alert.alert("เกิดข้อผิดพลาด", "ตั้งค่าการแจ้งเตือนไม่สำเร็จ");
+    } finally {
+      setSleepBusy(false);
+    }
   };
 
-  const toggleExercise = async () => {
-    if (exerciseEnabled) await cancelExerciseNotification();
-    else await scheduleExerciseNotification();
-    setExerciseEnabled(!exerciseEnabled);
+  const toggleExercise = async (nextVal) => {
+    if (exerciseBusy) return;
+    setExerciseBusy(true);
+    const prev = exerciseEnabled;
+    setExerciseEnabled(nextVal);
+    try {
+      if (nextVal) await scheduleExerciseNotification();
+      else await cancelExerciseNotification();
+    } catch (e) {
+      setExerciseEnabled(prev);
+      Alert.alert("เกิดข้อผิดพลาด", "ตั้งค่าการแจ้งเตือนไม่สำเร็จ");
+    } finally {
+      setExerciseBusy(false);
+    }
   };
 
-  const toggleSocial = async () => {
-    if (socialEnabled) await cancelSocialNotification();
-    else await scheduleSocialNotification();
-    setSocialEnabled(!socialEnabled);
+  const toggleSocial = async (nextVal) => {
+    if (socialBusy) return;
+    setSocialBusy(true);
+    const prev = socialEnabled;
+    setSocialEnabled(nextVal);
+    try {
+      if (nextVal) await scheduleSocialNotification();
+      else await cancelSocialNotification();
+    } catch (e) {
+      setSocialEnabled(prev);
+      Alert.alert("เกิดข้อผิดพลาด", "ตั้งค่าการแจ้งเตือนไม่สำเร็จ");
+    } finally {
+      setSocialBusy(false);
+    }
   };
 
-  const toggleLunch = async () => {
-    if (lunchEnabled) await cancelLunchNotification();
-    else await scheduleLunchNotification();
-    setLunchEnabled(!lunchEnabled);
+  const toggleLunch = async (nextVal) => {
+    if (lunchBusy) return;
+    setLunchBusy(true);
+    const prev = lunchEnabled;
+    setLunchEnabled(nextVal);
+    try {
+      if (nextVal) await scheduleLunchNotification();
+      else await cancelLunchNotification();
+    } catch (e) {
+      setLunchEnabled(prev);
+      Alert.alert("เกิดข้อผิดพลาด", "ตั้งค่าการแจ้งเตือนไม่สำเร็จ");
+    } finally {
+      setLunchBusy(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -89,7 +138,6 @@ export default function MenuScreen({ navigation }) {
     navigation.replace("Login");
   };
 
-  // สร้างรายการบล็อคด้วยสีเฉพาะของแต่ละประเภท
   const rows = [
     {
       key: "exercise",
@@ -98,6 +146,7 @@ export default function MenuScreen({ navigation }) {
       enabled: exerciseEnabled,
       onToggle: toggleExercise,
       palette: TILE_PALETTE.exercise,
+      disabled: exerciseBusy,
     },
     {
       key: "social",
@@ -106,6 +155,7 @@ export default function MenuScreen({ navigation }) {
       enabled: socialEnabled,
       onToggle: toggleSocial,
       palette: TILE_PALETTE.social,
+      disabled: socialBusy,
     },
     {
       key: "lunch",
@@ -114,6 +164,7 @@ export default function MenuScreen({ navigation }) {
       enabled: lunchEnabled,
       onToggle: toggleLunch,
       palette: TILE_PALETTE.lunch,
+      disabled: lunchBusy,
     },
     {
       key: "sleep",
@@ -122,6 +173,7 @@ export default function MenuScreen({ navigation }) {
       enabled: sleepEnabled,
       onToggle: toggleSleep,
       palette: TILE_PALETTE.sleep,
+      disabled: sleepBusy,
     },
   ];
 
@@ -153,6 +205,7 @@ export default function MenuScreen({ navigation }) {
             enabled={r.enabled}
             onToggle={r.onToggle}
             palette={r.palette}
+            disabled={r.disabled}
           />
         ))}
 
@@ -165,8 +218,8 @@ export default function MenuScreen({ navigation }) {
   );
 }
 
-/** ---------- Reusable Row (multi-color) ---------- */
-function Row({ icon, label, enabled, onToggle, palette }) {
+/** ---------- Reusable Row (JS) ---------- */
+function Row({ icon, label, enabled, onToggle, palette, disabled }) {
   return (
     <View
       style={[
@@ -174,7 +227,7 @@ function Row({ icon, label, enabled, onToggle, palette }) {
         {
           backgroundColor: palette.bg,
           borderColor: palette.border,
-          opacity: enabled ? 1 : 0.95, // ปิดอยู่ให้จางนิดๆ
+          opacity: disabled ? 0.6 : 1,
         },
       ]}
     >
@@ -191,7 +244,8 @@ function Row({ icon, label, enabled, onToggle, palette }) {
       </View>
       <Switch
         value={enabled}
-        onValueChange={onToggle}
+        onValueChange={onToggle}  // ใช้ค่า nextVal โดยตรง
+        disabled={disabled}
         trackColor={{ false: "#D9D9D9", true: palette.icon }}
         thumbColor="#FFFFFF"
       />
@@ -200,7 +254,7 @@ function Row({ icon, label, enabled, onToggle, palette }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" }, // พื้นหลังขาวตามที่ขอ
+  safe: { flex: 1, backgroundColor: "#FFFFFF" },
   container: {
     flexGrow: 1,
     padding: 20,

@@ -2,37 +2,37 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, Platform } from "react-native";
 
-/* ===== THEME (โทนส้มให้ตรงกับโปรเจค) ===== */
+// ===== ICONS =====
+// Expo:     import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
+// RN CLI:   import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
+
+/* ===== THEME: โทนส้ม อ่านง่าย ===== */
 const ORANGE = {
-  primary: "#FF922B",
-  light:   "#FFECD1",
-  pale:    "#FFF5EA",
-  border:  "#FFD8A8",
-  textMain:"#2F2A26",
-  textSub: "#5C3D2E",
+  primary: "#FF8A1F",
+  primaryDark: "#E67700",
+  light: "#FFE7CC",
+  pale: "#FFF6EC",
+  border: "#FFD2A3",
+  textMain: "#1F1300",
+  textSub: "#4A3726",
 };
-const NEUTRAL = {
-  bg: "#F7F7FA",
-  line: "#EAEAEA",
-  card: "#FFFFFF",
-  ink: "#0F172A",
-  sub: "#475569",
-};
+const NEUTRAL = { bg: "#FFFDF9", line: "#F0E7DC", card: "#FFFFFF" };
 const STATE = {
-  okBg: "#ECFDF5",
-  okBd: "#10B981",
-  okTx: "#065F46",
-  noBg: "#FEF2F2",
-  noBd: "#EF4444",
-  noTx: "#991B1B",
+  okBg: "#E9FFF5",
+  okBd: "#1DBF73",
+  okTx: "#075E3A",
+  noBg: "#FFF1F0",
+  noBd: "#F05252",
+  noTx: "#7A1D1B",
 };
 
 /* ===== CONFIG ===== */
-const QUESTION_TIME = 30;     // วินาทีต่อข้อ
-const AUTO_NEXT_DELAY = 500;  // ms หลังตอบ
-const SHUFFLE_CHOICES = true; // สุ่มช้อยส์ทุกครั้ง
+const QUESTION_TIME = 30;
+const AUTO_NEXT_DELAY = 600;
+const SHUFFLE_CHOICES = true;
 
-/* ===== DATA: 30 เรื่อง ===== */
+/* ===== ใช้ 5 เรื่อง (แก้เนื้อหาเองได้) ===== */
 const STORIES = [
   {
     id: "1",
@@ -395,6 +395,7 @@ const STORIES = [
     ],
   },
 ];
+
 /* ===== Utils ===== */
 const shuffleArray = (arr) => {
   const a = [...arr];
@@ -416,52 +417,45 @@ const prepareRoundQuestions = (qas) =>
     };
   });
 
-/* ปุ่มเด้งตอนกด (กดแล้ว scale นิด ๆ) */
+/* ปุ่มมีแอนิเมชันเด้ง */
 const PressableScale = ({ style, onPress, disabled, children }) => {
   const v = useRef(new Animated.Value(1)).current;
-  const onIn = () =>
-    Animated.spring(v, { toValue: 0.98, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
-  const onOut = () =>
-    Animated.spring(v, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
+  const onIn = () => Animated.spring(v, { toValue: 0.98, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
+  const onOut = () => Animated.spring(v, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
   return (
     <Animated.View style={{ transform: [{ scale: v }] }}>
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPressIn={onIn}
-        onPressOut={onOut}
-        onPress={onPress}
-        disabled={disabled}
-        style={style}
-      >
+      <TouchableOpacity activeOpacity={0.9} onPressIn={onIn} onPressOut={onOut} onPress={onPress} disabled={disabled} style={style}>
         {children}
       </TouchableOpacity>
     </Animated.View>
   );
 };
 
-/* ===== Screen: story | quiz | result ===== */
+/* ===== MAIN ===== */
 export default function StoryGame() {
-  const [phase, setPhase] = useState("story");
+  // phase: intro -> story -> quiz -> result
+  const [phase, setPhase] = useState("intro");
   const [story, setStory] = useState(() => STORIES[Math.floor(Math.random() * STORIES.length)]);
   const [questions, setQuestions] = useState(() => prepareRoundQuestions(story.qas));
   const [index, setIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(QUESTION_TIME);
   const [selected, setSelected] = useState(null);
-  const [answers, setAnswers] = useState([]); // {id, chosen, correctIndex}
+  const [answers, setAnswers] = useState([]);
 
   const timerRef = useRef(null);
   const lockRef = useRef(false);
 
-  // progress ต่อข้อ (Animated 0 → 1)
   const progress = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(1)).current;
 
   const current = questions[index];
 
+  /* ขนาดฟอนต์เนื้อเรื่อง */
   const storyFontSize = useMemo(() => {
     const len = (story?.body || "").length;
-    if (len > 700) return 18;
-    if (len > 400) return 19;
-    return 20;
+    if (len > 700) return 20;
+    if (len > 400) return 22;
+    return 24;
   }, [story]);
 
   /* TIMER */
@@ -484,7 +478,7 @@ export default function StoryGame() {
     return () => timerRef.current && clearInterval(timerRef.current);
   }, [phase, index]);
 
-  /* PROGRESS ANIM */
+  /* PROGRESS */
   useEffect(() => {
     if (phase !== "quiz") {
       progress.setValue(0);
@@ -494,20 +488,34 @@ export default function StoryGame() {
     Animated.timing(progress, { toValue: to, duration: 250, useNativeDriver: false }).start();
   }, [index, phase, questions.length, progress]);
 
+  /* PULSE เมื่อเวลาน้อย */
+  useEffect(() => {
+    if (phase === "quiz" && timeLeft <= 10) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, { toValue: 1.08, duration: 250, useNativeDriver: true }),
+          Animated.timing(pulse, { toValue: 1, duration: 250, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      pulse.setValue(1);
+    }
+  }, [phase, timeLeft, pulse]);
+
   /* FLOW */
+  const goStory = () => setPhase("story");
   const startQuiz = () => {
     setPhase("quiz");
     setIndex(0);
     setSelected(null);
     setAnswers([]);
-    setQuestions(prepareRoundQuestions(story.qas)); // สุ่มลำดับข้อ + ช้อยส์
+    setQuestions(prepareRoundQuestions(story.qas));
   };
 
   const finishQuestion = (choiceIndex) => {
     lockRef.current = true;
     setSelected(choiceIndex);
     setAnswers((prev) => [...prev, { id: current.id, chosen: choiceIndex, correctIndex: current.correctIndex }]);
-
     setTimeout(() => {
       if (index < questions.length - 1) {
         setIndex((i) => i + 1);
@@ -551,12 +559,15 @@ export default function StoryGame() {
     setTimeLeft(QUESTION_TIME);
   };
 
-  /* UI Subcomponents */
+  /* ช้อยส์ */
   const Option = ({ label, i }) => {
     const isChosen = selected === i;
     const isCorrect = i === current.correctIndex;
     const showGreen = selected !== null && isChosen && isCorrect;
     const showRed = selected !== null && isChosen && !isCorrect;
+
+    const bullets = ["①", "②", "③", "④"]; // ตัวนำหน้าอ่านง่าย
+    const prefix = bullets[i] || "•";
 
     return (
       <PressableScale
@@ -569,23 +580,71 @@ export default function StoryGame() {
           selected !== null && styles.optionDisabled,
         ]}
       >
-        <Text style={[styles.optionText, showGreen && styles.correctText, showRed && styles.wrongText]}>{label}</Text>
+        <Text style={[styles.optionText, showGreen && styles.correctText, showRed && styles.wrongText]}>
+          {prefix}  {label}
+        </Text>
       </PressableScale>
     );
   };
 
   return (
     <View style={styles.container}>
+      {/* ===== TOPBAR: ใช้ไอคอน + ข้อความไม่ตัด ===== */}
+      <View style={styles.topbar}>
+        <View style={styles.topbarContent}>
+          <Icon name="brain" size={26} color={ORANGE.primaryDark} style={{ marginRight: 8 }} />
+          <Text style={styles.topbarTitle}>เกมฝึกจำเรื่องสั้น</Text>
+        </View>
+      </View>
+
+      {/* ===== INTRO (วิธีเล่น) ===== */}
+      {phase === "intro" && (
+        <ScrollView contentContainerStyle={styles.introWrap} showsVerticalScrollIndicator={false}>
+          <View style={styles.introCard}>
+            <View style={styles.introRow}>
+              <Icon name="book-open-variant" size={26} color={ORANGE.primaryDark} />
+              <Text style={styles.introText}>อ่านเรื่องสั้นให้จบก่อนเริ่ม</Text>
+            </View>
+            <View style={styles.introRow}>
+              <Icon name="timer-outline" size={26} color={ORANGE.primaryDark} />
+              <Text style={styles.introText}>ตอบคำถามแต่ละข้อภายใน {QUESTION_TIME} วินาที</Text>
+            </View>
+            <View style={styles.introRow}>
+              <Icon name="gesture-tap" size={26} color={ORANGE.primaryDark} />
+              <Text style={styles.introText}>แตะตัวเลือกที่คิดว่าถูกต้อง</Text>
+            </View>
+            <View style={styles.introRow}>
+              <Icon name="check-circle-outline" size={26} color={STATE.okBd} />
+              <Text style={styles.introText}>ตอบถูกขึ้นกรอบสีเขียว / ผิดเป็นสีแดง</Text>
+            </View>
+            <View style={styles.introRow}>
+              <Icon name="chart-arc" size={26} color={ORANGE.primaryDark} />
+              <Text style={styles.introText}>จบแล้วมีสรุปคะแนน และเลือกเล่นซ้ำหรือสุ่มเรื่องใหม่ได้</Text>
+            </View>
+          </View>
+
+          <View style={styles.introActions}>
+            <PressableScale style={styles.primaryBtn} onPress={goStory}>
+              <Text style={styles.primaryBtnText}>
+                เริ่มอ่านเรื่อง
+              </Text>
+            </PressableScale>
+            <PressableScale style={styles.secondaryBtn} onPress={replayNew}>
+              <Text style={styles.secondaryBtnText}>สุ่มเรื่องใหม่</Text>
+            </PressableScale>
+          </View>
+        </ScrollView>
+      )}
+
       {/* ===== STORY ===== */}
       {phase === "story" && (
         <View style={{ flex: 1 }}>
-          <View style={styles.topbar}>
-            <Text style={styles.topbarTitle}>อ่านเรื่อง</Text>
-          </View>
-
           <ScrollView contentContainerStyle={styles.storyWrap} showsVerticalScrollIndicator={false}>
             <View style={styles.storyCard}>
-              <Text style={styles.storyTitle}>{story.title}</Text>
+              <View style={styles.storyTitleRow}>
+                <Icon name="book" size={22} color={ORANGE.primaryDark} />
+                <Text style={styles.storyTitle}>{story.title}</Text>
+              </View>
               <View style={styles.divider} />
               <Text style={[styles.storyBody, { fontSize: storyFontSize }]}>{story.body}</Text>
             </View>
@@ -606,10 +665,10 @@ export default function StoryGame() {
       {phase === "quiz" && current && (
         <View style={{ flex: 1 }}>
           <View style={styles.quizHeader}>
-            <View style={styles.timerPill}>
+            <Animated.View style={[styles.timerPill, { transform: [{ scale: pulse }] }]}>
               <Text style={styles.timerLabel}>เวลา</Text>
               <Text style={[styles.timerValue, timeLeft <= 10 && styles.timerUrgent]}>{timeLeft} วินาที</Text>
-            </View>
+            </Animated.View>
 
             <View style={styles.quizTitlePill}>
               <Text style={styles.quizTitleInline}>ข้อ {index + 1} / {questions.length}</Text>
@@ -620,12 +679,7 @@ export default function StoryGame() {
                 <Animated.View
                   style={[
                     styles.progressFill,
-                    {
-                      width: progress.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ["0%", "100%"],
-                      }),
-                    },
+                    { width: progress.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }) },
                   ]}
                 />
               </View>
@@ -633,9 +687,12 @@ export default function StoryGame() {
           </View>
 
           <View style={styles.quizBody}>
-            <Text style={styles.question}>{current.prompt}</Text>
+            <View style={styles.questionRow}>
+              <Icon name="help-circle-outline" size={22} color={ORANGE.primaryDark} />
+              <Text style={styles.question}>{current.prompt}</Text>
+            </View>
 
-            <View style={{ rowGap: 12 }}>
+            <View style={{ rowGap: 14 }}>
               {current.choices.map((c, i) => (
                 <Option key={`${current.id}-${i}`} label={c} i={i} />
               ))}
@@ -649,7 +706,7 @@ export default function StoryGame() {
                     selected === current.correctIndex ? styles.feedbackOk : styles.feedbackNo,
                   ]}
                 >
-                  {selected === current.correctIndex ? "ถูกต้อง" : "ไม่ถูกต้อง"}
+                  {selected === current.correctIndex ? "ตอบถูกต้อง" : "ไม่ถูก ลองใหม่รอบต่อไป"}
                 </Text>
               </View>
             )}
@@ -661,7 +718,10 @@ export default function StoryGame() {
       {phase === "result" && (
         <ScrollView contentContainerStyle={styles.resultWrap} showsVerticalScrollIndicator={false}>
           <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>สรุปผล</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Icon name="flag-checkered" size={22} color={ORANGE.primaryDark} />
+              <Text style={styles.resultTitle}>สรุปผล</Text>
+            </View>
             <Text style={styles.resultScore}>ได้ {correctCount} / {questions.length} ข้อ</Text>
             <View style={styles.resultBar}>
               <View style={[styles.resultFill, { width: `${(correctCount / questions.length) * 100}%` }]} />
@@ -696,7 +756,7 @@ export default function StoryGame() {
   );
 }
 
-/* ===== Styles: โทนส้ม + เงาบัตร + อ่านง่าย ===== */
+/* ===== STYLES ===== */
 const cardShadow = Platform.select({
   ios: { shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
   android: { elevation: 2 },
@@ -706,120 +766,134 @@ const cardShadow = Platform.select({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: NEUTRAL.bg },
 
-  // STORY
+  // TOP BAR (หัวเรื่องไม่ตัด)
   topbar: {
-    paddingTop: 12, paddingBottom: 12, paddingHorizontal: 16,
-    backgroundColor: NEUTRAL.card, borderBottomWidth: 1, borderBottomColor: NEUTRAL.line, alignItems: "center",
+    paddingTop: 14, paddingBottom: 14, paddingHorizontal: 16,
+    backgroundColor: NEUTRAL.card, borderBottomWidth: 1, borderBottomColor: NEUTRAL.line,
   },
-  topbarTitle: { fontSize: 24, fontWeight: "800", color: ORANGE.textMain },
+  topbarContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+    maxWidth: "92%", // กันข้อความยาวดันขอบ
+  },
+  topbarTitle: {
+    fontSize: 26, fontWeight: "900", color: ORANGE.textMain,
+    textAlign: "center",
+    flexShrink: 1, // ให้ห่อบรรทัดแทนที่จะตัด
+  },
 
-  storyWrap: { padding: 16, paddingBottom: 110 },
+  // INTRO
+  introWrap: { padding: 18, alignItems: "center" },
+  introCard: {
+    backgroundColor: NEUTRAL.card, borderRadius: 18, borderWidth: 2, borderColor: ORANGE.border,
+    padding: 18, width: "100%", ...cardShadow,
+  },
+  introRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
+  introText: { fontSize: 18, color: ORANGE.textSub, flexShrink: 1, lineHeight: 26 },
+  introActions: { marginTop: 14, gap: 10, alignItems: "center", width: "100%" },
+
+  // STORY
+  storyWrap: { padding: 18, paddingBottom: 120 },
   storyCard: {
-    backgroundColor: NEUTRAL.card, borderRadius: 16, borderWidth: 1, borderColor: ORANGE.border, padding: 20,
+    backgroundColor: NEUTRAL.card, borderRadius: 18, borderWidth: 2, borderColor: ORANGE.border, padding: 22,
     ...cardShadow,
   },
-  storyTitle: { fontSize: 22, fontWeight: "800", color: ORANGE.textMain, textAlign: "center", marginBottom: 12 },
-  storyBody: { lineHeight: 30, color: ORANGE.textSub, fontSize: 18 },
-  divider: { height: 1, backgroundColor: ORANGE.border, marginBottom: 14, opacity: 0.8 },
+  storyTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, justifyContent: "center" },
+  storyTitle: { fontSize: 22, fontWeight: "900", color: ORANGE.textMain, textAlign: "center" },
+  storyBody: { lineHeight: 36, color: ORANGE.textSub, fontSize: 22, marginTop: 10 },
+  divider: { height: 2, backgroundColor: ORANGE.border, marginTop: 10, marginBottom: 12, opacity: 0.9, borderRadius: 999 },
 
   bottomBarCenter: {
     position: "absolute", left: 0, right: 0, bottom: 0,
     borderTopWidth: 1, borderTopColor: NEUTRAL.line,
-    backgroundColor: NEUTRAL.card, padding: 16, alignItems: "center", gap: 8,
+    backgroundColor: NEUTRAL.card, padding: 16, alignItems: "center", gap: 10,
   },
 
   // QUIZ HEADER
   quizHeader: {
-    paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16,
+    paddingTop: 42, paddingBottom: 14, paddingHorizontal: 16,
     backgroundColor: NEUTRAL.card, borderBottomWidth: 1, borderBottomColor: NEUTRAL.line,
     flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8,
   },
   timerPill: {
-    backgroundColor: ORANGE.pale, borderWidth: 1, borderColor: ORANGE.border,
-    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10,
+    backgroundColor: ORANGE.pale, borderWidth: 2, borderColor: ORANGE.border,
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, minWidth: 120, alignItems: "center",
   },
-  timerLabel: { fontSize: 12, color: ORANGE.textSub, marginBottom: 2, fontWeight: "700" },
-  timerValue: { fontSize: 18, fontWeight: "900", color: ORANGE.primary },
-  timerUrgent: { color: "#DC2626" },
+  timerLabel: { fontSize: 14, color: ORANGE.textSub, marginBottom: 2, fontWeight: "800" },
+  timerValue: { fontSize: 20, fontWeight: "900", color: ORANGE.primaryDark },
+  timerUrgent: { color: "#C81E1E" },
 
   quizTitlePill: {
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
-    backgroundColor: ORANGE.light, borderWidth: 1, borderColor: ORANGE.border,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999,
+    backgroundColor: ORANGE.light, borderWidth: 2, borderColor: ORANGE.border,
   },
-  quizTitleInline: { fontSize: 16, fontWeight: "900", color: ORANGE.textMain },
+  quizTitleInline: { fontSize: 18, fontWeight: "900", color: ORANGE.textMain },
 
-  progressBox: { width: 140 },
-  progressBar: { width: "100%", height: 8, backgroundColor: ORANGE.pale, borderRadius: 999, overflow: "hidden" },
+  progressBox: { width: 150 },
+  progressBar: { width: "100%", height: 10, backgroundColor: ORANGE.pale, borderRadius: 999, overflow: "hidden" },
   progressFill: { height: "100%", backgroundColor: ORANGE.primary, borderRadius: 999 },
 
   // QUIZ BODY
-  quizBody: { flex: 1, padding: 16 },
-  question: {
-    fontSize: 22, fontWeight: "900", color: ORANGE.textMain,
-    marginBottom: 18, textAlign: "center", lineHeight: 30,
-  },
+  quizBody: { flex: 1, padding: 18 },
+  questionRow: { flexDirection: "row", alignItems: "center", gap: 8, justifyContent: "center", marginBottom: 12 },
+  question: { fontSize: 22, fontWeight: "900", color: ORANGE.textMain, textAlign: "center", lineHeight: 30 },
   option: {
     backgroundColor: NEUTRAL.card,
-    borderWidth: 2, borderColor: "#E2E8F0", borderRadius: 14, padding: 18,
-    ...cardShadow,
+    borderWidth: 2, borderColor: "#E5E2DA", borderRadius: 16, paddingVertical: 20, paddingHorizontal: 18,
+    minHeight: 64, justifyContent: "center", ...cardShadow,
   },
-  optionDisabled: { opacity: 0.9 },
-  optionText: { fontSize: 18, fontWeight: "700", color: ORANGE.textSub },
+  optionDisabled: { opacity: 0.95 },
+  optionText: { fontSize: 20, fontWeight: "800", color: ORANGE.textSub },
   correct: { backgroundColor: STATE.okBg, borderColor: STATE.okBd },
   correctText: { color: STATE.okTx },
   wrong: { backgroundColor: STATE.noBg, borderColor: STATE.noBd },
   wrongText: { color: STATE.noTx },
 
-  feedback: { alignItems: "center", marginTop: 14 },
-  feedbackText: { fontSize: 18, fontWeight: "900" },
+  feedback: { alignItems: "center", marginTop: 16 },
+  feedbackText: { fontSize: 20, fontWeight: "900" },
   feedbackOk: { color: STATE.okBd },
   feedbackNo: { color: STATE.noBd },
 
   // RESULT
-  resultWrap: { padding: 16, paddingTop: 36, alignItems: "center" },
+  resultWrap: { padding: 18, paddingTop: 36, alignItems: "center" },
   resultCard: {
-    backgroundColor: NEUTRAL.card, borderRadius: 16, borderWidth: 1, borderColor: ORANGE.border,
-    padding: 20, width: "100%", alignItems: "center", marginBottom: 14, ...cardShadow,
+    backgroundColor: NEUTRAL.card, borderRadius: 18, borderWidth: 2, borderColor: ORANGE.border,
+    padding: 22, width: "100%", alignItems: "center", marginBottom: 14, ...cardShadow,
   },
-  resultTitle: { fontSize: 20, fontWeight: "900", color: ORANGE.textMain, marginBottom: 6 },
-  resultScore: { fontSize: 16, color: ORANGE.textSub, marginBottom: 12 },
-  resultBar: { width: "100%", height: 10, backgroundColor: ORANGE.pale, borderRadius: 999, overflow: "hidden" },
+  resultTitle: { fontSize: 22, fontWeight: "900", color: ORANGE.textMain },
+  resultScore: { fontSize: 18, color: ORANGE.textSub, marginTop: 6, marginBottom: 12 },
+  resultBar: { width: "100%", height: 12, backgroundColor: ORANGE.pale, borderRadius: 999, overflow: "hidden" },
   resultFill: { height: "100%", backgroundColor: STATE.okBd },
 
   resultList: {
-    backgroundColor: NEUTRAL.card, borderRadius: 14, borderWidth: 1, borderColor: NEUTRAL.line,
+    backgroundColor: NEUTRAL.card, borderRadius: 16, borderWidth: 1, borderColor: NEUTRAL.line,
     padding: 12, width: "100%", marginTop: 6, marginBottom: 16, ...cardShadow,
   },
   resultItem: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    borderBottomWidth: 1, borderBottomColor: "#F1F5F9", paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: "#F4EFE7", paddingVertical: 12,
   },
-  resultIndex: { fontSize: 17, fontWeight: "900", color: ORANGE.textMain },
-  badge: { minWidth: 72, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, alignItems: "center" },
+  resultIndex: { fontSize: 18, fontWeight: "900", color: ORANGE.textMain },
+  badge: { minWidth: 92, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 999, alignItems: "center" },
   badgeOk: { backgroundColor: STATE.okBg },
   badgeNo: { backgroundColor: STATE.noBg },
-  badgeText: { fontSize: 15, fontWeight: "900", color: ORANGE.textMain },
+  badgeText: { fontSize: 16, fontWeight: "900", color: ORANGE.textMain },
 
-  resultActionsCenter: { width: "100%", gap: 10, alignItems: "center" },
+  resultActionsCenter: { width: "100%", gap: 12, alignItems: "center" },
 
   // BUTTONS
   primaryBtn: {
-    backgroundColor: ORANGE.primary, paddingVertical: 16, paddingHorizontal: 24,
-    borderRadius: 12, minWidth: 220, alignItems: "center",
-    ...cardShadow,
+    backgroundColor: ORANGE.primary, paddingVertical: 18, paddingHorizontal: 26,
+    borderRadius: 14, minWidth: 240, alignItems: "center", ...cardShadow,
   },
-  primaryBtnText: { color: "#FFFFFF", fontSize: 18, fontWeight: "900" },
-
+  primaryBtnText: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
   secondaryBtn: {
-    backgroundColor: ORANGE.pale, paddingVertical: 14, paddingHorizontal: 20,
-    borderRadius: 12, minWidth: 170, alignItems: "center",
-    borderWidth: 1, borderColor: ORANGE.border, ...cardShadow,
+    backgroundColor: ORANGE.light, paddingVertical: 16, paddingHorizontal: 22,
+    borderRadius: 14, minWidth: 200, alignItems: "center",
+    borderWidth: 2, borderColor: ORANGE.border, ...cardShadow,
   },
-  secondaryBtnText: { color: ORANGE.textMain, fontSize: 16, fontWeight: "900" },
-
-  ghostBtn: {
-    backgroundColor: "transparent", paddingVertical: 12, paddingHorizontal: 12,
-    borderRadius: 10, minWidth: 160, alignItems: "center",
-  },
-  ghostBtnText: { color: ORANGE.textSub, fontSize: 16, fontWeight: "900" },
+  secondaryBtnText: { color: ORANGE.textMain, fontSize: 18, fontWeight: "900" },
+  ghostBtn: { backgroundColor: "transparent", paddingVertical: 12, paddingHorizontal: 12, borderRadius: 12, minWidth: 180, alignItems: "center" },
+  ghostBtnText: { color: ORANGE.textSub, fontSize: 18, fontWeight: "900" },
 });

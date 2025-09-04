@@ -1,52 +1,36 @@
-// screens/Gamescreen/HiddenObjectGame.js
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ImageBackground,
-  TouchableOpacity,
-  ScrollView,
-  Platform,
-} from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, ImageBackground, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function MemoryGame() {
-  /* ---------- THEME (โทนส้มให้เข้าชุดเกมอื่น) ---------- */
+export default function HiddenObjectGame() {
+  // --- theme สีส้ม ---
   const ORANGE = {
-    primary: "#FF8A1F",
-    primaryDark: "#E67700",
-    light: "#FFE7CC",
-    pale: "#FFF6EC",
-    border: "#FFD2A3",
-    textMain: "#1F1300",
-    textSub: "#4A3726",
+    primary: "#FF922B",
+    border: "#FFD8A8",
+    pale: "#FFF5EA",
+    text: "#2F2A26",
     success: "#0CA678",
-    line: "#F0E7DC",
-    card: "#FFFFFF",
+    gray: "#666",
   };
 
-  /* ---------- PHASE: intro | play | result ---------- */
-  const [phase, setPhase] = useState("intro");
+  // --- step: intro -> play ---
+  const [step, setStep] = useState("intro");
 
-  /* ---------- POOL สิ่งของทั้งหมดในภาพ (คงเดิม) ---------- */
-  const allItems = useMemo(
-    () => [
-      { id: "ชายชุดดำ", top: "11%", left: "90%", width: "10%", height: "14%" },
-      { id: "แตงกวา", top: "11%", left: "21%", width: "12%", height: "10%" },
-      { id: "น้ำยาบ้วนปาก", top: "30%", left: "50%", width: "10%", height: "8%" },
-      { id: "หนู", top: "55%", left: "22%", width: "12%", height: "8%" },
-      { id: "ยูง", top: "35%", left: "68%", width: "9%", height: "6%" },
-      { id: "ปลาดุก", top: "1%", left: "45%", width: "10%", height: "10%" },
-      { id: "แยม", top: "35%", left: "2%", width: "9%", height: "7%" },
-      { id: "หมวก", top: "63%", left: "39%", width: "13%", height: "8%" },
-      { id: "ไส้เดือน", top: "52%", left: "60%", width: "22%", height: "10%" },
-    ],
-    []
-  );
+  // --- pool สิ่งของทั้งหมดในด่านนี้ ---
+  const allItems = [
+    { id: "ชายชุดดำ", top: "11%", left: "90%", width: "10%", height: "14%" },
+    { id: "แตงกวา", top: "11%", left: "21%", width: "12%", height: "10%" },
+    { id: "น้ำยาบ้วนปาก", top: "30%", left: "50%", width: "10%", height: "8%" },
+    { id: "หนู", top: "55%", left: "22%", width: "12%", height: "8%" },
+    { id: "ยูง", top: "35%", left: "68%", width: "9%", height: "6%" },
+    { id: "ปลาดุก", top: "1%", left: "45%", width: "10%", height: "10%" },
+    { id: "แยม", top: "35%", left: "2%", width: "9%", height: "7%" },
+    { id: "หมวก", top: "63%", left: "39%", width: "13%", height: "8%" },
+    { id: "ไส้เดือน", top: "52%", left: "60%", width: "22%", height: "10%" },
+  ];
 
-  /* ---------- เลือกสุ่ม 3 ชิ้นต่อรอบ (คงเดิม) ---------- */
   const [items, setItems] = useState([]);
+
   const shuffleItems = () => {
     const shuffled = [...allItems]
       .sort(() => 0.5 - Math.random())
@@ -55,9 +39,10 @@ export default function MemoryGame() {
     setItems(shuffled);
   };
 
-
-  useEffect(() => {
-  }, []);
+  const handleStart = () => {
+    shuffleItems();
+    setStep("play");
+  };
 
   const handleFind = (id) => {
     setItems((prev) =>
@@ -65,304 +50,178 @@ export default function MemoryGame() {
     );
   };
 
-  const foundCount = items.filter((i) => i.found).length;
-  const allFound = items.length > 0 && foundCount === items.length;
+  const allFound = items.length > 0 && items.every((item) => item.found);
 
-  // ไปหน้า result เมื่อหาเจอครบ
-  useEffect(() => {
-    if (phase === "play" && allFound) {
-      const t = setTimeout(() => setPhase("result"), 600);
-      return () => clearTimeout(t);
-    }
-  }, [phase, allFound]);
-
-  const startGame = () => {
-    shuffleItems();
-    setPhase("play");
-  };
-
-  const restart = () => {
-    shuffleItems();
-    setPhase("play");
-  };
-
-  return (
-    <View style={[styles.container, { backgroundColor: "#FFFDF9" }]}>
-      {/* ---------- TOPBAR ---------- */}
-      <View style={[styles.topbar, { backgroundColor: ORANGE.card, borderBottomColor: ORANGE.line }]}>
-        <View style={styles.topbarContent}>
-          <Ionicons name="search" size={26} color={ORANGE.primaryDark} style={{ marginRight: 8 }} />
-          <Text style={[styles.topbarTitle, { color: ORANGE.textMain }]}>เกมหาของในภาพ</Text>
+  if (step === "intro") {
+    return (
+      <View style={[styles.container, { paddingHorizontal: 16 }]}>
+        <View style={styles.headerRow}>
+          <Ionicons name="information-circle" size={24} color={ORANGE.primary} />
+          <Text style={[styles.title, { color: ORANGE.text }]}>วิธีเล่น</Text>
         </View>
+
+        <View style={[styles.card, { borderColor: ORANGE.border, backgroundColor: ORANGE.pale }]}>
+          <View style={styles.bulletRow}>
+            <Ionicons name="list" size={18} color={ORANGE.text} />
+            <Text style={styles.bulletText}>ในแต่ละรอบ ระบบจะสุ่มสิ่งของมา 3 ชิ้นจากภาพ</Text>
+          </View>
+          <View style={styles.bulletRow}>
+            <Ionicons name="finger-print" size={18} color={ORANGE.text} />
+            <Text style={styles.bulletText}>แตะบนตำแหน่งของสิ่งของในรูป เพื่อทำเครื่องหมายว่า “เจอแล้ว”</Text>
+          </View>
+          <View style={styles.bulletRow}>
+            <Ionicons name="checkmark-circle" size={18} color={ORANGE.success} />
+            <Text style={styles.bulletText}>เมื่อเจอครบ 3 ชิ้น จะขึ้นข้อความสำเร็จ และเริ่มรอบใหม่ได้</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          onPress={handleStart}
+          style={[styles.primaryBtn, { backgroundColor: ORANGE.primary, borderColor: ORANGE.border }]}
+          activeOpacity={0.9}
+        >
+          <Ionicons name="play" size={18} color="#fff" />
+          <Text style={styles.primaryBtnText}>เริ่มเล่น</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // --- หน้าเล่นเกม ---
+  return (
+    <View style={styles.container}>
+      <View style={styles.headerRow}>
+        <Ionicons name="search" size={24} color={ORANGE.primary} />
+        <Text style={[styles.title, { color: ORANGE.text }]}>หาของที่ซ่อนอยู่ในภาพ</Text>
       </View>
 
-      {/* ---------- INTRO ---------- */}
-      {phase === "intro" && (
-        <ScrollView contentContainerStyle={styles.introWrap} showsVerticalScrollIndicator={false}>
-          <View
+      <ImageBackground
+        source={require("../../assets/FindPic.png")}
+        style={styles.background}
+      >
+        {items.map((item) => (
+          <TouchableOpacity
+            key={item.id}
             style={[
-              styles.introCard,
+              styles.hitbox,
               {
-                backgroundColor: ORANGE.card,
-                borderColor: ORANGE.border,
+                top: item.top,
+                left: item.left,
+                width: item.width,
+                height: item.height,
+                borderWidth: item.found ? 3 : 0,
+                borderColor: item.found ? ORANGE.success : "transparent",
               },
             ]}
-          >
-            <View style={styles.introRow}>
-              <Ionicons name="book-outline" size={24} color={ORANGE.primaryDark} />
-              <Text style={[styles.introText, { color: ORANGE.textSub }]}>
-                แตะบนภาพเพื่อค้นหา “สิ่งของ” ที่กำหนดไว้ด้านล่างให้ครบทั้งหมด
-              </Text>
-            </View>
-            <View style={styles.introRow}>
-              <Ionicons name="hand-left-outline" size={24} color={ORANGE.primaryDark} />
-              <Text style={[styles.introText, { color: ORANGE.textSub }]}>
-                เมื่อพบสิ่งของแล้ว วงกรอบจะแสดงสีเขียว และชื่อรายการด้านล่างจะขีดทับ
-              </Text>
-            </View>
-            <View style={styles.introRow}>
-              <Ionicons name="checkmark-circle-outline" size={24} color={ORANGE.success} />
-              <Text style={[styles.introText, { color: ORANGE.textSub }]}>
-                หาให้ครบทุกชิ้น แล้วจะสรุปผลให้โดยอัตโนมัติ
-              </Text>
-            </View>
-          </View>
+            onPress={() => handleFind(item.id)}
+          />
+        ))}
+      </ImageBackground>
 
-          <View style={styles.introActions}>
-            <TouchableOpacity
-              style={[styles.primaryBtn, { backgroundColor: ORANGE.primary, borderColor: ORANGE.border }]}
-              onPress={startGame}
-              activeOpacity={0.9}
-            >
-              <Text style={styles.primaryBtnText}>เริ่มเกม</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      )}
-
-      {/* ---------- PLAY ---------- */}
-      {phase === "play" && (
-        <View style={{ flex: 1, alignItems: "center" }}>
-          {/* หัวเรื่องเล็ก ๆ */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-          </View>
-
-          {/* พื้นหลังรูปภาพ + hitbox */}
-          <ImageBackground
-            source={require("../../assets/FindPic.png")}
-            style={styles.background}
-            resizeMode="cover"
-          >
-            {items.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={[
-                  styles.hitbox,
-                  {
-                    top: item.top,
-                    left: item.left,
-                    width: item.width,
-                    height: item.height,
-                    borderWidth: item.found ? 3 : 0,
-                    borderColor: item.found ? ORANGE.success : "transparent",
-                  },
-                ]}
-                onPress={() => handleFind(item.id)}
-                activeOpacity={0.85}
-              />
-            ))}
-          </ImageBackground>
-
-          {/* รายการสิ่งของที่ต้องหา */}
-          <View style={[styles.list, { backgroundColor: ORANGE.pale, borderColor: ORANGE.border }]}>
-            {items.map((item) => (
-              <View
-                key={item.id}
-                style={[
-                  styles.chip,
-                  {
-                    borderColor: item.found ? ORANGE.success : ORANGE.border,
-                    backgroundColor: ORANGE.card,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name={item.found ? "checkmark-circle" : "ellipse-outline"}
-                  size={18}
-                  color={item.found ? ORANGE.success : ORANGE.textMain}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  style={[
-                    styles.listItem,
-                    { color: ORANGE.textMain },
-                    item.found && { textDecorationLine: "line-through", opacity: 0.6 },
-                  ]}
-                >
-                  {item.id}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-
-      {/* ---------- RESULT ---------- */}
-      {phase === "result" && (
-        <ScrollView contentContainerStyle={styles.resultWrap}>
+      {/* รายการสิ่งของ */}
+      <View style={[styles.list, { marginTop: -120 }]}>
+        {items.map((item) => (
           <View
+            key={item.id}
             style={[
-              styles.resultCard,
-              { backgroundColor: ORANGE.card, borderColor: ORANGE.border },
+              styles.chip,
+              { borderColor: item.found ? ORANGE.success : ORANGE.border, backgroundColor: ORANGE.pale },
             ]}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Ionicons name="flag-checkered" size={22} color={ORANGE.primaryDark} />
-              <Text style={[styles.resultTitle, { color: ORANGE.textMain }]}>สรุปผล</Text>
-            </View>
-
-            <Text style={[styles.resultScore, { color: ORANGE.textSub }]}>
-              เจอครบ {foundCount} / {items.length} ชิ้น
+            <Ionicons
+              name={item.found ? "checkmark-circle" : "ellipse-outline"}
+              size={18}
+              color={item.found ? ORANGE.success : ORANGE.text}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={[
+                styles.listItem,
+                item.found && { textDecorationLine: "line-through", color: ORANGE.gray },
+              ]}
+            >
+              {item.id}
             </Text>
-
-            <View style={[styles.resultBar, { backgroundColor: ORANGE.pale }]}>
-              <View
-                style={[
-                  styles.resultFill,
-                  {
-                    width: `${(foundCount / (items.length || 1)) * 100}%`,
-                    backgroundColor: ORANGE.success,
-                  },
-                ]}
-              />
-            </View>
           </View>
+        ))}
+      </View>
 
-          <View style={styles.resultActionsCenter}>
-            <TouchableOpacity
-              style={[styles.secondaryBtn, { borderColor: ORANGE.border, backgroundColor: ORANGE.light }]}
-              onPress={() => setPhase("intro")}
-              activeOpacity={0.9}
-            >
-              <Text style={[styles.secondaryBtnText, { color: ORANGE.textMain }]}>กลับหน้าเริ่ม</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.primaryBtn, { backgroundColor: ORANGE.primary }]}
-              onPress={restart}
-              activeOpacity={0.9}
-            >
-              <Text style={styles.primaryBtnText}>เล่นอีกครั้ง</Text>
-            </TouchableOpacity>
+      {/* จบเกม */}
+      {allFound && (
+        <View style={{ alignItems: "center", marginTop: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons name="trophy" size={22} color={ORANGE.primary} />
+            <Text style={[styles.winText, { color: ORANGE.primary }]}> เก่งมาก! เจอครบแล้ว</Text>
           </View>
-        </ScrollView>
+          <TouchableOpacity onPress={shuffleItems} style={styles.restartBtn} activeOpacity={0.9}>
+            <Ionicons name="refresh" size={18} color="#fff" />
+            <Text style={styles.restartText}>เริ่มใหม่</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );
 }
 
-/* ---------- Styles ---------- */
-const cardShadow = Platform.select({
-  ios: { shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
-  android: { elevation: 2 },
-  default: {},
-});
-
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  // โครงหลัก
+  container: { flex: 1, backgroundColor: "#fff", alignItems: "center", justifyContent: "flex-start" },
+  headerRow: { flexDirection: "row", alignItems: "center", margin: 10},
+  title: { fontSize: 22, fontWeight: "bold", marginLeft: 6 },
 
-  /* Topbar */
-  topbar: {
-    paddingTop: 14,
-    paddingBottom: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-  },
-  topbarContent: { flexDirection: "row", alignItems: "center", alignSelf: "center", maxWidth: "92%" },
-  topbarTitle: { fontSize: 24, fontWeight: "900" },
+  // รูปพื้นหลัง (ไม่แก้ไขส่วนรูปตามที่ขอ)
+  background: { width: "100%", height: "70%", marginTop: 20 },
+  hitbox: { position: "absolute" },
 
-  /* Intro */
-  introWrap: { padding: 18, alignItems: "center" },
-  introCard: {
-    borderRadius: 18,
-    borderWidth: 2,
-    padding: 18,
-    width: "100%",
-    ...cardShadow,
-  },
-  introRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
-  introText: { fontSize: 18, lineHeight: 26, flexShrink: 1 },
-  introActions: { marginTop: 14, gap: 10, alignItems: "center", width: "100%" },
-  primaryBtn: {
-    paddingVertical: 18,
-    paddingHorizontal: 26,
-    borderRadius: 14,
-    minWidth: 240,
-    alignItems: "center",
-    borderWidth: 2,
-    ...cardShadow,
-  },
-  primaryBtnText: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
-
-  /* Play */
-background: { 
-  width: "100%", 
-  height: "58%",      // ลดนิดหน่อยเพื่อเว้นให้ list
-  marginTop: 12
-},
-
-list: {
-  width: "92%",
-  borderWidth: 2,
-  borderRadius: 14,
-  paddingVertical: 8,
-  paddingHorizontal: 8,
-  marginTop: 8,        // ✅ ชิดใต้รูปพอดี
-  marginBottom: 12,    // ✅ กันไม่ให้ติดขอบล่างเกินไป
-  flexDirection: "row",
-  flexWrap: "wrap",
-  justifyContent: "center",
-  backgroundColor: "#FFF",
-},
-
+  // รายการสิ่งของใต้รูป
+  list: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center" },
 
   chip: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 2,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    margin: 4,
+  },
+  listItem: { fontSize: 18 },
+
+  // ข้อความชนะ + ปุ่มเริ่มใหม่
+  winText: { fontSize: 18, fontWeight: "bold", marginLeft: 4 },
+  restartBtn: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FF922B",
     borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    margin: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
-  listItem: { fontSize: 18, fontWeight: "700" },
+  restartText: { color: "#fff", fontSize: 16, fontWeight: "bold", marginLeft: 6 },
 
-  /* Result */
-  resultWrap: { padding: 18, paddingTop: 36, alignItems: "center" },
-  resultCard: {
-    borderRadius: 18,
-    borderWidth: 2,
-    padding: 22,
+  // การ์ด intro
+  card: {
     width: "100%",
-    alignItems: "center",
-    marginBottom: 14,
-    ...cardShadow,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 6,
   },
-  resultTitle: { fontSize: 22, fontWeight: "900" },
-  resultScore: { fontSize: 18, marginTop: 6, marginBottom: 12 },
-  resultBar: { width: "100%", height: 12, borderRadius: 999, overflow: "hidden" },
-  resultFill: { height: "100%", borderRadius: 999 },
+  bulletRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  bulletText: { fontSize: 16, marginLeft: 8, color: "#2F2A26" },
 
-  resultActionsCenter: { width: "100%", gap: 12, alignItems: "center" },
-
-  secondaryBtn: {
-    paddingVertical: 16,
-    paddingHorizontal: 22,
-    borderRadius: 14,
-    minWidth: 200,
+  // ปุ่มเริ่มเล่น
+  primaryBtn: {
+    marginTop: 14,
+    flexDirection: "row",
     alignItems: "center",
-    borderWidth: 2,
-    ...cardShadow,
+    alignSelf: "center",
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
   },
-  secondaryBtnText: { fontSize: 18, fontWeight: "900" },
+  primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "bold", marginLeft: 8 },
 });

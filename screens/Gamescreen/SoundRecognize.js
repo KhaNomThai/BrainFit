@@ -1,18 +1,27 @@
+// screens/Gamescreen/SoundRecognize.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
 import { Audio } from 'expo-av';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ORANGE = '#ff7f32';
 const GREEN = '#10B981';
 const RED = '#EF4444';
 
 const sounds = [
-  { file: require('../../assets/sounds/Dog.mp3'),   answer: 'หมา' },
-  { file: require('../../assets/sounds/Cat.mp3'),   answer: 'แมว' },
-  { file: require('../../assets/sounds/Car.mp3'),   answer: 'รถยนต์' },
-  { file: require('../../assets/sounds/Bird.mp3'),  answer: 'นก' },
+  { file: require('../../assets/sounds/Dog.mp3'), answer: 'หมา' },
+  { file: require('../../assets/sounds/Cat.mp3'), answer: 'แมว' },
+  { file: require('../../assets/sounds/Car.mp3'), answer: 'รถยนต์' },
+  { file: require('../../assets/sounds/Bird.mp3'), answer: 'นก' },
   { file: require('../../assets/sounds/Horse.mp3'), answer: 'ม้า' },
-  { file: require('../../assets/sounds/Rain.mp3'),  answer: 'ฝน' },
+  { file: require('../../assets/sounds/Rain.mp3'), answer: 'ฝน' },
   { file: require('../../assets/sounds/Sheep.mp3'), answer: 'แกะ' },
 ];
 
@@ -26,15 +35,17 @@ function shuffleArray(array) {
   return arr;
 }
 function generateChoices(correctAnswer) {
-  const wrongAnswers = sounds.map(s => s.answer).filter(a => a !== correctAnswer);
+  const wrongAnswers = sounds.map((s) => s.answer).filter((a) => a !== correctAnswer);
   const randomWrongs = shuffleArray(wrongAnswers).slice(0, 2);
   return shuffleArray([correctAnswer, ...randomWrongs]);
 }
 
-const AUTO_NEXT_DELAY = 800; // มิลลิวินาที หลังแสดงผลถูก/ผิดค่อยไปข้อถัดไป
+const AUTO_NEXT_DELAY = 800;
 const MAX_ROUNDS = 5;
 
 export default function SoundRecognize({ navigation }) {
+  const insets = useSafeAreaInsets();
+
   // phases: 'intro' | 'quiz' | 'result'
   const [phase, setPhase] = useState('intro');
 
@@ -47,10 +58,9 @@ export default function SoundRecognize({ navigation }) {
   const [score, setScore] = useState(0);
 
   const [choices, setChoices] = useState(generateChoices(currentSound.answer));
-  const [selected, setSelected] = useState(null);     // string (คำที่เลือก)
-  const [isCorrect, setIsCorrect] = useState(null);   // true/false/null
+  const [selected, setSelected] = useState(null); // string
+  const [isCorrect, setIsCorrect] = useState(null); // true/false/null
 
-  // สำหรับหน้า result (จำเฉพาะถูก/ผิดพอ)
   const [history, setHistory] = useState([]); // [{answer, chosen, correct:bool}]
 
   // โหลด/เล่นเสียง
@@ -68,12 +78,12 @@ export default function SoundRecognize({ navigation }) {
     }
   }
 
-  // เคลียร์เสียงเมื่อเลิกใช้
   useEffect(() => {
-    return () => { if (sound) sound.unloadAsync(); };
+    return () => {
+      if (sound) sound.unloadAsync();
+    };
   }, [sound]);
 
-  // เริ่มเกมใหม่
   const startGame = () => {
     const first = sounds[Math.floor(Math.random() * sounds.length)];
     setCurrentSound(first);
@@ -86,7 +96,6 @@ export default function SoundRecognize({ navigation }) {
     setPhase('quiz');
   };
 
-  // ไปข้อถัดไปหรือสรุป
   const goNext = () => {
     if (round >= MAX_ROUNDS) {
       setPhase('result');
@@ -95,24 +104,21 @@ export default function SoundRecognize({ navigation }) {
     const next = sounds[Math.floor(Math.random() * sounds.length)];
     setCurrentSound(next);
     setChoices(generateChoices(next.answer));
-    setRound(r => r + 1);
+    setRound((r) => r + 1);
     setSelected(null);
     setIsCorrect(null);
   };
 
-  // ตรวจคำตอบ (แสดงสีบนปุ่ม + อัปเดตคะแนน + เข้าหน้าต่อไปอัตโนมัติ)
   const checkAnswer = async (choice) => {
-    if (selected) return; // กันกดซ้ำ
+    if (selected) return;
     const correct = currentSound.answer;
     const ok = choice === correct;
 
     setSelected(choice);
     setIsCorrect(ok);
-    setHistory(h => [...h, { answer: correct, chosen: choice, correct: ok }]);
+    setHistory((h) => [...h, { answer: correct, chosen: choice, correct: ok }]);
+    if (ok) setScore((s) => s + 1);
 
-    if (ok) setScore(s => s + 1);
-
-    // หยุดเสียงถ้ากำลังเล่น
     try {
       if (sound) await sound.stopAsync();
     } catch {}
@@ -122,32 +128,82 @@ export default function SoundRecognize({ navigation }) {
     }, AUTO_NEXT_DELAY);
   };
 
-  // UI
+  /* INTRO */
   if (phase === 'intro') {
-  return (
-    <View style={[styles.container, { justifyContent: 'center' }]}>
-      <Text style={styles.title}>เกมฟังเสียง</Text>
-      <Text style={styles.subtitle}>กด “เล่นเสียง” แล้วเลือกคำตอบที่ถูกต้อง</Text>
+    return (
+      <View
+        style={[
+          styles.safeWrap,
+          {
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            paddingLeft: insets.left + 16,
+            paddingRight: insets.right + 16,
+          },
+        ]}
+      >
+        <View style={styles.topbar}>
+          <Ionicons name="headset" size={24} color={ORANGE} style={{ marginRight: 8 }} />
+          <Text style={styles.topbarTitle}>เกมฟังเสียง</Text>
+        </View>
 
-      <TouchableOpacity style={styles.primaryBtn} onPress={startGame} activeOpacity={0.9}>
-        <Text style={styles.primaryBtnText}>เริ่มเกม</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
+        <ScrollView contentContainerStyle={styles.introWrap}>
+          <View style={styles.introCard}>
+            <View style={styles.introRow}>
+              <Ionicons name="musical-notes-outline" size={22} color={ORANGE} />
+              <Text style={styles.introText}>กดปุ่ม “เล่นเสียง” เพื่อฟังเสียงตัวอย่าง</Text>
+            </View>
+            <View style={styles.introRow}>
+              <Ionicons name="hand-right-outline" size={22} color={ORANGE} />
+              <Text style={styles.introText}>เลือกคำตอบที่ตรงกับเสียงมากที่สุด</Text>
+            </View>
+            <View style={styles.introRow}>
+              <Ionicons name="checkmark-circle-outline" size={22} color={GREEN} />
+              <Text style={styles.introText}>ตอบถูก = ปุ่มเป็นสีเขียว</Text>
+            </View>
+            <View style={styles.introRow}>
+              <Ionicons name="close-circle-outline" size={22} color={RED} />
+              <Text style={styles.introText}>ตอบผิด = ปุ่มเป็นสีแดง</Text>
+            </View>
+            <View style={styles.introRow}>
+              <Ionicons name="albums-outline" size={22} color={ORANGE} />
+              <Text style={styles.introText}>ทั้งหมด {MAX_ROUNDS} รอบ ระบบจะนับคะแนนให้</Text>
+            </View>
+          </View>
 
+          <TouchableOpacity style={styles.primaryBtn} onPress={startGame} activeOpacity={0.9}>
+            <Text style={styles.primaryBtnText}>เริ่มเกม</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  /* RESULT */
   if (phase === 'result') {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>สรุปผล</Text>
-        <Text style={styles.scoreText}>คุณได้ {score} / {MAX_ROUNDS} คะแนน</Text>
+      <View
+        style={[
+          styles.safeWrap,
+          {
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            paddingLeft: insets.left + 16,
+            paddingRight: insets.right + 16,
+          },
+        ]}
+      >
+        <View style={styles.topbar}>
+          <Ionicons name="flag-outline" size={24} color={ORANGE} style={{ marginRight: 8 }} />
+          <Text style={styles.topbarTitle}>สรุปผล</Text>
+        </View>
 
-        {/* แถบผลรวม (progress bar แบบง่าย) */}
+        <Text style={styles.title}>คุณได้ {score} / {MAX_ROUNDS} คะแนน</Text>
+
         <View style={styles.resultBar}>
           <View style={[styles.resultFill, { width: `${(score / MAX_ROUNDS) * 100}%` }]} />
         </View>
 
-        {/* รายการสั้น ๆ ว่าถูก/ผิด */}
         <View style={styles.resultList}>
           {history.map((h, idx) => (
             <View key={idx} style={styles.resultItem}>
@@ -166,10 +222,19 @@ export default function SoundRecognize({ navigation }) {
     );
   }
 
-  // phase === 'quiz'
+  /* QUIZ */
   return (
-    <View style={styles.container}>
-      {/* Header badges */}
+    <View
+      style={[
+        styles.safeWrap,
+        {
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left + 16,
+          paddingRight: insets.right + 16,
+        },
+      ]}
+    >
       <View style={styles.headerRow}>
         <View style={styles.badgeSolid}>
           <Text style={styles.badgeSolidText}>รอบ {round}/{MAX_ROUNDS}</Text>
@@ -181,18 +246,15 @@ export default function SoundRecognize({ navigation }) {
 
       <Text style={styles.title}>ฟังเสียงอะไรเอ่ย?</Text>
 
-      {/* ปุ่มเล่นเสียง */}
       <TouchableOpacity style={styles.primaryBtn} onPress={playSound} activeOpacity={0.9}>
         <Text style={styles.primaryBtnText}>▶️ เล่นเสียง</Text>
       </TouchableOpacity>
 
-      {/* ปุ่มตัวเลือก (แสดงสีเมื่อเลือก) */}
       <View style={styles.choices}>
         {choices.map((c) => {
           const isChosen = selected === c;
           const showGreen = isChosen && isCorrect === true;
           const showRed = isChosen && isCorrect === false;
-
           return (
             <TouchableOpacity
               key={c}
@@ -200,7 +262,7 @@ export default function SoundRecognize({ navigation }) {
                 styles.choiceBtn,
                 showGreen && { backgroundColor: '#d4f8e8', borderColor: GREEN },
                 showRed && { backgroundColor: '#ffe3e3', borderColor: RED },
-                selected && !isChosen && { opacity: 0.6 }, // ทำจางลงเมื่อเลือกไปแล้ว
+                selected && !isChosen && { opacity: 0.6 },
               ]}
               onPress={() => checkAnswer(c)}
               activeOpacity={0.9}
@@ -220,33 +282,62 @@ export default function SoundRecognize({ navigation }) {
         })}
       </View>
 
-      {/* ข้อความ feedback */}
       {selected && (
         <Text style={[styles.feedback, isCorrect ? styles.ok : styles.no]}>
-          {isCorrect ? '✅ ถูกต้อง!' : `❌ ไม่ถูกต้อง`}
+          {isCorrect ? '✅ ถูกต้อง!' : '❌ ไม่ถูกต้อง'}
         </Text>
       )}
     </View>
   );
 }
 
+/* =========================
+   Styles
+   ========================= */
 const styles = StyleSheet.create({
-  // layout พื้นฐานเหมือนเกมอื่น ๆ (พื้นหลังขาว โทนส้ม)
+  safeWrap: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: 16,
   },
 
-  // header
+  topbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F2',
+    marginBottom: 8,
+  },
+  topbarTitle: { fontSize: 24, fontWeight: '900', color: ORANGE },
+
+  introWrap: { padding: 18, alignItems: 'center', width: '100%' },
+  introCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#FFD2A3',
+    padding: 18,
+    width: '100%',
+    marginBottom: 14,
+  },
+  introRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  introText: { fontSize: 18, color: '#4A3726', flexShrink: 1, lineHeight: 26 },
+
   headerRow: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginTop: 6,
+    marginBottom: 12,
   },
   badgeSolid: {
     backgroundColor: ORANGE,
@@ -264,29 +355,21 @@ const styles = StyleSheet.create({
   },
   badgeOutlineText: { color: ORANGE, fontWeight: '800', fontSize: 16 },
 
-  // titles
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     color: ORANGE,
     textAlign: 'center',
     marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#444',
-    textAlign: 'center',
-    marginBottom: 22,
-  },
 
-  // play button
   primaryBtn: {
     backgroundColor: ORANGE,
     paddingVertical: 16,
     paddingHorizontal: 28,
     borderRadius: 14,
     marginTop: 8,
-    marginBottom: 24,
+    marginBottom: 20,
     minWidth: 220,
     alignItems: 'center',
     shadowColor: '#000',
@@ -297,7 +380,6 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: { color: '#fff', fontSize: 18, fontWeight: '900' },
 
-  // choices
   choices: { width: '100%', paddingHorizontal: 8, marginTop: 4 },
   choiceBtn: {
     backgroundColor: '#fff',
@@ -315,12 +397,10 @@ const styles = StyleSheet.create({
   },
   choiceText: { color: '#222', fontSize: 18, fontWeight: '800' },
 
-  // feedback
   feedback: { marginTop: 10, fontSize: 18, fontWeight: '800' },
   ok: { color: GREEN },
   no: { color: RED },
 
-  // result
   scoreText: { fontSize: 20, fontWeight: '700', marginBottom: 16, color: '#333' },
   resultBar: {
     width: '100%',
@@ -331,7 +411,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   resultFill: { height: '100%', backgroundColor: GREEN },
-
   resultList: {
     width: '100%',
     backgroundColor: '#fff',
@@ -350,7 +429,13 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F1F5F9',
   },
   resultLabel: { fontSize: 16, color: '#222' },
-  badge: { minWidth: 64, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, alignItems: 'center' },
+  badge: {
+    minWidth: 64,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    alignItems: 'center',
+  },
   badgeOk: { backgroundColor: '#d4f8e8' },
   badgeNo: { backgroundColor: '#ffe3e3' },
   badgeText: { fontSize: 14, fontWeight: '800', color: '#0F172A' },

@@ -593,7 +593,7 @@ export default function StoryGame() {
       <View style={styles.topbar}>
         <View style={styles.topbarContent}>
           <Icon name="brain" size={26} color={ORANGE.primaryDark} style={{ marginRight: 8 }} />
-          <Text style={styles.topbarTitle}>เกมฝึกจำเรื่องสั้น</Text>
+          <Text style={styles.topbarTitle}>เกมเล่าเรื่องเเล้วถาม</Text>
         </View>
       </View>
 

@@ -1,5 +1,5 @@
 // screens/Gamescreen/HiddenObjectGame.js
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function HiddenObjectGame() {
   const insets = useSafeAreaInsets();
 
-  /* ---------- THEME ---------- */
+export default function MemoryGame() {
+  /* ---------- THEME (โทนส้มให้เข้าชุดเกมอื่น) ---------- */
   const ORANGE = {
     primary: "#FF8A1F",
     primaryDark: "#E67700",
@@ -32,24 +33,25 @@ export default function HiddenObjectGame() {
   /* ---------- PHASE: intro | play | result ---------- */
   const [phase, setPhase] = useState("intro");
 
-  /* ---------- POOL สิ่งของทั้งหมด ---------- */
+  /* ---------- POOL สิ่งของทั้งหมดในภาพ (คงเดิม) ---------- */
   const allItems = useMemo(
     () => [
-      { id: "ชายชุดดำ",   top: "11%", left: "90%", width: "10%", height: "14%" },
-      { id: "แตงกวา",     top: "11%", left: "21%", width: "12%", height: "10%" },
+      { id: "ชายชุดดำ", top: "11%", left: "90%", width: "10%", height: "14%" },
+      { id: "แตงกวา", top: "11%", left: "21%", width: "12%", height: "10%" },
       { id: "น้ำยาบ้วนปาก", top: "30%", left: "50%", width: "10%", height: "8%" },
-      { id: "หนู",        top: "55%", left: "22%", width: "12%", height: "8%" },
-      { id: "ยูง",        top: "35%", left: "68%", width: "9%",  height: "6%" },
-      { id: "ปลาดุก",     top: "1%",  left: "45%", width: "10%", height: "10%" },
-      { id: "แยม",        top: "35%", left: "2%",  width: "9%",  height: "7%" },
-      { id: "หมวก",       top: "63%", left: "39%", width: "13%", height: "8%" },
-      { id: "ไส้เดือน",   top: "52%", left: "60%", width: "22%", height: "10%" },
+      { id: "หนู", top: "55%", left: "22%", width: "12%", height: "8%" },
+      { id: "ยูง", top: "35%", left: "68%", width: "9%", height: "6%" },
+      { id: "ปลาดุก", top: "1%", left: "45%", width: "10%", height: "10%" },
+      { id: "แยม", top: "35%", left: "2%", width: "9%", height: "7%" },
+      { id: "หมวก", top: "63%", left: "39%", width: "13%", height: "8%" },
+      { id: "ไส้เดือน", top: "52%", left: "60%", width: "22%", height: "10%" },
     ],
     []
   );
 
-  /* ---------- เลือกสุ่ม 3 ชิ้นต่อรอบ ---------- */
+  /* ---------- เลือกสุ่ม 3 ชิ้นต่อรอบ (คงเดิม) ---------- */
   const [items, setItems] = useState([]);
+
   const shuffleItems = () => {
     const shuffled = [...allItems]
       .sort(() => 0.5 - Math.random())
@@ -58,12 +60,9 @@ export default function HiddenObjectGame() {
     setItems(shuffled);
   };
 
-  // กันกรณี phase ไปที่ "play" แต่ลืมสุ่ม items
+
   useEffect(() => {
-    if (phase === "play" && items.length === 0) {
-      shuffleItems();
-    }
-  }, [phase, items.length]);
+  }, []);
 
   const handleFind = (id) => {
     setItems((prev) =>
@@ -71,16 +70,14 @@ export default function HiddenObjectGame() {
     );
   };
 
-  const foundCount = items.filter((i) => i.found).length;
-  const allFound = items.length > 0 && foundCount === items.length;
+  const allFound = items.length > 0 && items.every((item) => item.found);
 
-  // ไปหน้า result อัตโนมัติเมื่อหาเจอครบ
+  // ไปหน้า result เมื่อหาเจอครบ
   useEffect(() => {
     if (phase === "play" && allFound) {
-      const t = setTimeout(() => setPhase("result"), 600);
-      return () => clearTimeout(t);
+      setPhase("result");
     }
-  }, [phase, allFound]);
+  }, [allFound, phase]);
 
   const startGame = () => {
     shuffleItems();
@@ -93,17 +90,7 @@ export default function HiddenObjectGame() {
   };
 
   return (
-    <View
-      style={[
-        styles.safeWrap,
-        {
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-          paddingLeft: insets.left + 12,
-          paddingRight: insets.right + 12,
-        },
-      ]}
-    >
+    <View style={[styles.container, { backgroundColor: "#FFFDF9" }]}>
       {/* ---------- TOPBAR ---------- */}
       <View style={[styles.topbar, { backgroundColor: ORANGE.card, borderBottomColor: ORANGE.line }]}>
         <View style={styles.topbarContent}>
@@ -112,41 +99,46 @@ export default function HiddenObjectGame() {
         </View>
       </View>
 
-      {/* ---------- INTRO ---------- */}
-      {phase === "intro" && (
         <ScrollView contentContainerStyle={styles.introWrap} showsVerticalScrollIndicator={false}>
           <View
             style={[
               styles.introCard,
-              { backgroundColor: ORANGE.card, borderColor: ORANGE.border },
+              {
+                backgroundColor: ORANGE.card,
+                borderColor: ORANGE.border,
+              },
             ]}
           >
             <View style={styles.introRow}>
-              <Ionicons name="book-outline" size={24} color={ORANGE.primaryDark} />
-              <Text style={[styles.introText, { color: ORANGE.textSub }]}>
-                แตะบนภาพเพื่อค้นหา “สิ่งของ” ที่กำหนดไว้ด้านล่างให้ครบทั้งหมด
+              <Ionicons name="image" size={24} color={ORANGE.primaryDark} />
+              <Text style={styles.introText}>
+                ในแต่ละรอบจะสุ่มรายชื่อสิ่งของ <Text style={{fontWeight: "900"}}>3 ชิ้น</Text> ให้คุณตามหาในภาพ
               </Text>
             </View>
             <View style={styles.introRow}>
-              <Ionicons name="hand-left-outline" size={24} color={ORANGE.primaryDark} />
-              <Text style={[styles.introText, { color: ORANGE.textSub }]}>
-                เมื่อพบสิ่งของแล้ว วงกรอบจะแสดงสีเขียว และชื่อรายการด้านล่างจะขีดทับ
+              {/* ใช้ชื่อไอคอนที่มีจริง เพื่อลด error */}
+              <Ionicons name="finger-print" size={24} color={ORANGE.primaryDark} />
+              <Text style={styles.introText}>
+                แตะบริเวณที่คิดว่าเป็นตำแหน่งของสิ่งของนั้น ๆ เพื่อทำเครื่องหมาย “เจอแล้ว”
               </Text>
             </View>
             <View style={styles.introRow}>
               <Ionicons name="checkmark-circle-outline" size={24} color={ORANGE.success} />
-              <Text style={[styles.introText, { color: ORANGE.textSub }]}>
-                หาให้ครบทุกชิ้น แล้วจะสรุปผลให้โดยอัตโนมัติ
+              <Text style={styles.introText}>
+                รายการด้านล่างภาพจะมี <Text style={{ fontWeight: "900" }}>วงกลม</Text> แสดงสถานะว่าพบสิ่งของนั้น ๆ หรือยัง
+              </Text>
+            </View>
+            <View style={styles.introRow}>
+              <Ionicons name="refresh" size={24} color={ORANGE.primaryDark} />
+              <Text style={styles.introText}>
+                เจอครบ 3 ชิ้นแล้ว กด “เริ่มใหม่” เพื่อสุ่มชุดใหม่และเล่นต่อ
               </Text>
             </View>
           </View>
 
           <View style={styles.introActions}>
             <TouchableOpacity
-              style={[
-                styles.primaryBtn,
-                { backgroundColor: ORANGE.primary, borderColor: ORANGE.border },
-              ]}
+              style={[styles.primaryBtn, { backgroundColor: ORANGE.primary, borderColor: ORANGE.border }]}
               onPress={startGame}
               activeOpacity={0.9}
             >
@@ -159,9 +151,13 @@ export default function HiddenObjectGame() {
       {/* ---------- PLAY ---------- */}
       {phase === "play" && (
         <View style={{ flex: 1, alignItems: "center" }}>
-          {/* ภาพพื้นหลัง + จุด hitbox */}
+          {/* หัวเรื่องเล็ก ๆ */}
+          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
+          </View>
+
+          {/* พื้นหลังรูปภาพ + hitbox */}
           <ImageBackground
-            source={require("../../assets/FindPic.png")} // ตรวจ path ให้ตรงจริง ๆ
+            source={require("../../assets/FindPic.png")}
             style={styles.background}
             resizeMode="cover"
           >
@@ -185,7 +181,7 @@ export default function HiddenObjectGame() {
             ))}
           </ImageBackground>
 
-          {/* รายการสิ่งของ (วางชิดใต้รูป) */}
+          {/* รายการสิ่งของที่ต้องหา */}
           <View style={[styles.list, { backgroundColor: ORANGE.pale, borderColor: ORANGE.border }]}>
             {items.map((item) => (
               <View
@@ -273,110 +269,100 @@ export default function HiddenObjectGame() {
   );
 }
 
-/* ---------- Styles ---------- */
-const cardShadow = Platform.select({
-  ios: { shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
-  android: { elevation: 2 },
-  default: {},
-});
-
+/* ===== Styles ===== */
 const styles = StyleSheet.create({
-  safeWrap: {
-    flex: 1,
-    backgroundColor: "#FFFDF9",
-  },
+  container: { flex: 1 },
 
-  /* Topbar */
+  // TOPBAR
   topbar: {
     paddingTop: 14,
     paddingBottom: 14,
     paddingHorizontal: 16,
+    backgroundColor: NEUTRAL.card,
     borderBottomWidth: 1,
+    borderBottomColor: NEUTRAL.line,
   },
   topbarContent: { flexDirection: "row", alignItems: "center", alignSelf: "center", maxWidth: "92%" },
-  topbarTitle: { fontSize: 24, fontWeight: "900" },
+  topbarTitle: {
+    fontSize: 26,
+    fontWeight: "900",
+    color: ORANGE.textMain,
+    textAlign: "center",
+    flexShrink: 1,
+  },
 
-  /* Intro */
+  // INTRO
   introWrap: { padding: 18, alignItems: "center" },
   introCard: {
+    backgroundColor: NEUTRAL.card,
     borderRadius: 18,
     borderWidth: 2,
+    borderColor: ORANGE.border,
     padding: 18,
     width: "100%",
     ...cardShadow,
   },
   introRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
-  introText: { fontSize: 18, lineHeight: 26, flexShrink: 1 },
+  introText: { fontSize: 18, color: ORANGE.textSub, flexShrink: 1, lineHeight: 26 },
   introActions: { marginTop: 14, gap: 10, alignItems: "center", width: "100%" },
   primaryBtn: {
+    backgroundColor: ORANGE.primary,
     paddingVertical: 18,
     paddingHorizontal: 26,
     borderRadius: 14,
     minWidth: 240,
     alignItems: "center",
-    borderWidth: 2,
     ...cardShadow,
   },
   primaryBtnText: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
 
   /* Play */
-  background: {
-    width: "100%",
-    height: "58%", // เว้นที่ให้ลิสต์อยู่ชิดใต้รูป
-    marginTop: 12,
-  },
-  hitbox: { position: "absolute" },
+background: { 
+  width: "100%", 
+  height: "58%",      // ลดนิดหน่อยเพื่อเว้นให้ list
+  marginTop: 12
+},
 
-  list: {
-    width: "100%",
-    borderWidth: 2,
-    borderRadius: 14,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    marginTop: 8,      // ชิดใต้รูป
-    marginBottom: 12,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    backgroundColor: "#FFF",
-  },
+list: {
+  width: "92%",
+  borderWidth: 2,
+  borderRadius: 14,
+  paddingVertical: 8,
+  paddingHorizontal: 8,
+  marginTop: 8,        // ✅ ชิดใต้รูปพอดี
+  marginBottom: 12,    // ✅ กันไม่ให้ติดขอบล่างเกินไป
+  flexDirection: "row",
+  flexWrap: "wrap",
+  justifyContent: "center",
+  backgroundColor: "#FFF",
+},
+
+
   chip: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 2,
-    borderRadius: 10,
+    borderWidth: 1,
+    borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    margin: 6,
+    margin: 4,
+    backgroundColor: ORANGE.pale,
   },
-  listItem: { fontSize: 18, fontWeight: "700" },
+  listItem: { fontSize: 16, color: ORANGE.textMain },
 
-  /* Result */
-  resultWrap: { padding: 18, paddingTop: 36, alignItems: "center" },
-  resultCard: {
-    borderRadius: 18,
-    borderWidth: 2,
-    padding: 22,
-    width: "100%",
-    alignItems: "center",
-    marginBottom: 14,
-    ...cardShadow,
-  },
-  resultTitle: { fontSize: 22, fontWeight: "900" },
-  resultScore: { fontSize: 18, marginTop: 6, marginBottom: 12 },
-  resultBar: { width: "100%", height: 12, borderRadius: 999, overflow: "hidden" },
-  resultFill: { height: "100%", borderRadius: 999 },
-
-  resultActionsCenter: { width: "100%", gap: 12, alignItems: "center" },
-
+  // RESULT
   secondaryBtn: {
+    backgroundColor: ORANGE.light,
     paddingVertical: 16,
     paddingHorizontal: 22,
     borderRadius: 14,
     minWidth: 200,
     alignItems: "center",
     borderWidth: 2,
+    borderColor: ORANGE.border,
     ...cardShadow,
   },
-  secondaryBtnText: { fontSize: 18, fontWeight: "900" },
+  secondaryBtnText: { color: ORANGE.textMain, fontSize: 18, fontWeight: "900" },
+  linkBtn: { paddingVertical: 8, paddingHorizontal: 10 },
+  linkBtnText: { color: ORANGE.primary, fontWeight: "800", fontSize: 16 },
 });

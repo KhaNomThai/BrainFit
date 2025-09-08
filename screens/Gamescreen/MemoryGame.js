@@ -10,9 +10,12 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function MemoryGame() {
-  /* ---------- THEME (โทนส้มให้เข้าชุดเกมอื่น) ---------- */
+export default function HiddenObjectGame() {
+  const insets = useSafeAreaInsets();
+
+  /* ---------- THEME ---------- */
   const ORANGE = {
     primary: "#FF8A1F",
     primaryDark: "#E67700",
@@ -29,23 +32,23 @@ export default function MemoryGame() {
   /* ---------- PHASE: intro | play | result ---------- */
   const [phase, setPhase] = useState("intro");
 
-  /* ---------- POOL สิ่งของทั้งหมดในภาพ (คงเดิม) ---------- */
+  /* ---------- POOL สิ่งของทั้งหมด ---------- */
   const allItems = useMemo(
     () => [
-      { id: "ชายชุดดำ", top: "11%", left: "90%", width: "10%", height: "14%" },
-      { id: "แตงกวา", top: "11%", left: "21%", width: "12%", height: "10%" },
+      { id: "ชายชุดดำ",   top: "11%", left: "90%", width: "10%", height: "14%" },
+      { id: "แตงกวา",     top: "11%", left: "21%", width: "12%", height: "10%" },
       { id: "น้ำยาบ้วนปาก", top: "30%", left: "50%", width: "10%", height: "8%" },
-      { id: "หนู", top: "55%", left: "22%", width: "12%", height: "8%" },
-      { id: "ยูง", top: "35%", left: "68%", width: "9%", height: "6%" },
-      { id: "ปลาดุก", top: "1%", left: "45%", width: "10%", height: "10%" },
-      { id: "แยม", top: "35%", left: "2%", width: "9%", height: "7%" },
-      { id: "หมวก", top: "63%", left: "39%", width: "13%", height: "8%" },
-      { id: "ไส้เดือน", top: "52%", left: "60%", width: "22%", height: "10%" },
+      { id: "หนู",        top: "55%", left: "22%", width: "12%", height: "8%" },
+      { id: "ยูง",        top: "35%", left: "68%", width: "9%",  height: "6%" },
+      { id: "ปลาดุก",     top: "1%",  left: "45%", width: "10%", height: "10%" },
+      { id: "แยม",        top: "35%", left: "2%",  width: "9%",  height: "7%" },
+      { id: "หมวก",       top: "63%", left: "39%", width: "13%", height: "8%" },
+      { id: "ไส้เดือน",   top: "52%", left: "60%", width: "22%", height: "10%" },
     ],
     []
   );
 
-  /* ---------- เลือกสุ่ม 3 ชิ้นต่อรอบ (คงเดิม) ---------- */
+  /* ---------- เลือกสุ่ม 3 ชิ้นต่อรอบ ---------- */
   const [items, setItems] = useState([]);
   const shuffleItems = () => {
     const shuffled = [...allItems]
@@ -55,9 +58,12 @@ export default function MemoryGame() {
     setItems(shuffled);
   };
 
-
+  // กันกรณี phase ไปที่ "play" แต่ลืมสุ่ม items
   useEffect(() => {
-  }, []);
+    if (phase === "play" && items.length === 0) {
+      shuffleItems();
+    }
+  }, [phase, items.length]);
 
   const handleFind = (id) => {
     setItems((prev) =>
@@ -68,7 +74,7 @@ export default function MemoryGame() {
   const foundCount = items.filter((i) => i.found).length;
   const allFound = items.length > 0 && foundCount === items.length;
 
-  // ไปหน้า result เมื่อหาเจอครบ
+  // ไปหน้า result อัตโนมัติเมื่อหาเจอครบ
   useEffect(() => {
     if (phase === "play" && allFound) {
       const t = setTimeout(() => setPhase("result"), 600);
@@ -87,7 +93,17 @@ export default function MemoryGame() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: "#FFFDF9" }]}>
+    <View
+      style={[
+        styles.safeWrap,
+        {
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left + 12,
+          paddingRight: insets.right + 12,
+        },
+      ]}
+    >
       {/* ---------- TOPBAR ---------- */}
       <View style={[styles.topbar, { backgroundColor: ORANGE.card, borderBottomColor: ORANGE.line }]}>
         <View style={styles.topbarContent}>
@@ -102,10 +118,7 @@ export default function MemoryGame() {
           <View
             style={[
               styles.introCard,
-              {
-                backgroundColor: ORANGE.card,
-                borderColor: ORANGE.border,
-              },
+              { backgroundColor: ORANGE.card, borderColor: ORANGE.border },
             ]}
           >
             <View style={styles.introRow}>
@@ -130,7 +143,10 @@ export default function MemoryGame() {
 
           <View style={styles.introActions}>
             <TouchableOpacity
-              style={[styles.primaryBtn, { backgroundColor: ORANGE.primary, borderColor: ORANGE.border }]}
+              style={[
+                styles.primaryBtn,
+                { backgroundColor: ORANGE.primary, borderColor: ORANGE.border },
+              ]}
               onPress={startGame}
               activeOpacity={0.9}
             >
@@ -143,13 +159,9 @@ export default function MemoryGame() {
       {/* ---------- PLAY ---------- */}
       {phase === "play" && (
         <View style={{ flex: 1, alignItems: "center" }}>
-          {/* หัวเรื่องเล็ก ๆ */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-          </View>
-
-          {/* พื้นหลังรูปภาพ + hitbox */}
+          {/* ภาพพื้นหลัง + จุด hitbox */}
           <ImageBackground
-            source={require("../../assets/FindPic.png")}
+            source={require("../../assets/FindPic.png")} // ตรวจ path ให้ตรงจริง ๆ
             style={styles.background}
             resizeMode="cover"
           >
@@ -173,7 +185,7 @@ export default function MemoryGame() {
             ))}
           </ImageBackground>
 
-          {/* รายการสิ่งของที่ต้องหา */}
+          {/* รายการสิ่งของ (วางชิดใต้รูป) */}
           <View style={[styles.list, { backgroundColor: ORANGE.pale, borderColor: ORANGE.border }]}>
             {items.map((item) => (
               <View
@@ -269,7 +281,10 @@ const cardShadow = Platform.select({
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  safeWrap: {
+    flex: 1,
+    backgroundColor: "#FFFDF9",
+  },
 
   /* Topbar */
   topbar: {
@@ -305,27 +320,26 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
 
   /* Play */
-background: { 
-  width: "100%", 
-  height: "58%",      // ลดนิดหน่อยเพื่อเว้นให้ list
-  marginTop: 12
-},
+  background: {
+    width: "100%",
+    height: "58%", // เว้นที่ให้ลิสต์อยู่ชิดใต้รูป
+    marginTop: 12,
+  },
+  hitbox: { position: "absolute" },
 
-list: {
-  width: "92%",
-  borderWidth: 2,
-  borderRadius: 14,
-  paddingVertical: 8,
-  paddingHorizontal: 8,
-  marginTop: 8,        // ✅ ชิดใต้รูปพอดี
-  marginBottom: 12,    // ✅ กันไม่ให้ติดขอบล่างเกินไป
-  flexDirection: "row",
-  flexWrap: "wrap",
-  justifyContent: "center",
-  backgroundColor: "#FFF",
-},
-
-
+  list: {
+    width: "100%",
+    borderWidth: 2,
+    borderRadius: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    marginTop: 8,      // ชิดใต้รูป
+    marginBottom: 12,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    backgroundColor: "#FFF",
+  },
   chip: {
     flexDirection: "row",
     alignItems: "center",

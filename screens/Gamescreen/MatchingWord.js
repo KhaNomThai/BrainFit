@@ -16,25 +16,113 @@ const ORANGE = {
 const NEUTRAL = { bg: "#FFFDF9", line: "#F0E7DC", card: "#FFFFFF" };
 
 // หน่วงเวลาหลังเลือก (ms) เพื่อให้เห็นสีถูก/ผิดก่อนข้าม
-const AUTO_NEXT_DELAY = 1000;
+const AUTO_NEXT_DELAY = 900;
 
 // ===== Helper =====
 const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+const sampleN = (arr, n) => shuffle(arr).slice(0, n);
+
+// กลุ่ม emoji ที่ “คล้ายกันเกินไป” จะถูกกันไม่ให้สุ่มมาเป็นตัวหลอก
+const SIMILAR_GROUPS = [
+  ["🏀","⚽","🏐","🎾","🏉","🥎","🏈","🏓","🏸"],
+  ["🚗","🚙","🚕","🚓","🚚","🚛","🚜","🛻","🚒","🚑"],
+  ["👕","👚","👗","🧥","👔","👖","👘"],
+  ["🐝","🦋","🐞","🐜","🪲","🦟","🪰"],
+  ["✈️","🚁","🚀","🛫","🛬"],
+  ["📖","📚","📘","📕","📒"],
+  ["⏰","⏱️","🕰️","⌛","⏳"],
+  ["🛏️","🛌","🛋️"],
+  ["🔨","🔧","🔩","🪓","🪛"],
+  ["🍜","🍝","🍲","🥘"],
+  ["🌊","⛲","💧","🏞️"],
+];
+
+// คืน set ของ emoji ที่ควรกันออกเพราะ “คล้าย” กับ target
+const similarSetOf = (emoji) => {
+  for (const group of SIMILAR_GROUPS) {
+    if (group.includes(emoji)) return new Set(group);
+  }
+  return new Set([emoji]);
+};
+
+// คลัง emoji ทั่วไป (ใช้เป็นตัวหลอก “ข้ามหมวด”)
+const DISTRACTOR_POOL = [
+  "📱","🎧","🖥️","🧸","🍕","🍔","🍟","🌮","🍩","🍪",
+  "🐶","🐱","🦊","🐼","🦄","🦈","🦑","🦀",
+  "🌋","🏝️","🌈","☀️","🌙","⭐","🔥","❄️",
+  "🎒","💼","💡","🔦","📷","🎲","🎯","🎹",
+  "🚲","🛴","🛵","🚆","🚇","🚢",
+  "🏰","⛩️","⛪","🏯","🏫","🏥",
+  "🧂","🍯","🥫","🫙","🍶","🍳",
+];
+
+// ===== คลังคำทั้งหมด (ไม่ใช่ 10 ข้อ ยังไม่สุ่ม) =====
+const FULL_BANK = [
+  { word: "แอปเปิ้ล", correct: "🍎" },
+  { word: "หมา", correct: "🐶" },
+  { word: "พระอาทิตย์", correct: "☀️" },
+  { word: "พิซซ่า", correct: "🍕" },
+  { word: "วาฬ", correct: "🐋" },
+  { word: "ภูเขา", correct: "⛰️" },
+  { word: "กระทะ", correct: "🍳" },
+  { word: "ห้องสมุด", correct: "📚" },
+  // ไม่มี emoji มะละกอ → ใช้ 🥭 (แทนผลไม้โทนใกล้เคียง)
+  { word: "มะละกอ", correct: "🥭" },
+  { word: "เตียงนอน", correct: "🛏️" },
+  { word: "ค้อน", correct: "🔨" },
+  { word: "ชาวนา", correct: "👨‍🌾" },
+  { word: "ตลาด", correct: "🛍️" },
+  { word: "กระโปรง", correct: "👗" },
+  { word: "น้ำตก", correct: "🌊" },
+  { word: "ก๋วยเตี๋ยว", correct: "🍜" },
+  { word: "นาฬิกา", correct: "⏰" },
+  { word: "บาสเกตบอล", correct: "🏀" },
+  { word: "กระเป๋า", correct: "👜" },
+  { word: "กรรไกร", correct: "✂️" },
+  { word: "ผีเสื้อ", correct: "🦋" },
+  { word: "เครื่องบิน", correct: "✈️" },
+  { word: "เครื่องปรุงรส", correct: "🧂" },
+  { word: "รองเท้า", correct: "👟" },
+  { word: "ปลาหมึก", correct: "🦑" },
+  { word: "พยาบาล", correct: "👩‍⚕️" },
+  { word: "แจกัน", correct: "🏺" },
+  { word: "หมอน", correct: "🛏️" }, // ไม่มีหมอนเฉพาะ ใช้เตียง
+  { word: "รถบรรทุก", correct: "🚚" },
+  { word: "ไฟฉาย", correct: "🔦" },
+  { word: "กวาง", correct: "🦌" },
+  { word: "เสื้อ", correct: "👕" },
+  { word: "นักเรียน", correct: "👩‍🎓" },
+  { word: "วัด", correct: "⛩️" },
+  { word: "ต้มยำกุ้ง", correct: "🍲" },
+  { word: "จักรยาน", correct: "🚲" },
+  { word: "ต้นไม้", correct: "🌳" },
+  { word: "รถไฟ", correct: "🚆" },
+  { word: "ปิงปอง", correct: "🏓" },
+  { word: "หนังสือ", correct: "📖" },
+  { word: "ตำรวจ", correct: "👮" },
+  { word: "ผัก", correct: "🥦" },
+];
+
+// สร้างตัวเลือก 4 ตัว (ถูก 1 + หลอก 3) โดยกันของคล้ายเกินไป
+function buildChoices(correct) {
+  const ban = similarSetOf(correct);    // emoji ที่คล้าย (รวมตัวมันเอง)
+  const pool = DISTRACTOR_POOL.filter((e) => !ban.has(e));
+  const distractors = sampleN(pool, 3);
+  return shuffle([correct, ...distractors]);
+}
+
+// สร้างคำถาม (word, correct, choices)
+function buildQuestion(item) {
+  return { ...item, choices: buildChoices(item.correct) };
+}
 
 // ===== Component =====
 export default function Matchingword({ navigation }) {
-  // phase: intro | quiz | result
   const [phase, setPhase] = useState("intro");
 
-  // -------- โจทย์ --------
-  const bank = useMemo(
-    () =>
-      shuffle([
-        { word: "แอปเปิ้ล",   correct: "🍎", choices: ["🍎", "🍌", "🍇", "🍑"] },
-        { word: "หมา",       correct: "🐶", choices: ["🐶", "🐱", "🐭", "🐹"] },
-        { word: "พระอาทิตย์", correct: "☀️", choices: ["🌧️", "☀️", "⛄", "🌙"] },
-        { word: "พิซซ่า",    correct: "🍕", choices: ["🍔", "🍟", "🍕", "🌭"] },
-      ]),
+  // เลือก “10 ข้อแบบสุ่ม” ตอน mount + ผูก choices ให้เรียบร้อย
+  const QUESTIONS = useMemo(
+    () => shuffle(FULL_BANK).slice(0, 10).map(buildQuestion),
     []
   );
 
@@ -43,19 +131,18 @@ export default function Matchingword({ navigation }) {
   const [picked, setPicked] = useState(null);
   const [isCorrect, setIsCorrect] = useState(null);
 
-  const total = bank.length;
-  const q = bank[index];
-  const choices = useMemo(() => shuffle(q.choices), [index]);
+  const total = QUESTIONS.length;
+  const q = QUESTIONS[index];
+  const choices = q.choices; // สุ่มครั้งเดียวตอนสร้างคำถาม (ลดกระพริบ/สับสน)
 
   const choose = (emoji) => {
-    if (picked) return; // กันกดซ้ำระหว่างหน่วงเวลา
+    if (picked) return;
     const ok = emoji === q.correct;
 
     setPicked(emoji);
     setIsCorrect(ok);
     if (ok) setScore((s) => s + 1);
 
-    // หน่วงให้เห็นสี แล้วข้ามอัตโนมัติ
     setTimeout(() => {
       if (index < total - 1) {
         setIndex((i) => i + 1);
@@ -68,7 +155,7 @@ export default function Matchingword({ navigation }) {
   };
 
   const restart = () => {
-    // เริ่มใหม่ (ใช้ชุดคำถามเดิมที่สุ่มตอน mount แล้ว)
+    // เริ่มใหม่ด้วยการสุ่ม “ชุด 10 ข้อ” ใหม่ทั้งหมด
     setIndex(0);
     setScore(0);
     setPicked(null);
@@ -93,7 +180,7 @@ export default function Matchingword({ navigation }) {
             <View style={styles.introRow}>
               <Icon name="book-outline" size={26} color={ORANGE.primaryDark} />
               <Text style={styles.introText}>
-                อ่านคำศัพท์ตรงกลาง เช่น “แอปเปิ้ล” แล้วเลือก Emoji ที่ตรงกับคำนั้น
+                อ่านคำศัพท์ตรงกลาง แล้วเลือก Emoji ที่ตรงกับคำนั้น
               </Text>
             </View>
             <View style={styles.introRow}>
@@ -145,7 +232,6 @@ export default function Matchingword({ navigation }) {
               let bg = "#f2f2f2";
               if (isPicked && isCorrect === true) bg = "#2ecc71";
               if (isPicked && isCorrect === false) bg = "#e74c3c";
-
               return (
                 <TouchableOpacity
                   key={i}
@@ -158,7 +244,6 @@ export default function Matchingword({ navigation }) {
               );
             })}
           </View>
-          {/* ไม่มีปุ่มข้อต่อไปแล้วนะ ✅ */}
         </View>
       )}
 
@@ -181,7 +266,7 @@ export default function Matchingword({ navigation }) {
               <Text style={styles.secondaryBtnText}>กลับหน้าเริ่ม</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.primaryBtn} onPress={restart}>
-              <Text style={styles.primaryBtnText}>เล่นอีกครั้ง</Text>
+              <Text style={styles.primaryBtnText}>เล่นอีกครั้ง (สุ่มใหม่)</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.primaryBtn, { backgroundColor: "#8e8e8e" }]}
@@ -196,7 +281,7 @@ export default function Matchingword({ navigation }) {
   );
 }
 
-/* ===== Styles ===== */
+/* ===== Styles (เหมือนเดิม) ===== */
 const cardShadow = Platform.select({
   ios: { shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
   android: { elevation: 2 },
@@ -205,18 +290,12 @@ const cardShadow = Platform.select({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: NEUTRAL.bg },
-
-  // Topbar
   topbar: {
     paddingTop: 14, paddingBottom: 14, paddingHorizontal: 16,
     backgroundColor: NEUTRAL.card, borderBottomWidth: 1, borderBottomColor: NEUTRAL.line,
   },
   topbarContent: { flexDirection: "row", alignItems: "center", alignSelf: "center", maxWidth: "92%" },
-  topbarTitle: {
-    fontSize: 26, fontWeight: "900", color: ORANGE.textMain, textAlign: "center", flexShrink: 1,
-  },
-
-  // Intro
+  topbarTitle: { fontSize: 26, fontWeight: "900", color: ORANGE.textMain, textAlign: "center", flexShrink: 1 },
   introWrap: { padding: 18, alignItems: "center" },
   introCard: {
     backgroundColor: NEUTRAL.card, borderRadius: 18, borderWidth: 2, borderColor: ORANGE.border,
@@ -230,67 +309,25 @@ const styles = StyleSheet.create({
     borderRadius: 14, minWidth: 240, alignItems: "center", ...cardShadow,
   },
   primaryBtnText: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
-
-  // Quiz 
-  headerRow: {
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  badge: {
-    backgroundColor: ORANGE.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
+  headerRow: { width: "100%", flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
+  badge: { backgroundColor: ORANGE.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
   badgeText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-  badgeOutline: {
-    borderWidth: 2,
-    borderColor: ORANGE.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
+  badgeOutline: { borderWidth: 2, borderColor: ORANGE.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
   badgeOutlineText: { color: ORANGE.primary, fontWeight: "700", fontSize: 16 },
-
   questionBox: {
-    borderWidth: 3,
-    borderColor: ORANGE.primary,
-    borderRadius: 16,
-    padding: 20,
-    marginTop: 16,
-    marginBottom: 20,
-    backgroundColor: "#fff",
-    width: "100%",
-    alignItems: "center",
+    borderWidth: 3, borderColor: ORANGE.primary, borderRadius: 16,
+    padding: 20, marginTop: 16, marginBottom: 20, backgroundColor: "#fff", width: "100%", alignItems: "center",
   },
   word: { fontSize: 42, fontWeight: "800", color: "#222", textAlign: "center" },
-
   choicesGrid: {
-    width: "90%",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    marginBottom: 20,
+    width: "90%", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", marginBottom: 20,
   },
   choice: {
-    width: "44%",
-    aspectRatio: 1,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f2f2f2",
-    margin: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    width: "44%", aspectRatio: 1, borderRadius: 20, justifyContent: "center", alignItems: "center",
+    backgroundColor: "#f2f2f2", margin: 8, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 }, elevation: 3,
   },
   choiceEmoji: { fontSize: 40, textAlign: "center" },
-
-  // Result
   resultWrap: { padding: 18, paddingTop: 36, alignItems: "center" },
   resultCard: {
     backgroundColor: NEUTRAL.card, borderRadius: 18, borderWidth: 2, borderColor: ORANGE.border,

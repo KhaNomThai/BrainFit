@@ -154,7 +154,7 @@ export default function HomeScreen({ email, setEmail }) {
 
         {/* การ์ดสถิติ */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>📊 สถิติการใช้งาน</Text>
+          <Text style={styles.cardTitle}>สถิติการใช้งาน</Text>
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
               <Ionicons name="time-outline" size={22} color={ORANGE} style={{ marginBottom: 4 }} />

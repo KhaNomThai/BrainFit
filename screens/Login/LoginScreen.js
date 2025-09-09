@@ -51,7 +51,7 @@ export default function LoginScreen({ navigation, email, setEmail, password, set
     >
       <View style={styles.form}>
         <Text style={styles.loginAText}>เข้าสู่ระบบบัญชี</Text>
-        <Text style={styles.WelconeText}>ยินดีต้อนรับเข้าสู่เเอปพลิเคชั่น....</Text>
+        <Text style={styles.WelconeText}>ยินดีต้อนรับเข้าสู่เเอปพลิเคชัน....</Text>
         <Text style={styles.EmailText}>อีเมล</Text>
         <TextInput
           style={styles.inputEmail}

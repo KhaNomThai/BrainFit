@@ -1,31 +1,21 @@
-// screens/Gamescreen/SoundRecognize.js
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
-import { Audio } from 'expo-av';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from "react-native";
+import { Audio } from "expo-audio";
+import { Ionicons } from "@expo/vector-icons";
 
-const ORANGE = '#ff7f32';
-const GREEN = '#10B981';
-const RED = '#EF4444';
+const GREEN = "#10B981";
+const RED = "#EF4444";
 
 const sounds = [
-  { file: require('../../assets/sounds/Dog.mp3'), answer: 'หมา' },
-  { file: require('../../assets/sounds/Cat.mp3'), answer: 'แมว' },
-  { file: require('../../assets/sounds/Car.mp3'), answer: 'รถยนต์' },
-  { file: require('../../assets/sounds/Bird.mp3'), answer: 'นก' },
-  { file: require('../../assets/sounds/Horse.mp3'), answer: 'ม้า' },
-  { file: require('../../assets/sounds/Rain.mp3'), answer: 'ฝน' },
-  { file: require('../../assets/sounds/Sheep.mp3'), answer: 'แกะ' },
+  { file: require("../../assets/sounds/Dog.mp3"), answer: "หมา" },
+  { file: require("../../assets/sounds/Cat.mp3"), answer: "แมว" },
+  { file: require("../../assets/sounds/Car.mp3"), answer: "รถยนต์" },
+  { file: require("../../assets/sounds/Bird.mp3"), answer: "นก" },
+  { file: require("../../assets/sounds/Horse.mp3"), answer: "ม้า" },
+  { file: require("../../assets/sounds/Rain.mp3"), answer: "ฝน" },
+  { file: require("../../assets/sounds/Sheep.mp3"), answer: "แกะ" },
 ];
 
-// utils
 function shuffleArray(array) {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -34,6 +24,7 @@ function shuffleArray(array) {
   }
   return arr;
 }
+
 function generateChoices(correctAnswer) {
   const wrongAnswers = sounds.map((s) => s.answer).filter((a) => a !== correctAnswer);
   const randomWrongs = shuffleArray(wrongAnswers).slice(0, 2);
@@ -43,46 +34,44 @@ function generateChoices(correctAnswer) {
 const AUTO_NEXT_DELAY = 800;
 const MAX_ROUNDS = 5;
 
-export default function SoundRecognize({ navigation }) {
-  const insets = useSafeAreaInsets();
-
-  // phases: 'intro' | 'quiz' | 'result'
-  const [phase, setPhase] = useState('intro');
-
-  const [currentSound, setCurrentSound] = useState(
-    sounds[Math.floor(Math.random() * sounds.length)]
-  );
-  const [sound, setSound] = useState(null);
-
+export default function SoundRecognize() {
+  const [phase, setPhase] = useState("intro");
+  const [currentSound, setCurrentSound] = useState(null);
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
+  const [choices, setChoices] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [isCorrect, setIsCorrect] = useState(null);
+  const [history, setHistory] = useState([]);
 
-  const [choices, setChoices] = useState(generateChoices(currentSound.answer));
-  const [selected, setSelected] = useState(null); // string
-  const [isCorrect, setIsCorrect] = useState(null); // true/false/null
+  const soundRef = useRef(null);
 
-  const [history, setHistory] = useState([]); // [{answer, chosen, correct:bool}]
-
-  // โหลด/เล่นเสียง
-  async function playSound() {
-    try {
-      if (sound) {
-        await sound.stopAsync();
-        await sound.unloadAsync();
-      }
-      const { sound: newSound } = await Audio.Sound.createAsync(currentSound.file);
-      setSound(newSound);
-      await newSound.playAsync();
-    } catch (e) {
-      console.warn('playSound error:', e);
-    }
-  }
-
+  // cleanup sound when unmount
   useEffect(() => {
     return () => {
-      if (sound) sound.unloadAsync();
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
     };
-  }, [sound]);
+  }, []);
+
+  const playSound = async () => {
+    try {
+      if (!currentSound?.file) return;
+
+      // unload sound ก่อน
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+
+      const { sound } = await Audio.Sound.createAsync(currentSound.file);
+      soundRef.current = sound;
+      await sound.playAsync();
+    } catch (e) {
+      console.warn("playSound error:", e);
+    }
+  };
 
   const startGame = () => {
     const first = sounds[Math.floor(Math.random() * sounds.length)];
@@ -93,12 +82,12 @@ export default function SoundRecognize({ navigation }) {
     setSelected(null);
     setIsCorrect(null);
     setHistory([]);
-    setPhase('quiz');
+    setPhase("quiz");
   };
 
   const goNext = () => {
     if (round >= MAX_ROUNDS) {
-      setPhase('result');
+      setPhase("result");
       return;
     }
     const next = sounds[Math.floor(Math.random() * sounds.length)];
@@ -109,52 +98,41 @@ export default function SoundRecognize({ navigation }) {
     setIsCorrect(null);
   };
 
-  const checkAnswer = async (choice) => {
+  const checkAnswer = (choice) => {
     if (selected) return;
-    const correct = currentSound.answer;
-    const ok = choice === correct;
-
+    const ok = choice === currentSound.answer;
     setSelected(choice);
     setIsCorrect(ok);
-    setHistory((h) => [...h, { answer: correct, chosen: choice, correct: ok }]);
+    setHistory((h) => [...h, { answer: currentSound.answer, chosen: choice, correct: ok }]);
     if (ok) setScore((s) => s + 1);
 
-    try {
-      if (sound) await sound.stopAsync();
-    } catch {}
-
-    setTimeout(() => {
-      goNext();
-    }, AUTO_NEXT_DELAY);
+    setTimeout(goNext, AUTO_NEXT_DELAY);
   };
 
-  /* INTRO */
-  if (phase === 'intro') {
+  // ----- UI -----
+  if (phase === "intro") {
     return (
-      <View
-        style={[
-          styles.safeWrap,
-          {
-            paddingTop: insets.top,
-            paddingBottom: insets.bottom,
-            paddingLeft: insets.left + 16,
-            paddingRight: insets.right + 16,
-          },
-        ]}
-      >
+      <>
         <View style={styles.topbar}>
-          <Ionicons name="headset" size={24} color={ORANGE} style={{ marginRight: 8 }} />
-          <Text style={styles.topbarTitle}>เกมฟังเสียง</Text>
+          <View style={styles.topbarContent}>
+            <Ionicons
+              name="headset"
+              size={26}
+              color={ORANGE.primaryDark}
+              style={{ marginRight: 8 }}
+            />
+            <Text style={styles.topbarTitle}>เกมฟังเสียง</Text>
+          </View>
         </View>
 
         <ScrollView contentContainerStyle={styles.introWrap}>
           <View style={styles.introCard}>
             <View style={styles.introRow}>
-              <Ionicons name="musical-notes-outline" size={22} color={ORANGE} />
+              <Ionicons name="musical-notes-outline" size={22} color={ORANGE.primary} />
               <Text style={styles.introText}>กดปุ่ม “เล่นเสียง” เพื่อฟังเสียงตัวอย่าง</Text>
             </View>
             <View style={styles.introRow}>
-              <Ionicons name="hand-right-outline" size={22} color={ORANGE} />
+              <Ionicons name="hand-right-outline" size={22} color={ORANGE.primary} />
               <Text style={styles.introText}>เลือกคำตอบที่ตรงกับเสียงมากที่สุด</Text>
             </View>
             <View style={styles.introRow}>
@@ -166,7 +144,7 @@ export default function SoundRecognize({ navigation }) {
               <Text style={styles.introText}>ตอบผิด = ปุ่มเป็นสีแดง</Text>
             </View>
             <View style={styles.introRow}>
-              <Ionicons name="albums-outline" size={22} color={ORANGE} />
+              <Ionicons name="albums-outline" size={22} color={ORANGE.primary} />
               <Text style={styles.introText}>ทั้งหมด {MAX_ROUNDS} รอบ ระบบจะนับคะแนนให้</Text>
             </View>
           </View>
@@ -175,69 +153,31 @@ export default function SoundRecognize({ navigation }) {
             <Text style={styles.primaryBtnText}>เริ่มเกม</Text>
           </TouchableOpacity>
         </ScrollView>
-      </View>
+      </>
     );
   }
 
-  /* RESULT */
-  if (phase === 'result') {
+  if (phase === "result") {
     return (
-      <View
-        style={[
-          styles.safeWrap,
-          {
-            paddingTop: insets.top,
-            paddingBottom: insets.bottom,
-            paddingLeft: insets.left + 16,
-            paddingRight: insets.right + 16,
-          },
-        ]}
-      >
-        <View style={styles.topbar}>
-          <Ionicons name="flag-outline" size={24} color={ORANGE} style={{ marginRight: 8 }} />
-          <Text style={styles.topbarTitle}>สรุปผล</Text>
-        </View>
-
-        <Text style={styles.title}>คุณได้ {score} / {MAX_ROUNDS} คะแนน</Text>
-
-        <View style={styles.resultBar}>
-          <View style={[styles.resultFill, { width: `${(score / MAX_ROUNDS) * 100}%` }]} />
-        </View>
-
-        <View style={styles.resultList}>
-          {history.map((h, idx) => (
-            <View key={idx} style={styles.resultItem}>
-              <Text style={styles.resultLabel}>ข้อ {idx + 1} • เสียง: {h.answer}</Text>
-              <View style={[styles.badge, h.correct ? styles.badgeOk : styles.badgeNo]}>
-                <Text style={styles.badgeText}>{h.correct ? 'ถูก' : 'ผิด'}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        <TouchableOpacity style={styles.primaryBtn} onPress={startGame} activeOpacity={0.9}>
+      <View style={styles.container}>
+        <Text style={styles.title}>สรุปผล</Text>
+        <Text style={styles.scoreText}>
+          คุณได้ {score} / {MAX_ROUNDS} คะแนน
+        </Text>
+        <TouchableOpacity style={styles.primaryBtn} onPress={startGame}>
           <Text style={styles.primaryBtnText}>เล่นอีกครั้ง</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  /* QUIZ */
   return (
-    <View
-      style={[
-        styles.safeWrap,
-        {
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-          paddingLeft: insets.left + 16,
-          paddingRight: insets.right + 16,
-        },
-      ]}
-    >
+    <View style={styles.container}>
       <View style={styles.headerRow}>
         <View style={styles.badgeSolid}>
-          <Text style={styles.badgeSolidText}>รอบ {round}/{MAX_ROUNDS}</Text>
+          <Text style={styles.badgeSolidText}>
+            รอบ {round}/{MAX_ROUNDS}
+          </Text>
         </View>
         <View style={styles.badgeOutline}>
           <Text style={styles.badgeOutlineText}>คะแนน {score}</Text>
@@ -246,33 +186,28 @@ export default function SoundRecognize({ navigation }) {
 
       <Text style={styles.title}>ฟังเสียงอะไรเอ่ย?</Text>
 
-      <TouchableOpacity style={styles.primaryBtn} onPress={playSound} activeOpacity={0.9}>
+      <TouchableOpacity style={styles.primaryBtn} onPress={playSound}>
         <Text style={styles.primaryBtnText}>▶️ เล่นเสียง</Text>
       </TouchableOpacity>
 
       <View style={styles.choices}>
         {choices.map((c) => {
           const isChosen = selected === c;
-          const showGreen = isChosen && isCorrect === true;
-          const showRed = isChosen && isCorrect === false;
           return (
             <TouchableOpacity
               key={c}
               style={[
                 styles.choiceBtn,
-                showGreen && { backgroundColor: '#d4f8e8', borderColor: GREEN },
-                showRed && { backgroundColor: '#ffe3e3', borderColor: RED },
+                isChosen && (isCorrect ? styles.correctChoice : styles.wrongChoice),
                 selected && !isChosen && { opacity: 0.6 },
               ]}
               onPress={() => checkAnswer(c)}
-              activeOpacity={0.9}
               disabled={!!selected}
             >
               <Text
                 style={[
                   styles.choiceText,
-                  showGreen && { color: '#065F46' },
-                  showRed && { color: '#991B1B' },
+                  isChosen && (isCorrect ? styles.correctText : styles.wrongText),
                 ]}
               >
                 {c}
@@ -284,159 +219,97 @@ export default function SoundRecognize({ navigation }) {
 
       {selected && (
         <Text style={[styles.feedback, isCorrect ? styles.ok : styles.no]}>
-          {isCorrect ? '✅ ถูกต้อง!' : '❌ ไม่ถูกต้อง'}
+          {isCorrect ? "✅ ถูกต้อง!" : "❌ ไม่ถูกต้อง"}
         </Text>
       )}
     </View>
   );
 }
 
-/* =========================
-   Styles
-   ========================= */
-const styles = StyleSheet.create({
-  safeWrap: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    paddingTop: 16,
-  },
-
-  topbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F2',
-    marginBottom: 8,
-  },
-  topbarTitle: { fontSize: 24, fontWeight: '900', color: ORANGE },
-
-  introWrap: { padding: 18, alignItems: 'center', width: '100%' },
-  introCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#FFD2A3',
-    padding: 18,
-    width: '100%',
-    marginBottom: 14,
-  },
-  introRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  introText: { fontSize: 18, color: '#4A3726', flexShrink: 1, lineHeight: 26 },
-
-  headerRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 6,
-    marginBottom: 12,
-  },
-  badgeSolid: {
-    backgroundColor: ORANGE,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  badgeSolidText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  badgeOutline: {
-    borderWidth: 2,
-    borderColor: ORANGE,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  badgeOutlineText: { color: ORANGE, fontWeight: '800', fontSize: 16 },
-
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: ORANGE,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-
-  primaryBtn: {
-    backgroundColor: ORANGE,
-    paddingVertical: 16,
-    paddingHorizontal: 28,
-    borderRadius: 14,
-    marginTop: 8,
-    marginBottom: 20,
-    minWidth: 220,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  primaryBtnText: { color: '#fff', fontSize: 18, fontWeight: '900' },
-
-  choices: { width: '100%', paddingHorizontal: 8, marginTop: 4 },
-  choiceBtn: {
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: ORANGE,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginVertical: 8,
-    shadowColor: '#000',
+const ORANGE = {
+  primary: "#FF8A1F",
+  primaryDark: "#E67700",
+  light: "#FFE7CC",
+  pale: "#FFF6EC",
+  border: "#FFD2A3",
+  textMain: "#1F1300",
+  textSub: "#4A3726",
+};
+const NEUTRAL = { bg: "#FFFDF9", line: "#F0E7DC", card: "#FFFFFF" };
+const cardShadow = Platform.select({
+  ios: {
+    shadowColor: "#000",
     shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
-  choiceText: { color: '#222', fontSize: 18, fontWeight: '800' },
+  android: { elevation: 2 },
+  default: {},
+});
 
-  feedback: { marginTop: 10, fontSize: 18, fontWeight: '800' },
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff", alignItems: "center", padding: 20 },
+  headerRow: { flexDirection: "row", justifyContent: "space-between", width: "100%", marginBottom: 16 },
+  badgeSolid: { backgroundColor: ORANGE.primary, padding: 8, borderRadius: 8 },
+  badgeSolidText: { color: "#fff", fontWeight: "bold" },
+  badgeOutline: { borderWidth: 1, borderColor: ORANGE.primary, padding: 8, borderRadius: 8 },
+  badgeOutlineText: { color: ORANGE.primary, fontWeight: "bold" },
+  title: { fontSize: 24, fontWeight: "bold", color: ORANGE.primary, marginVertical: 8 },
+  subtitle: { fontSize: 16, color: "#444", textAlign: "center", marginBottom: 20 },
+  primaryBtn: {
+    backgroundColor: ORANGE.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 26,
+    borderRadius: 14,
+    minWidth: 200,
+    alignItems: "center",
+    marginTop: 20,
+    ...cardShadow,
+  },
+  primaryBtnText: { color: "#FFFFFF", fontSize: 20, fontWeight: "900", },
+  choices: { width: "100%", marginTop: 10 },
+  choiceBtn: {
+    padding: 16,
+    borderWidth: 2,
+    borderColor: ORANGE.primary,
+    borderRadius: 12,
+    marginVertical: 6,
+    alignItems: "center",
+  },
+  correctChoice: { backgroundColor: "#d4f8e8", borderColor: GREEN },
+  wrongChoice: { backgroundColor: "#ffe3e3", borderColor: RED },
+  choiceText: { fontSize: 18, fontWeight: "bold", color: ORANGE.primary },
+  correctText: { color: GREEN },
+  wrongText: { color: RED },
+  feedback: { marginTop: 10, fontSize: 20, fontWeight: "bold" },
   ok: { color: GREEN },
   no: { color: RED },
+  scoreText: { fontSize: 20, fontWeight: "bold", marginBottom: 20 },
 
-  scoreText: { fontSize: 20, fontWeight: '700', marginBottom: 16, color: '#333' },
-  resultBar: {
-    width: '100%',
-    height: 10,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginBottom: 14,
-  },
-  resultFill: { height: '100%', backgroundColor: GREEN },
-  resultList: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E5E9F0',
-    marginBottom: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  resultItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
+  // Topbar
+  topbar: {
+    paddingTop: 14,
+    paddingBottom: 14,
+    paddingHorizontal: 16,
+    backgroundColor: NEUTRAL.card,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: NEUTRAL.line,
   },
-  resultLabel: { fontSize: 16, color: '#222' },
-  badge: {
-    minWidth: 64,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    alignItems: 'center',
+  topbarContent: { flexDirection: "row", alignItems: "center", alignSelf: "center", maxWidth: "92%" },
+  topbarTitle: { fontSize: 24, fontWeight: "900", color: ORANGE.textMain, textAlign: "center", flexShrink: 1 },
+
+  // Intro
+  introWrap: { padding: 18, alignItems: "center" },
+  introCard: {
+    backgroundColor: NEUTRAL.card,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: ORANGE.border,
+    padding: 18,
+    width: "100%",
+    ...cardShadow,
   },
-  badgeOk: { backgroundColor: '#d4f8e8' },
-  badgeNo: { backgroundColor: '#ffe3e3' },
-  badgeText: { fontSize: 14, fontWeight: '800', color: '#0F172A' },
+  introRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
+  introText: { fontSize: 18, color: ORANGE.textSub, flexShrink: 1, lineHeight: 26 },
+  introActions: { marginTop: 14, gap: 10, alignItems: "center", width: "100%" },
 });

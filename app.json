@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Brain Fit",
-    "slug": "Brain_Fit_T",
+    "slug": "Brain_Fit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -21,7 +21,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.err0r4o4.Brain_Fit_T"
+      "package": "com.cpe.Brain_Fit"
     },
     "web": {
       "favicon": "./assets/icon.png"
@@ -32,7 +32,6 @@
       }
     },
     "plugins": [
-      "expo-av",
       "expo-audio"
     ]
   }

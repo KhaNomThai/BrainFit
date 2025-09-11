@@ -1,13 +1,24 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Platform,
   BackHandler, Alert, SafeAreaView, StatusBar,
 } from "react-native";
-import { post, isEmail } from "../../api";
+import { post } from "../../api";
 
-export default function CognitiveTestScreen({ navigation, email, setEmail }) {
+/** Helpers */
+const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const shuffle = (arr) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+export default function CognitiveTestScreen({ navigation, email }) {
   /** ----------------------- State หลักของหน้า ----------------------- */
-  // flow: intro → Quiz_1 → Quiz_2 → Quiz_3 → Quiz_4_1 → Quiz_4_2 → Quiz_4_3 → Quiz_4_4 → Quiz_5_1 → Quiz_5_2 → Quiz_5_3 → Quiz_5_4 → q6_read → q6_answer → review
+  // flow: intro → Quiz_1 → Quiz_2 → Quiz_3 → Quiz_4 → Quiz_5 → q6_read → q6_answer → review
   const [step, setStep] = useState("intro");
 
   // ใช้ roundId เพื่อ "สุ่มชุดโจทย์ใหม่" เมื่อกดทำอีกรอบ
@@ -19,19 +30,20 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
   const currentMonthIdx = now.getMonth() + 1; // 1-12
   const currentHour24 = now.getHours(); // 0-23
 
-  // เก็บคำตอบ
+  // เก็บคำตอบ (เพื่อส่งบันทึก)
   const [answers, setAnswers] = useState({
     Quiz_1: "",
     Quiz_2: "",
     Quiz_3: "",
-    Quiz_4_1: "",
-    Quiz_4_2: "",
-    Quiz_4_3: "",
-    Quiz_4_4: "",
-    Quiz_5_1: "",
-    Quiz_5_2: "",
-    Quiz_5_3: "",
-    Quiz_5_4: "",
+    // Q4 (เกมตัวเลข จากมาก→น้อย)
+    Q4_Start: 0,
+    Q4_ExpectedSeq: [],
+    Q4_Taps: [],
+    // Q5 (เกมเดือนย้อน 12 เดือน)
+    Q5_StartMonth: 0,
+    Q5_ExpectedSeq: [],
+    Q5_Taps: [],
+    // Q6
     Quiz6_Name: "",
     Quiz6_Surname: "",
     Quiz6_Number: "",
@@ -76,25 +88,161 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
     return n >= 0 && n <= 23;
   };
 
-  /** ----------------------- สุ่มโจทย์ ข้อ 4/5 ----------------------- */
-  const q4Qs = useMemo(() => {
-    const items = [];
-    for (let i = 0; i < 4; i++) {
-      const start = Math.floor(Math.random() * 18) + 1; // 1..18
-      items.push({ Min: start, Max: start + 2, Answer: start + 1 });
+  /** ----------------------- Q4: เกมกดเลข 20 ปุ่ม (เรียงจากมาก → น้อย) ----------------------- */
+  // เริ่มเลขให้ "ใหญ่ขึ้นหน่อย" จากเดิม 20–100 → ปรับเป็น 60–150 (เปลี่ยนได้ตามต้องการ)
+  const [q4Start, setQ4Start] = useState(0);
+  const [q4Buttons, setQ4Buttons] = useState([]);
+  const [q4Next, setQ4Next] = useState(0);          // internal (ไม่แสดง)
+  const [q4CorrectSet, setQ4CorrectSet] = useState(new Set());
+  const [q4WrongCount, setQ4WrongCount] = useState(0);
+  const [q4Complete, setQ4Complete] = useState(false);
+
+  // flash ปุ่มที่กดผิดเป็นสีแดงชั่วคราว
+  const [q4WrongFlash, setQ4WrongFlash] = useState(new Set());
+  const q4TimersRef = useRef({});
+
+  const flashQ4Wrong = (num) => {
+    setQ4WrongFlash((prev) => {
+      const n = new Set(prev);
+      n.add(num);
+      return n;
+    });
+    if (q4TimersRef.current[num]) clearTimeout(q4TimersRef.current[num]);
+    q4TimersRef.current[num] = setTimeout(() => {
+      setQ4WrongFlash((prev) => {
+        const n = new Set(prev);
+        n.delete(num);
+        return n;
+      });
+      delete q4TimersRef.current[num];
+    }, 350);
+  };
+
+  const initQ4 = () => {
+    const start = randInt(20, 100);
+    const seqDesc = Array.from({ length: 20 }, (_, i) => start - i); // มาก → น้อย (start, start-1, ... start-19)
+    const seqShuffled = shuffle([...seqDesc]);
+    setQ4Start(start);
+    setQ4Buttons(seqShuffled);
+    setQ4Next(start); // เริ่มที่ตัวใหญ่สุด
+    setQ4CorrectSet(new Set());
+    setQ4WrongCount(0);
+    setQ4Complete(false);
+    setQ4WrongFlash(new Set());
+    setAnswers((prev) => ({
+      ...prev,
+      Q4_Start: start,
+      Q4_ExpectedSeq: seqDesc,
+      Q4_Taps: [],
+    }));
+  };
+
+  const onTapQ4 = (num) => {
+    const minVal = q4Start - 19;
+    setAnswers((p) => ({ ...p, Q4_Taps: [...p.Q4_Taps, num] }));
+    if (num === q4Next) {
+      const newSet = new Set(q4CorrectSet);
+      newSet.add(num);
+      setQ4CorrectSet(newSet);
+      const nextVal = q4Next - 1;
+      if (nextVal < minVal) {
+        setQ4Complete(true);
+      } else {
+        setQ4Next(nextVal);
+      }
+    } else {
+      setQ4WrongCount((c) => c + 1);
+      flashQ4Wrong(num);
     }
-    return items;
+  };
+
+  /** ----------------------- Q5: เกมกดเดือน 12 ปุ่ม (เริ่มเดือนสุ่ม แล้วย้อน 12 เดือน) ----------------------- */
+  const wrapMonth = (n) => ((n - 1) % 12 + 12) % 12 + 1; // 1..12
+  const [q5StartMonth, setQ5StartMonth] = useState(1);
+  const [q5Buttons, setQ5Buttons] = useState([]); // {num,label}[]
+  const [q5ExpectedSeq, setQ5ExpectedSeq] = useState([]);
+  const [q5Index, setQ5Index] = useState(0);
+  const [q5CorrectSet, setQ5CorrectSet] = useState(new Set());
+  const [q5WrongCount, setQ5WrongCount] = useState(0);
+  const [q5Complete, setQ5Complete] = useState(false);
+
+  const [q5WrongFlash, setQ5WrongFlash] = useState(new Set());
+  const q5TimersRef = useRef({});
+
+  const flashQ5Wrong = (num) => {
+    setQ5WrongFlash((prev) => {
+      const n = new Set(prev);
+      n.add(num);
+      return n;
+    });
+    if (q5TimersRef.current[num]) clearTimeout(q5TimersRef.current[num]);
+    q5TimersRef.current[num] = setTimeout(() => {
+      setQ5WrongFlash((prev) => {
+        const n = new Set(prev);
+        n.delete(num);
+        return n;
+      });
+      delete q5TimersRef.current[num];
+    }, 350);
+  };
+
+  const initQ5 = () => {
+    const start = randInt(1, 12);
+    const seq = [];
+    for (let i = 0; i < 12; i++) seq.push(wrapMonth(start - i)); // เริ่ม start แล้วย้อนหลัง
+    const btns = shuffle(
+      Array.from({ length: 12 }, (_, i) => ({ num: i + 1, label: monthNamesTh[i] }))
+    );
+
+    setQ5StartMonth(start);
+    setQ5ExpectedSeq(seq);
+    setQ5Buttons(btns);
+    setQ5Index(0);
+    setQ5CorrectSet(new Set());
+    setQ5WrongCount(0);
+    setQ5Complete(false);
+    setQ5WrongFlash(new Set());
+
+    setAnswers((prev) => ({
+      ...prev,
+      Q5_StartMonth: start,
+      Q5_ExpectedSeq: seq,
+      Q5_Taps: [],
+    }));
+  };
+
+  const onTapQ5 = (monthNum) => {
+    setAnswers((p) => ({ ...p, Q5_Taps: [...p.Q5_Taps, monthNum] }));
+    const expected = q5ExpectedSeq[q5Index];
+    if (monthNum === expected) {
+      const newSet = new Set(q5CorrectSet);
+      newSet.add(monthNum);
+      setQ5CorrectSet(newSet);
+      const next = q5Index + 1;
+      if (next >= 12) {
+        setQ5Complete(true);
+      } else {
+        setQ5Index(next);
+      }
+    } else {
+      setQ5WrongCount((c) => c + 1);
+      flashQ5Wrong(monthNum);
+    }
+  };
+
+  /** ----------------------- สุ่ม Q4/Q5 เมื่อเริ่มรอบ ----------------------- */
+  useEffect(() => {
+    initQ4();
+    initQ5();
   }, [roundId]);
 
-  const q5Qs = useMemo(() => {
-    const wrap = (n) => ((n - 1) % 12 + 12) % 12 + 1;
-    const items = [];
-    for (let i = 0; i < 4; i++) {
-      const start = Math.floor(Math.random() * 12) + 1;
-      items.push({ Min: start, Max: wrap(start + 2), Answer: wrap(start + 1) });
-    }
-    return items;
-  }, [roundId]);
+  /** ----------------------- Cleanup timers ----------------------- */
+  useEffect(() => {
+    return () => {
+      Object.values(q4TimersRef.current).forEach(clearTimeout);
+      Object.values(q5TimersRef.current).forEach(clearTimeout);
+    };
+  }, []);
 
   /** ----------------------- ฟังก์ชันให้คะแนน ----------------------- */
   const scoreQuiz_1 = (ans) => {
@@ -114,20 +262,8 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
     const n = parseInt(normalizeNumber(ans), 10);
     return Math.abs(n - currentHour24) <= 1 ? 0 : 3;
   };
-  const scoreQ4 = (ansList) => {
-    let errors = 0;
-    q4Qs.forEach((q, idx) => {
-      if (normalizeNumber(ansList[idx]) !== String(q.Answer)) errors++;
-    });
-    return errors === 0 ? 0 : errors === 1 ? 2 : 4;
-  };
-  const scoreQ5 = (ansList) => {
-    let errors = 0;
-    q5Qs.forEach((q, idx) => {
-      if (parseMonthToNumber(ansList[idx]) !== q.Answer) errors++;
-    });
-    return errors === 0 ? 0 : errors === 1 ? 2 : 4;
-  };
+  const scoreFromWrong = (wrong) => (wrong === 0 ? 0 : wrong === 1 ? 2 : 4);
+
   const scoreQ6 = ({ name, surname, number, street, province }) => {
     let errors = 0;
     if (normalize(name) !== "สมหมาย") errors++;
@@ -137,7 +273,10 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
     if (normalize(province) !== "สุพรรณบุรี") errors++;
     return errors * 2;
   };
-  const getLevel = (sum) => (sum <= 7 ? "ปกติ" : sum <= 9 ? "ความบกพร่องทางสติปัญญาเล็กน้อย" : "ความบกพร่องทางสติปัญญาอย่างมีนัยสำคัญ");
+
+  const getLevel = (sum) =>
+    sum <= 7 ? "ปกติ" : sum <= 9 ? "ความบกพร่องทางสติปัญญาเล็กน้อย" : "ความบกพร่องทางสติปัญญาอย่างมีนัยสำคัญ";
+
   const getAdvice = (sum) => {
     if (sum <= 7) {
       return {
@@ -172,11 +311,11 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
   const handleSubmit = async () => {
     // ตรวจว่ากรอกครบข้อ 6
     if (
-      !answers.Quiz6_Name.trim() ||
-      !answers.Quiz6_Surname.trim() ||
-      !answers.Quiz6_Number.trim() ||
-      !answers.Quiz6_Street.trim() ||
-      !answers.Quiz6_Province.trim()
+      !answers.Quiz6_Name?.trim() ||
+      !answers.Quiz6_Surname?.trim() ||
+      !answers.Quiz6_Number?.trim() ||
+      !answers.Quiz6_Street?.trim() ||
+      !answers.Quiz6_Province?.trim()
     ) {
       Alert.alert("กรอกไม่ครบ", "กรุณากรอกข้อมูลให้ครบทุกช่องในข้อ 6");
       return;
@@ -186,8 +325,8 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
     const Sum_Quiz_1 = scoreQuiz_1(answers.Quiz_1);
     const Sum_Quiz_2 = scoreQuiz_2(answers.Quiz_2);
     const Sum_Quiz_3 = scoreQuiz_3(answers.Quiz_3);
-    const Sum_Quiz_4 = scoreQ4([answers.Quiz_4_1, answers.Quiz_4_2, answers.Quiz_4_3, answers.Quiz_4_4]);
-    const Sum_Quiz_5 = scoreQ5([answers.Quiz_5_1, answers.Quiz_5_2, answers.Quiz_5_3, answers.Quiz_5_4]);
+    const Sum_Quiz_4 = scoreFromWrong(q4WrongCount);
+    const Sum_Quiz_5 = scoreFromWrong(q5WrongCount);
     const Sum_Quiz_6 = scoreQ6({
       name: answers.Quiz6_Name,
       surname: answers.Quiz6_Surname,
@@ -204,7 +343,7 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
       Quiz_5: Sum_Quiz_5,
       Quiz_6: Sum_Quiz_6,
     };
-    const sum = Sum_Quiz_1 + Sum_Quiz_2 + Sum_Quiz_3 + Sum_Quiz_4 + Sum_Quiz_5 + Sum_Quiz_6;
+    const sum = Object.values(newScores).reduce((a, b) => a + b, 0);
     const lvl = getLevel(sum);
 
     setScores(newScores);
@@ -222,8 +361,8 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
         totalScore: sum,
         level: lvl,
         takenAtDeviceTime: nowISO,
-        q4Generated: q4Qs,
-        q5Generated: q5Qs,
+        q4Generated: { start: q4Start, expected: answers.Q4_ExpectedSeq, shuffled: q4Buttons },
+        q5Generated: { startMonth: q5StartMonth, expected: answers.Q5_ExpectedSeq, shuffled: q5Buttons },
       });
 
       if (data?.success) setStep("review");
@@ -244,28 +383,19 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
   }, [step]);
 
   /** ----------------------- Progress & canProceed ----------------------- */
-  const steps = [
-    "intro","Quiz_1","Quiz_2","Quiz_3","Quiz_4_1","Quiz_4_2","Quiz_4_3","Quiz_4_4",
-    "Quiz_5_1","Quiz_5_2","Quiz_5_3","Quiz_5_4","q6_read","q6_answer","review",
-  ];
+  const steps = ["intro","Quiz_1","Quiz_2","Quiz_3","Quiz_4","Quiz_5","q6_read","q6_answer","review"];
   const lastProgressStep = steps.indexOf("q6_answer");
   const progress = Math.max(0, Math.min(steps.indexOf(step), lastProgressStep)) / lastProgressStep;
 
   // ต้องตอบก่อนถึงจะไปต่อได้
   const canProceed = (() => {
     switch (step) {
-      case "Quiz_1": return !!answers.Quiz_1.trim();
-      case "Quiz_2": return !!answers.Quiz_2.trim();
+      case "Quiz_1": return !!answers.Quiz_1?.trim();
+      case "Quiz_2": return !!answers.Quiz_2?.trim();
       case "Quiz_3": return isValidHour00to23(answers.Quiz_3);
-      case "Quiz_4_1": return !!answers.Quiz_4_1.trim();
-      case "Quiz_4_2": return !!answers.Quiz_4_2.trim();
-      case "Quiz_4_3": return !!answers.Quiz_4_3.trim();
-      case "Quiz_4_4": return !!answers.Quiz_4_4.trim();
-      case "Quiz_5_1": return !!answers.Quiz_5_1.trim();
-      case "Quiz_5_2": return !!answers.Quiz_5_2.trim();
-      case "Quiz_5_3": return !!answers.Quiz_5_3.trim();
-      case "Quiz_5_4": return !!answers.Quiz_5_4.trim();
-      case "q6_read": return true; // ไม่มีคำตอบในหน้านี้
+      case "Quiz_4": return q4Complete; // ต้องกดครบ 20 ปุ่ม
+      case "Quiz_5": return q5Complete; // ต้องกดครบ 12 เดือน
+      case "q6_read": return true;
       default: return true;
     }
   })();
@@ -274,15 +404,15 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
   const resetRound = () => {
     setAnswers({
       Quiz_1: "", Quiz_2: "", Quiz_3: "",
-      Quiz_4_1: "", Quiz_4_2: "", Quiz_4_3: "", Quiz_4_4: "",
-      Quiz_5_1: "", Quiz_5_2: "", Quiz_5_3: "", Quiz_5_4: "",
+      Q4_Start: 0, Q4_ExpectedSeq: [], Q4_Taps: [],
+      Q5_StartMonth: 0, Q5_ExpectedSeq: [], Q5_Taps: [],
       Quiz6_Name: "", Quiz6_Surname: "", Quiz6_Number: "", Quiz6_Street: "", Quiz6_Province: "",
     });
     setScores({ Quiz_1: 0, Quiz_2: 0, Quiz_3: 0, Quiz_4: 0, Quiz_5: 0, Quiz_6: 0 });
     setTotal(0);
     setLevel("");
     setNow(new Date());
-    setRoundId((r) => r + 1);
+    setRoundId((r) => r + 1); // trigger initQ4/initQ5 ใหม่
     setStep("intro");
   };
 
@@ -353,8 +483,8 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
           {step === "Quiz_3" && (
             <QuestionBlock
               title="ข้อ 3) ตอนนี้ประมาณกี่โมง?"
-              hint="ตอบเป็นเวลา 00 - 23น. ±1 ชั่วโมง"
-              onNext={() => canProceed && setStep("Quiz_4_1")}
+              hint="ตอบเป็นเวลา 00 - 23 น. (±1 ชั่วโมงถือว่าถูก)"
+              onNext={() => canProceed && setStep("Quiz_4")}
               disabledNext={!canProceed}
             >
               <TextInput
@@ -368,135 +498,107 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
                   setAnswers((s) => ({ ...s, Quiz_3: digits }));
                 }}
               />
-              {/* แสดง error ถ้าใส่แล้วแต่ไม่ใช่ 00–23 */}
               {answers.Quiz_3 !== "" && !isValidHour00to23(answers.Quiz_3) ? (
                 <Text style={styles.errorText}>กรุณาใส่ชั่วโมง 00–23</Text>
               ) : null}
             </QuestionBlock>
           )}
 
-          {/* Quiz_4_1..4 : เลขที่อยู่ระหว่าง */}
-          {step === "Quiz_4_1" && (
-            <QuestionBlock
-              title={`ข้อ 4.1) เลขใดอยู่ระหว่าง ${q4Qs[0].Min} และ ${q4Qs[0].Max}?`}
-              onNext={() => canProceed && setStep("Quiz_4_2")}
-              disabledNext={!canProceed}
-            >
-              <TextInput
-                style={styles.input}
-                placeholder={`เช่น 14`}
-                keyboardType="number-pad"
-                value={answers.Quiz_4_1}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz_4_1: t }))}
-              />
-            </QuestionBlock>
-          )}
-          {step === "Quiz_4_2" && (
-            <QuestionBlock
-              title={`ข้อ 4.2) เลขใดอยู่ระหว่าง ${q4Qs[1].Min} และ ${q4Qs[1].Max}?`}
-              onNext={() => canProceed && setStep("Quiz_4_3")}
-              disabledNext={!canProceed}
-            >
-              <TextInput
-                style={styles.input}
-                placeholder={`เช่น 14`}
-                keyboardType="number-pad"
-                value={answers.Quiz_4_2}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz_4_2: t }))}
-              />
-            </QuestionBlock>
-          )}
-          {step === "Quiz_4_3" && (
-            <QuestionBlock
-              title={`ข้อ 4.3) เลขใดอยู่ระหว่าง ${q4Qs[2].Min} และ ${q4Qs[2].Max}?`}
-              onNext={() => canProceed && setStep("Quiz_4_4")}
-              disabledNext={!canProceed}
-            >
-              <TextInput
-                style={styles.input}
-                placeholder={`เช่น 14`}
-                keyboardType="number-pad"
-                value={answers.Quiz_4_3}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz_4_3: t }))}
-              />
-            </QuestionBlock>
-          )}
-          {step === "Quiz_4_4" && (
-            <QuestionBlock
-              title={`ข้อ 4.4) เลขใดอยู่ระหว่าง ${q4Qs[3].Min} และ ${q4Qs[3].Max}?`}
-              onNext={() => canProceed && setStep("Quiz_5_1")}
-              disabledNext={!canProceed}
-            >
-              <TextInput
-                style={styles.input}
-                placeholder={`เช่น 14`}
-                keyboardType="number-pad"
-                value={answers.Quiz_4_4}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz_4_4: t }))}
-              />
-            </QuestionBlock>
+          {/* Quiz_4: เกมตัวเลข 20 ปุ่ม (มาก → น้อย), ไม่บอกตัวถัดไป */}
+          {step === "Quiz_4" && (
+            <View style={{ marginBottom: 8 }}>
+              <Text style={styles.qTitle}>ข้อ 4) แตะตัวเลขเรียงจากมาก → น้อย</Text>
+              <Text style={styles.hint}>
+                เริ่มจากเลข:
+              </Text>
+              <Text style={styles.startBig}>{q4Start}</Text>
+
+              <View style={styles.gridWrap}>
+                {q4Buttons.map((n) => {
+                  const done = q4CorrectSet.has(n);
+                  const wrongBlink = q4WrongFlash.has(n);
+                  return (
+                    <TouchableOpacity
+                      key={n}
+                      style={[
+                        styles.gridBtn,
+                        done && styles.gridBtnDone,
+                        wrongBlink && styles.gridBtnWrong,
+                      ]}
+                      onPress={() => !done && onTapQ4(n)}
+                      disabled={done}
+                      activeOpacity={done ? 1 : 0.85}
+                    >
+                      <Text
+                        style={[
+                          styles.gridBtnText,
+                          done && styles.gridBtnTextDone,
+                          wrongBlink && styles.gridBtnTextWrong,
+                        ]}
+                      >
+                        {n}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={styles.rowBetween}>
+                <Text style={styles.statusText}>ผิดพลาด: <Text style={styles.bold}>{q4WrongCount}</Text> ครั้ง</Text>
+              </View>
+
+              <View style={{ width: "100%", marginTop: 8 }}>
+                <PrimaryButton label="ถัดไป" onPress={() => setStep("Quiz_5")} disabled={!q4Complete} />
+              </View>
+            </View>
           )}
 
-          {/* Quiz_5_1..4 : เดือนที่อยู่ระหว่าง */}
-          {step === "Quiz_5_1" && (
-            <QuestionBlock
-              title={`ข้อ 5.1) เดือนใดอยู่ระหว่าง "${monthNamesTh[q5Qs[0].Min - 1]}" และ "${monthNamesTh[q5Qs[0].Max - 1]}"?`}
-              hint="พิมพ์ได้ทั้งไทย/อังกฤษ/ตัวย่อ หรือเลข 1–12"
-              onNext={() => canProceed && setStep("Quiz_5_2")}
-              disabledNext={!canProceed}
-            >
-              <TextInput
-                style={styles.input}
-                placeholder={`เช่น สิงหาคม / Aug / 8`}
-                value={answers.Quiz_5_1}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz_5_1: t }))}
-              />
-            </QuestionBlock>
-          )}
-          {step === "Quiz_5_2" && (
-            <QuestionBlock
-              title={`ข้อ 5.2) เดือนใดอยู่ระหว่าง "${monthNamesTh[q5Qs[1].Min - 1]}" และ "${monthNamesTh[q5Qs[1].Max - 1]}"?`}
-              hint="พิมพ์ได้ทั้งไทย/อังกฤษ/ตัวย่อ หรือเลข 1–12"
-              onNext={() => canProceed && setStep("Quiz_5_3")}
-              disabledNext={!canProceed}
-            >
-              <TextInput
-                style={styles.input}
-                placeholder={`เช่น สิงหาคม / Aug / 8`}
-                value={answers.Quiz_5_2}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz_5_2: t }))}
-              />
-            </QuestionBlock>
-          )}
-          {step === "Quiz_5_3" && (
-            <QuestionBlock
-              title={`ข้อ 5.3) เดือนใดอยู่ระหว่าง "${monthNamesTh[q5Qs[2].Min - 1]}" และ "${monthNamesTh[q5Qs[2].Max - 1]}"?`}
-              hint="พิมพ์ได้ทั้งไทย/อังกฤษ/ตัวย่อ หรือเลข 1–12"
-              onNext={() => canProceed && setStep("Quiz_5_4")}
-              disabledNext={!canProceed}
-            >
-              <TextInput
-                style={styles.input}
-                placeholder={`เช่น สิงหาคม / Aug / 8`}
-                value={answers.Quiz_5_3}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz_5_3: t }))}
-              />
-            </QuestionBlock>
-          )}
-          {step === "Quiz_5_4" && (
-            <QuestionBlock
-              title={`ข้อ 5.4) เดือนใดอยู่ระหว่าง "${monthNamesTh[q5Qs[3].Min - 1]}" และ "${monthNamesTh[q5Qs[3].Max - 1]}"?`}
-              hint="พิมพ์ได้ทั้งไทย/อังกฤษ/ตัวย่อ หรือเลข 1–12"
-              onNext={() => canProceed && setStep("q6_read")}
-              disabledNext={!canProceed}
-            >
-              <TextInput
-                style={styles.input}
-                placeholder={`เช่น สิงหาคม / Aug / 8`}
-                value={answers.Quiz_5_4}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz_5_4: t }))}
-              />
-            </QuestionBlock>
+          {/* Quiz_5: เกมเดือน 12 ปุ่ม (เริ่มเดือนสุ่ม แล้วย้อนครบ 12), ไม่บอกเดือนถัดไป */}
+          {step === "Quiz_5" && (
+            <View style={{ marginBottom: 8 }}>
+              <Text style={styles.qTitle}>ข้อ 5) แตะชื่อเดือนเริ่มจากเดือนที่กำหนด แล้วย้อนกลับให้ครบ 12 เดือน</Text>
+              <Text style={styles.hint}>เริ่มจากเดือน:</Text>
+              <Text style={styles.startBig}>{monthNamesTh[q5StartMonth - 1]}</Text>
+
+              <View style={styles.gridWrap}>
+                {q5Buttons.map((b) => {
+                  const done = q5CorrectSet.has(b.num);
+                  const wrongBlink = q5WrongFlash.has(b.num);
+                  return (
+                    <TouchableOpacity
+                      key={b.num}
+                      style={[
+                        styles.gridBtn,
+                        done && styles.gridBtnDone,
+                        wrongBlink && styles.gridBtnWrong,
+                      ]}
+                      onPress={() => onTapQ5(b.num)}
+                      disabled={done}
+                      activeOpacity={done ? 1 : 0.85}
+                    >
+                      <Text
+                        style={[
+                          styles.gridBtnText,
+                          done && styles.gridBtnTextDone,
+                          wrongBlink && styles.gridBtnTextWrong,
+                        ]}
+                      >
+                        {b.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={styles.rowBetween}>
+                <Text style={styles.statusText}>คงเหลือ: <Text style={styles.bold}>{12 - q5Index}</Text> เดือน</Text>
+                <Text style={styles.statusText}>ผิดพลาด: <Text style={styles.bold}>{q5WrongCount}</Text> ครั้ง</Text>
+              </View>
+
+              <View style={{ width: "100%", marginTop: 8 }}>
+                <PrimaryButton label="ถัดไป" onPress={() => setStep("q6_read")} disabled={!q5Complete} />
+              </View>
+            </View>
           )}
 
           {/* Q6 - หน้าบทความ */}
@@ -564,8 +666,8 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
                 <Text style={styles.resultLine}>ข้อ 1 (ปี): {scores.Quiz_1} คะแนน</Text>
                 <Text style={styles.resultLine}>ข้อ 2 (เดือน): {scores.Quiz_2} คะแนน</Text>
                 <Text style={styles.resultLine}>ข้อ 3 (ชั่วโมง): {scores.Quiz_3} คะแนน</Text>
-                <Text style={styles.resultLine}>ข้อ 4 (เลขที่อยู่ระหว่าง): {scores.Quiz_4} คะแนน</Text>
-                <Text style={styles.resultLine}>ข้อ 5 (เดือนที่อยู่ระหว่าง): {scores.Quiz_5} คะแนน</Text>
+                <Text style={styles.resultLine}>ข้อ 4 (เกมตัวเลข): {scores.Quiz_4} คะแนน</Text>
+                <Text style={styles.resultLine}>ข้อ 5 (เกมเดือน): {scores.Quiz_5} คะแนน</Text>
                 <Text style={styles.resultLine}>ข้อ 6 (ที่อยู่): {scores.Quiz_6} คะแนน</Text>
                 <View style={styles.divider} />
                 <Text style={styles.totalText}>
@@ -578,8 +680,8 @@ export default function CognitiveTestScreen({ navigation, email, setEmail }) {
 
               {/* คำแนะนำตามระดับคะแนน */}
               <View style={styles.adviceCard}>
-                <Text style={styles.adviceTitle}>{advice.heading}</Text>
-                {advice.bullets.map((b, i) => (
+                <Text style={styles.adviceTitle}>{getAdvice(total).heading}</Text>
+                {getAdvice(total).bullets.map((b, i) => (
                   <Text key={i} style={styles.adviceItem}>• {b}</Text>
                 ))}
               </View>
@@ -638,6 +740,16 @@ const styles = StyleSheet.create({
   p: { fontSize: 16, marginBottom: 10, lineHeight: 22, color: "#111827" },
   qTitle: { fontSize: 18, fontWeight: "700", marginBottom: 8, color: "#111827" },
   hint: { fontSize: 13, color: "#9A3412", marginBottom: 8 },
+  bold: { fontWeight: "800", color: "#7C2D12" },
+
+  startBig: {
+    fontSize: 28,
+    fontWeight: "900",
+    color: "#7C2D12",
+    marginTop: -4,
+    marginBottom: 6,
+  },
+
   input: {
     borderWidth: 1, borderColor: "#FED7AA", padding: 12, borderRadius: 12, marginBottom: 12, backgroundColor: "#FFFBEB",
   },
@@ -670,6 +782,52 @@ const styles = StyleSheet.create({
   adviceCard: { marginTop: 12, backgroundColor: "#FFF7ED", borderWidth: 1, borderColor: "#FED7AA", borderRadius: 14, padding: 12 },
   adviceTitle: { fontSize: 16, fontWeight: "800", color: "#7C2D12", marginBottom: 6 },
   adviceItem: { fontSize: 14, color: "#7C2D12", lineHeight: 20, marginBottom: 4 },
+
+  /* --- ปุ่มกริดสำหรับ Q4/Q5 --- */
+  gridWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginTop: 6,
+  },
+  gridBtn: {
+    width: "31%",
+    marginBottom: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#FED7AA",
+    backgroundColor: "#FFF7ED",
+  },
+  gridBtnDone: {
+    backgroundColor: "#FDBA74",
+    borderColor: "#FB923C",
+  },
+  gridBtnWrong: {
+    backgroundColor: "#FEE2E2",
+    borderColor: "#EF4444",
+  },
+  gridBtnText: {
+    color: "#7C2D12",
+    fontWeight: "800",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  gridBtnTextDone: {
+    color: "#7C2D12",
+    opacity: 0.85,
+  },
+  gridBtnTextWrong: {
+    color: "#B91C1C",
+  },
+
+  rowBetween: {
+    marginTop: 2,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  statusText: { fontSize: 14, color: "#7C2D12", marginTop: 4 },
 });
 
 /** ----------------------- สีป้ายระดับ ----------------------- */

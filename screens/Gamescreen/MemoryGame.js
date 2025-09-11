@@ -10,6 +10,9 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { post } from "../../api";
+
+const AUTO_NEXT_DELAY = 1000;
 
 /* ===== THEME ===== */
 const ORANGE = {
@@ -31,10 +34,11 @@ const cardShadow = Platform.select({
   default: {},
 });
 
-export default function HiddenObjectGame() {
+export default function HiddenObjectGame({email}) {
   // phase: intro | play | result
   const [phase, setPhase] = useState("intro");
-
+  const [startTime, setStartTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
   // --- HITBOX DATA (ห้ามแก้) ---
   const allItems = [
     { id: "ชายชุดดำ", top: "11%", left: "90%", width: "10%", height: "14%" },
@@ -58,7 +62,21 @@ export default function HiddenObjectGame() {
     setItems(shuffled);
   };
 
+  const saveResult = async () => {
+    const data = await 
+    post({ 
+      action: "savegametime",
+      email: email.trim(), 
+      gameName: "เกมหาของในภาพ",
+      playTime: elapsedTime,
+      score: "ไม่มีคะเเนน",
+      total: 0,
+    });
+  };
+
   const startGame = () => {
+    setStartTime(Date.now());
+    setElapsedTime(0);
     shuffleItems();
     setPhase("play");
   };
@@ -72,12 +90,24 @@ export default function HiddenObjectGame() {
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, found: true } : item))
     );
+    setTimeout(() => {
+        const endTime = Date.now();
+        const durationMs = endTime - startTime;
+        const totalSeconds = Math.floor(durationMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const playTime = parseFloat(`${minutes}.${seconds.toString().padStart(2, "0")}`);
+        setElapsedTime(playTime.toFixed(2));
+    }, AUTO_NEXT_DELAY);
   };
 
   const allFound = items.length > 0 && items.every((item) => item.found);
 
   // เมื่อหาเจอครบ ให้ข้ามไปหน้า result ผ่าน useEffect (ไม่เปลี่ยน state ระหว่าง render)
   useEffect(() => {
+    if (phase === "result" && elapsedTime > 0) {
+      saveResult();
+    }
     if (phase === "play" && allFound) {
       setPhase("result");
     }

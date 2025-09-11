@@ -1,6 +1,7 @@
 // screens/Gamescreen/MatchGame.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Platform } from "react-native";
+import { post } from "../../api";
 
 // ===== ICONS =====
 // Expo:
@@ -83,7 +84,7 @@ const PressableScale = ({ style, onPress, disabled, children }) => {
 };
 
 /* ===== Screen ===== */
-export default function MatchGame() {
+export default function MatchGame({email}) {
   // phase: intro -> quiz -> result
   const [phase, setPhase] = useState("intro");
   const [questions, setQuestions] = useState(() => prepareRoundQuestions(BASE_QUESTIONS));
@@ -95,6 +96,9 @@ export default function MatchGame() {
   const timerRef = useRef(null);
   const lockRef = useRef(false);
 
+  const [startTime, setStartTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
   // progress + pulse เหมือนเกมแรก
   const progress = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(1)).current;
@@ -102,7 +106,21 @@ export default function MatchGame() {
   const current = questions[index];
   const correctCount = useMemo(() => answers.filter((a) => a.chosen === a.correctIndex).length, [answers]);
 
+  const saveResult = async () => {
+    const data = await 
+    post({ 
+      action: "savegametime",
+      email: email.trim(), 
+      gameName: "เกมจับคู่ความสัมพันธ์",
+      playTime: elapsedTime,
+      score: correctCount,
+      total: 0,
+    });
+  };
+
   const startGame = () => {
+    setStartTime(Date.now());
+    setElapsedTime(0);
     setQuestions(prepareRoundQuestions(BASE_QUESTIONS));
     setPhase("quiz");
     setIndex(0);
@@ -113,6 +131,9 @@ export default function MatchGame() {
 
   /* Timer ต่อข้อ */
   useEffect(() => {
+    if (phase === "result" && elapsedTime > 0) {
+        saveResult();
+    }
     if (phase !== "quiz") return;
     if (timerRef.current) clearInterval(timerRef.current);
     setTimeLeft(QUESTION_TIME);
@@ -163,6 +184,13 @@ export default function MatchGame() {
         setSelected(null);
         lockRef.current = false;
       } else {
+        const endTime = Date.now();
+        const durationMs = endTime - startTime;
+        const totalSeconds = Math.floor(durationMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const playTime = parseFloat(`${minutes}.${seconds.toString().padStart(2, "0")}`);
+        setElapsedTime(playTime.toFixed(2));
         setPhase("result");
         lockRef.current = false;
       }

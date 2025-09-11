@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, ScrollView } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
+import { post } from "../../api";
+
+const AUTO_NEXT_DELAY = 1000;
 
 function ScoreScreen({ score, total, onRestart, SetScreen }) {
   return (
@@ -78,10 +81,13 @@ function IntroScreen({ onStart }) {
       );
 }
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, email }) {
   const [phase, setPhase] = useState("intro"); // intro | quiz | result
   const [selected, setSelected] = useState({});
   const [showScore, setShowScore] = useState(false);
+
+  const [startTime, setStartTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const questions = [
     {
@@ -137,6 +143,15 @@ export default function HomeScreen({ navigation }) {
       setShowScore(true);
       setPhase("result");
     }
+    setTimeout(() => {
+        const endTime = Date.now();
+        const durationMs = endTime - startTime;
+        const totalSeconds = Math.floor(durationMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const playTime = parseFloat(`${minutes}.${seconds.toString().padStart(2, "0")}`);
+        setElapsedTime(playTime.toFixed(2));
+    }, AUTO_NEXT_DELAY);
   };
 
   const calculateScore = () => {
@@ -147,18 +162,45 @@ export default function HomeScreen({ navigation }) {
     return score;
   };
 
+  const saveResult = async () => {
+      const data = await 
+      post({ 
+        action: "savegametime",
+        email: email.trim(), 
+        gameName: "เกมจับคู่จำนวนกับภาพ",
+        playTime: elapsedTime,
+        score: calculateScore(),
+        total: 0,
+      });
+    };
+
   const handleRestart = () => {
+    setStartTime(Date.now());
+    setElapsedTime(0);
     setSelected({});
     setShowScore(false);
     setPhase("quiz");
   };
 
+  useEffect(() => {
+    if (phase === "result" && elapsedTime > 0) {
+      saveResult();
+    }
+  }, [phase]);
+
+
   const SetScreen = () => {
     navigation.navigate("MainTabs");
   };
 
+  const startGame = () => {
+    setStartTime(Date.now());
+    setElapsedTime(0);
+    setPhase("quiz");
+  };
+
   if (phase === "intro") {
-    return <IntroScreen onStart={() => setPhase("quiz")} />;
+    return <IntroScreen onStart={startGame} />;
   }
 
   if (phase === "result") {

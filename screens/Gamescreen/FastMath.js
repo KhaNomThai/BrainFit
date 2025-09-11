@@ -11,6 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
+import { post } from "../../api";
 
 /* ===== THEME ===== */
 const ORANGE = {
@@ -29,7 +30,7 @@ const RED = "#E74C3C";
 /* ===== CONFIG ===== */
 const TOTAL_QUESTIONS = 20;
 const SECONDS_PER_QUESTION = 20;
-const AUTO_NEXT_DELAY = 800; // หน่วงให้เห็นสีถูก/ผิดก่อนข้าม
+const AUTO_NEXT_DELAY = 1000; // หน่วงให้เห็นสีถูก/ผิดก่อนข้าม
 
 const cardShadow = Platform.select({
   ios: { shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
@@ -37,7 +38,7 @@ const cardShadow = Platform.select({
   default: {},
 });
 
-export default function FastMath() {
+export default function FastMath({email}) {
   // phase: intro | quiz | result
   const [phase, setPhase] = useState("intro");
 
@@ -49,6 +50,9 @@ export default function FastMath() {
   const [feedback, setFeedback] = useState(null); // ข้อความ ✓/✗
   const [answerState, setAnswerState] = useState(null); // "correct" | "wrong" | null
   const [gameOver, setGameOver] = useState(false);
+
+  const [startTime, setStartTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const total = useMemo(() => TOTAL_QUESTIONS, []);
 
@@ -66,7 +70,21 @@ export default function FastMath() {
     return q;
   };
 
+  const saveResult = async () => {
+      const data = await 
+      post({ 
+        action: "savegametime",
+        email: email.trim(), 
+        gameName: "เกมคณิตคิดเร็ว",
+        playTime: elapsedTime,
+        score: score,
+        total: 0,
+      });
+    };
+
   const startGame = () => {
+    setStartTime(Date.now());
+    setElapsedTime(0);
     setQuestions(generateQuestions());
     setPhase("quiz");
     setQuestionIndex(0);
@@ -80,6 +98,9 @@ export default function FastMath() {
 
   // จับเวลาต่อข้อ
   useEffect(() => {
+    if (phase === "result" && elapsedTime > 0) {
+      saveResult();
+    }
     if (phase !== "quiz") return;
     if (questionIndex >= total) {
       setGameOver(true);
@@ -110,6 +131,14 @@ export default function FastMath() {
       setFeedback(null);
       setAnswerState(null);
       setQuestionIndex((prev) => prev + 1);
+
+      const endTime = Date.now();
+      const durationMs = endTime - startTime;
+      const totalSeconds = Math.floor(durationMs / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      const playTime = parseFloat(`${minutes}.${seconds.toString().padStart(2, "0")}`);
+      setElapsedTime(playTime.toFixed(2));
     }, AUTO_NEXT_DELAY);
   };
 

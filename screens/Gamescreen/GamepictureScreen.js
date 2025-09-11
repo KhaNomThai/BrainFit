@@ -11,15 +11,21 @@ import {
   Dimensions
 } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
-const { width, height } = Dimensions.get("window");
+import { post } from "../../api";
 
-export default function GamepictureScreen({navigation}) {
+const { width, height } = Dimensions.get("window");
+const AUTO_NEXT_DELAY = 1000;
+
+export default function GamepictureScreen({navigation, email}) {
   const [screen, setScreen] = useState("home");
   const [gameQuestions, setGameQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState(null);
   const [timeLeft, setTimeLeft] = useState(5); // ⬅️ ย้ายขึ้นมาที่ top-level
+
+  const [startTime, setStartTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   // ===== โจทย์ทั้งหมด 10 ข้อ =====
   const allQuestions = [
@@ -40,8 +46,22 @@ export default function GamepictureScreen({navigation}) {
     return [...array].sort(() => Math.random() - 0.5);
   }
 
+  const saveResult = async () => {
+      const data = await 
+      post({ 
+        action: "savegametime",
+        email: email.trim(), 
+        gameName: "เกมจำภาพ",
+        playTime: elapsedTime,
+        score: score,
+        total: 0,
+      });
+    };
+
   // ===== เริ่มเกม: สุ่ม 4 ข้อ =====
   const startGame = () => {
+    setStartTime(Date.now());
+    setElapsedTime(0);
     setScore(0);
     const shuffled = shuffle(allQuestions).slice(0, 4);
     setGameQuestions(shuffled);
@@ -60,8 +80,10 @@ export default function GamepictureScreen({navigation}) {
       setSelected(null);
       setTimeLeft(5); // reset timer
       setScreen("memory");
+      
     } else {
       setScreen("score");
+      saveResult();
     }
   };
 
@@ -157,7 +179,14 @@ export default function GamepictureScreen({navigation}) {
       const isCorrect = index === question.answer;
       setTimeout(() => {
         nextQuestion(isCorrect);
-      }, 1200);
+        const endTime = Date.now();
+        const durationMs = endTime - startTime;
+        const totalSeconds = Math.floor(durationMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const playTime = parseFloat(`${minutes}.${seconds.toString().padStart(2, "0")}`);
+        setElapsedTime(playTime.toFixed(2));
+      }, AUTO_NEXT_DELAY);
     };
 
     const getBorderColor = (index) => {

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from "react-native";
 import { Audio } from "expo-audio";
 import { Ionicons } from "@expo/vector-icons";
+import { post } from "../../api";
 
 const GREEN = "#10B981";
 const RED = "#EF4444";
@@ -31,10 +32,10 @@ function generateChoices(correctAnswer) {
   return shuffleArray([correctAnswer, ...randomWrongs]);
 }
 
-const AUTO_NEXT_DELAY = 800;
+const AUTO_NEXT_DELAY = 1000;
 const MAX_ROUNDS = 5;
 
-export default function SoundRecognize() {
+export default function SoundRecognize({email}) {
   const [phase, setPhase] = useState("intro");
   const [currentSound, setCurrentSound] = useState(null);
   const [round, setRound] = useState(1);
@@ -44,16 +45,22 @@ export default function SoundRecognize() {
   const [isCorrect, setIsCorrect] = useState(null);
   const [history, setHistory] = useState([]);
 
+  const [startTime, setStartTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
   const soundRef = useRef(null);
 
   // cleanup sound when unmount
   useEffect(() => {
+    if (phase === "result" && elapsedTime > 0) {
+      saveResult();
+    }
     return () => {
       if (soundRef.current) {
         soundRef.current.unloadAsync();
       }
     };
-  }, []);
+  }, [phase]);
 
   const playSound = async () => {
     try {
@@ -73,7 +80,21 @@ export default function SoundRecognize() {
     }
   };
 
+  const saveResult = async () => {
+      const data = await 
+      post({ 
+        action: "savegametime",
+        email: email.trim(), 
+        gameName: "เกมฟังเสียง",
+        playTime: elapsedTime,
+        score: score,
+        total: 0,
+      });
+    };
+  
   const startGame = () => {
+    setStartTime(Date.now());
+    setElapsedTime(0);
     const first = sounds[Math.floor(Math.random() * sounds.length)];
     setCurrentSound(first);
     setChoices(generateChoices(first.answer));
@@ -87,6 +108,13 @@ export default function SoundRecognize() {
 
   const goNext = () => {
     if (round >= MAX_ROUNDS) {
+      const endTime = Date.now();
+      const durationMs = endTime - startTime;
+      const totalSeconds = Math.floor(durationMs / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      const playTime = parseFloat(`${minutes}.${seconds.toString().padStart(2, "0")}`);
+      setElapsedTime(playTime.toFixed(2));
       setPhase("result");
       return;
     }
@@ -106,7 +134,9 @@ export default function SoundRecognize() {
     setHistory((h) => [...h, { answer: currentSound.answer, chosen: choice, correct: ok }]);
     if (ok) setScore((s) => s + 1);
 
-    setTimeout(goNext, AUTO_NEXT_DELAY);
+    setTimeout(
+      goNext, 
+    AUTO_NEXT_DELAY);
   };
 
   // ----- UI -----

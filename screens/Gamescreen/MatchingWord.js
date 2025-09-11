@@ -1,7 +1,8 @@
 // screens/Gamescreen/Catchword.js
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
+import { post } from "../../api";
 
 // ===== THEME =====
 const ORANGE = {
@@ -16,7 +17,7 @@ const ORANGE = {
 const NEUTRAL = { bg: "#FFFDF9", line: "#F0E7DC", card: "#FFFFFF" };
 
 // หน่วงเวลาหลังเลือก (ms) เพื่อให้เห็นสีถูก/ผิดก่อนข้าม
-const AUTO_NEXT_DELAY = 900;
+const AUTO_NEXT_DELAY = 1000;
 
 // ===== Helper =====
 const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
@@ -117,7 +118,7 @@ function buildQuestion(item) {
 }
 
 // ===== Component =====
-export default function Matchingword({ navigation }) {
+export default function Matchingword({ navigation, email }) {
   const [phase, setPhase] = useState("intro");
 
   // เลือก “10 ข้อแบบสุ่ม” ตอน mount + ผูก choices ให้เรียบร้อย
@@ -131,14 +132,35 @@ export default function Matchingword({ navigation }) {
   const [picked, setPicked] = useState(null);
   const [isCorrect, setIsCorrect] = useState(null);
 
+  const [startTime, setStartTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
   const total = QUESTIONS.length;
   const q = QUESTIONS[index];
   const choices = q.choices; // สุ่มครั้งเดียวตอนสร้างคำถาม (ลดกระพริบ/สับสน)
 
+  const saveResult = async () => {
+    const data = await 
+    post({ 
+      action: "savegametime",
+      email: email.trim(), 
+      gameName: "เกมจับคู่คำกับอิโมจิ",
+      playTime: elapsedTime,
+      score: score,
+      total: 0,
+    });
+  };
+
+  const GameStartTime = () => {
+    setStartTime(Date.now());
+    setElapsedTime(0);
+    setPhase("quiz");
+  };
+
+  // เลือกคำตอบ
   const choose = (emoji) => {
     if (picked) return;
     const ok = emoji === q.correct;
-
     setPicked(emoji);
     setIsCorrect(ok);
     if (ok) setScore((s) => s + 1);
@@ -149,13 +171,27 @@ export default function Matchingword({ navigation }) {
         setPicked(null);
         setIsCorrect(null);
       } else {
+        const endTime = Date.now();
+        const durationMs = endTime - startTime;
+        const totalSeconds = Math.floor(durationMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const playTime = parseFloat(`${minutes}.${seconds.toString().padStart(2, "0")}`);
+        setElapsedTime(playTime.toFixed(2));
         setPhase("result");
       }
     }, AUTO_NEXT_DELAY);
   };
 
+  useEffect(() => {
+    if (phase === "result" && elapsedTime > 0) {
+      saveResult();
+    }
+  }, [phase]);
+
   const restart = () => {
-    // เริ่มใหม่ด้วยการสุ่ม “ชุด 10 ข้อ” ใหม่ทั้งหมด
+    setStartTime(Date.now());
+    setElapsedTime(0);
     setIndex(0);
     setScore(0);
     setPicked(null);
@@ -194,7 +230,7 @@ export default function Matchingword({ navigation }) {
           </View>
 
           <View style={styles.introActions}>
-            <TouchableOpacity style={styles.primaryBtn} onPress={() => setPhase("quiz")}>
+            <TouchableOpacity style={styles.primaryBtn} onPress={GameStartTime}>
               <Text style={styles.primaryBtnText}>เริ่มเกม</Text>
             </TouchableOpacity>
           </View>
@@ -262,9 +298,9 @@ export default function Matchingword({ navigation }) {
           </View>
 
           <View style={styles.resultActionsCenter}>
-            <TouchableOpacity style={styles.secondaryBtn} onPress={() => setPhase("intro")}>
+            {/* <TouchableOpacity style={styles.secondaryBtn} onPress={() => setPhase("intro")}>
               <Text style={styles.secondaryBtnText}>กลับหน้าเริ่ม</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             <TouchableOpacity style={styles.primaryBtn} onPress={restart}>
               <Text style={styles.primaryBtnText}>เล่นอีกครั้ง (สุ่มใหม่)</Text>
             </TouchableOpacity>

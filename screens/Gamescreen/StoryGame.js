@@ -1,6 +1,7 @@
 // screens/Gamescreen/StoryGame.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, Platform } from "react-native";
+import { post } from "../../api";
 
 // ===== ICONS =====
 // Expo:     import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
@@ -29,7 +30,7 @@ const STATE = {
 
 /* ===== CONFIG ===== */
 const QUESTION_TIME = 30;
-const AUTO_NEXT_DELAY = 600;
+const AUTO_NEXT_DELAY = 1000;
 const SHUFFLE_CHOICES = true;
 
 /* ===== ใช้ 5 เรื่อง (แก้เนื้อหาเองได้) ===== */
@@ -432,7 +433,7 @@ const PressableScale = ({ style, onPress, disabled, children }) => {
 };
 
 /* ===== MAIN ===== */
-export default function StoryGame() {
+export default function StoryGame({email}) {
   // phase: intro -> story -> quiz -> result
   const [phase, setPhase] = useState("intro");
   const [story, setStory] = useState(() => STORIES[Math.floor(Math.random() * STORIES.length)]);
@@ -447,6 +448,9 @@ export default function StoryGame() {
 
   const progress = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(1)).current;
+
+  const [startTime, setStartTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const current = questions[index];
 
@@ -502,8 +506,24 @@ export default function StoryGame() {
     }
   }, [phase, timeLeft, pulse]);
 
+  const saveResult = async () => {
+    const data = await 
+    post({ 
+      action: "savegametime",
+      email: email.trim(), 
+      gameName: "เกมเล่าเรื่องเเล้วถาม",
+      playTime: elapsedTime,
+      score: correctCount,
+      total: 0,
+    });
+  };
+
   /* FLOW */
-  const goStory = () => setPhase("story");
+  const goStory = () => {
+    setStartTime(Date.now());
+    setElapsedTime(0);
+    setPhase("story");
+  };
   const startQuiz = () => {
     setPhase("quiz");
     setIndex(0);
@@ -522,7 +542,15 @@ export default function StoryGame() {
         setSelected(null);
         lockRef.current = false;
         resetTimer();
+        const endTime = Date.now();
+        const durationMs = endTime - startTime;
+        const totalSeconds = Math.floor(durationMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const playTime = parseFloat(`${minutes}.${seconds.toString().padStart(2, "0")}`);
+        setElapsedTime(playTime.toFixed(2));
       } else {
+        saveResult();
         setPhase("result");
         lockRef.current = false;
       }
@@ -540,6 +568,8 @@ export default function StoryGame() {
   );
 
   const replaySame = () => {
+    setStartTime(Date.now());
+    setElapsedTime(0);
     setPhase("story");
     setIndex(0);
     setSelected(null);
@@ -549,6 +579,8 @@ export default function StoryGame() {
   };
 
   const replayNew = () => {
+    setStartTime(Date.now());
+    setElapsedTime(0);
     const next = STORIES[Math.floor(Math.random() * STORIES.length)];
     setStory(next);
     setQuestions(prepareRoundQuestions(next.qas));

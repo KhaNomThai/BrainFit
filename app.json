@@ -26,11 +26,6 @@
     "web": {
       "favicon": "./assets/icon.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "6778e11d-983c-4140-b44f-5e8f18e30d9b"
-      }
-    },
     "plugins": [
       "expo-audio"
     ]

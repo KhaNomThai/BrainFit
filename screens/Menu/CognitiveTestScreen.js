@@ -5,6 +5,30 @@ import {
 } from "react-native";
 import { post } from "../../api";
 
+/** ----------------------- Q6 Question Bank ----------------------- */
+const Q6_BANK = [
+  { name: "อนันต์", surname: "อยู่ดี", number: "15", street: "มาลัย", province: "สุพรรณบุรี" },
+  { name: "กาญจนา", surname: "ดำรงค์", number: "89", street: "นางพญา", province: "พิษณุโลก" },
+  { name: "วรชัย", surname: "ยั่งยืน", number: "42", street: "สวรรค์วิถี", province: "นครสวรรค์" },
+  { name: "ปาณิตา", surname: "อยู่เย็น", number: "30", street: "พระปิ่นเกล้า", province: "กรุงเทพมหานคร" },
+  { name: "ฐากูร", surname: "รุ่งเรือง", number: "79", street: "เจริญเมือง", province: "เชียงใหม่" },
+  { name: "ณรงค์", surname: "ก้าวหน้า", number: "52", street: "พระรามหก", province: "กรุงเทพมหานคร" },
+  { name: "จิราภา", surname: "อยู่มั่น", number: "12", street: "บรมราชชนนี", province: "นครปฐม" },
+  { name: "ธีรพงษ์", surname: "เจริญสุข", number: "21", street: "อินทวโรรส", province: "ลำปาง" },
+  { name: "วิไล", surname: "รื่นรมย์", number: "93", street: "เทพประสิทธิ์", province: "ชลบุรี" },
+  { name: "กิตติ", surname: "มั่งมี", number: "10", street: "รามคำแหง", province: "กรุงเทพมหานคร" },
+  { name: "ปรีชา", surname: "รุ่งเรือง", number: "67", street: "สรรพสิทธิ์", province: "อุบลราชธานี" },
+  { name: "สมชาย", surname: "อยู่ดีมีสุข", number: "82", street: "กลางเมือง", province: "ขอนแก่น" },
+  { name: "อาทิตย์", surname: "ไพบูลย์", number: "76", street: "โพศรี", province: "อุดรธานี" },
+  { name: "พีรภพ", surname: "ตั้งตรง", number: "23", street: "สุริยวงศ์", province: "สุรินทร์" },
+  { name: "สมเกียรติ", surname: "อุดมผล", number: "34", street: "หน้าสถานี", province: "นครราชสีมา" },
+  { name: "อารีย์", surname: "เพิ่มพูน", number: "19", street: "ราชการุญ", province: "พิจิตร" },
+  { name: "นพดล", surname: "พิพัฒน์", number: "27", street: "สีหราชเดโชชัย", province: "พิษณุโลก" },
+  { name: "ปาริชาติ", surname: "ศรีสวัสดิ์", number: "71", street: "ราชดำเนิน", province: "พระนครศรีอยุธยา" },
+  { name: "ธนกร", surname: "สายชล", number: "34", street: "จอมพล", province: "ขอนแก่น" },
+  { name: "วุฒิพงษ์", surname: "วัฒนชัย", number: "56", street: "มหาราช", province: "สงขลา" },
+];
+
 /** Helpers */
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const shuffle = (arr) => {
@@ -43,13 +67,16 @@ export default function CognitiveTestScreen({ navigation, email }) {
     Q5_StartMonth: 0,
     Q5_ExpectedSeq: [],
     Q5_Taps: [],
-    // Q6
+    // Q6 (คำตอบผู้ใช้)
     Quiz6_Name: "",
     Quiz6_Surname: "",
     Quiz6_Number: "",
     Quiz6_Street: "",
     Quiz6_Province: "",
   });
+
+  // โจทย์ที่สุ่มได้สำหรับ Q6
+  const [q6Item, setQ6Item] = useState(null);
 
   // คะแนน
   const [scores, setScores] = useState({ Quiz_1: 0, Quiz_2: 0, Quiz_3: 0, Quiz_4: 0, Quiz_5: 0, Quiz_6: 0 });
@@ -89,7 +116,7 @@ export default function CognitiveTestScreen({ navigation, email }) {
   };
 
   /** ----------------------- Q4: เกมกดเลข 20 ปุ่ม (เรียงจากมาก → น้อย) ----------------------- */
-  // เริ่มเลขให้ "ใหญ่ขึ้นหน่อย" จากเดิม 20–100 → ปรับเป็น 60–150 (เปลี่ยนได้ตามต้องการ)
+  // เริ่มเลข 20–100 (ตามที่กำหนดล่าสุด)
   const [q4Start, setQ4Start] = useState(0);
   const [q4Buttons, setQ4Buttons] = useState([]);
   const [q4Next, setQ4Next] = useState(0);          // internal (ไม่แสดง)
@@ -120,7 +147,7 @@ export default function CognitiveTestScreen({ navigation, email }) {
 
   const initQ4 = () => {
     const start = randInt(20, 100);
-    const seqDesc = Array.from({ length: 20 }, (_, i) => start - i); // มาก → น้อย (start, start-1, ... start-19)
+    const seqDesc = Array.from({ length: 20 }, (_, i) => start - i); // มาก → น้อย
     const seqShuffled = shuffle([...seqDesc]);
     setQ4Start(start);
     setQ4Buttons(seqShuffled);
@@ -189,7 +216,7 @@ export default function CognitiveTestScreen({ navigation, email }) {
   const initQ5 = () => {
     const start = randInt(1, 12);
     const seq = [];
-    for (let i = 0; i < 12; i++) seq.push(wrapMonth(start - i)); // เริ่ม start แล้วย้อนหลัง
+    for (let i = 0; i < 12; i++) seq.push(wrapMonth(start - i)); // เริ่ม start แล้วย้อนหลัง 12 เดือน
     const btns = shuffle(
       Array.from({ length: 12 }, (_, i) => ({ num: i + 1, label: monthNamesTh[i] }))
     );
@@ -230,10 +257,18 @@ export default function CognitiveTestScreen({ navigation, email }) {
     }
   };
 
-  /** ----------------------- สุ่ม Q4/Q5 เมื่อเริ่มรอบ ----------------------- */
+  /** ----------------------- Q6: สุ่มโจทย์เมื่อเริ่มรอบ ----------------------- */
+  const initQ6 = () => {
+    const item = Q6_BANK[randInt(0, Q6_BANK.length - 1)];
+    setQ6Item(item);
+    // ไม่ต้องรีเซ็ตคำตอบของผู้ใช้ที่ช่อง Q6 ใน init รอบ (resetRound จะจัดการ)
+  };
+
+  /** ----------------------- สุ่ม Q4/Q5/Q6 เมื่อเริ่มรอบ ----------------------- */
   useEffect(() => {
     initQ4();
     initQ5();
+    initQ6();
   }, [roundId]);
 
   /** ----------------------- Cleanup timers ----------------------- */
@@ -264,14 +299,16 @@ export default function CognitiveTestScreen({ navigation, email }) {
   };
   const scoreFromWrong = (wrong) => (wrong === 0 ? 0 : wrong === 1 ? 2 : 4);
 
-  const scoreQ6 = ({ name, surname, number, street, province }) => {
+  // ให้คะแนน Q6 โดยเทียบกับโจทย์ที่สุ่ม (q6Item)
+  const scoreQ6 = (user, expected) => {
+    if (!expected) return 10; // กันพลาด
     let errors = 0;
-    if (normalize(name) !== "สมหมาย") errors++;
-    if (normalize(surname) !== "ยืนคง") errors++;
-    if (normalizeNumber(number) !== "27") errors++;
-    if (normalize(street) !== "ศรีอุทัย") errors++;
-    if (normalize(province) !== "สุพรรณบุรี") errors++;
-    return errors * 2;
+    if (normalize(user.name) !== normalize(expected.name)) errors++;
+    if (normalize(user.surname) !== normalize(expected.surname)) errors++;
+    if (normalizeNumber(user.number) !== normalizeNumber(expected.number)) errors++;
+    if (normalize(user.street) !== normalize(expected.street)) errors++;
+    if (normalize(user.province) !== normalize(expected.province)) errors++;
+    return errors * 2; // 0/2/4/6/8/10
   };
 
   const getLevel = (sum) =>
@@ -327,13 +364,16 @@ export default function CognitiveTestScreen({ navigation, email }) {
     const Sum_Quiz_3 = scoreQuiz_3(answers.Quiz_3);
     const Sum_Quiz_4 = scoreFromWrong(q4WrongCount);
     const Sum_Quiz_5 = scoreFromWrong(q5WrongCount);
-    const Sum_Quiz_6 = scoreQ6({
-      name: answers.Quiz6_Name,
-      surname: answers.Quiz6_Surname,
-      number: answers.Quiz6_Number,
-      street: answers.Quiz6_Street,
-      province: answers.Quiz6_Province,
-    });
+    const Sum_Quiz_6 = scoreQ6(
+      {
+        name: answers.Quiz6_Name,
+        surname: answers.Quiz6_Surname,
+        number: answers.Quiz6_Number,
+        street: answers.Quiz6_Street,
+        province: answers.Quiz6_Province,
+      },
+      q6Item
+    );
 
     const newScores = {
       Quiz_1: Sum_Quiz_1,
@@ -363,6 +403,7 @@ export default function CognitiveTestScreen({ navigation, email }) {
         takenAtDeviceTime: nowISO,
         q4Generated: { start: q4Start, expected: answers.Q4_ExpectedSeq, shuffled: q4Buttons },
         q5Generated: { startMonth: q5StartMonth, expected: answers.Q5_ExpectedSeq, shuffled: q5Buttons },
+        q6Generated: q6Item, // << บันทึกโจทย์ที่ใช้จริง
       });
 
       if (data?.success) setStep("review");
@@ -411,8 +452,9 @@ export default function CognitiveTestScreen({ navigation, email }) {
     setScores({ Quiz_1: 0, Quiz_2: 0, Quiz_3: 0, Quiz_4: 0, Quiz_5: 0, Quiz_6: 0 });
     setTotal(0);
     setLevel("");
+    setQ6Item(null);
     setNow(new Date());
-    setRoundId((r) => r + 1); // trigger initQ4/initQ5 ใหม่
+    setRoundId((r) => r + 1); // trigger initQ4/initQ5/initQ6 ใหม่
     setStep("intro");
   };
 
@@ -508,9 +550,7 @@ export default function CognitiveTestScreen({ navigation, email }) {
           {step === "Quiz_4" && (
             <View style={{ marginBottom: 8 }}>
               <Text style={styles.qTitle}>ข้อ 4) แตะตัวเลขเรียงจากมาก → น้อย</Text>
-              <Text style={styles.hint}>
-                เริ่มจากเลข:
-              </Text>
+              <Text style={styles.hint}>เริ่มจากเลข:</Text>
               <Text style={styles.startBig}>{q4Start}</Text>
 
               <View style={styles.gridWrap}>
@@ -606,7 +646,10 @@ export default function CognitiveTestScreen({ navigation, email }) {
             <View>
               <Text style={styles.qTitle}>ข้อ 6) อ่านแล้วจำรายละเอียด</Text>
               <Text style={styles.quote}>
-                “คุณสมหมาย ยืนคง อยู่บ้านเลขที่ 27 ถนนศรีอุทัย จังหวัดสุพรรณบุรี”
+                {/* ถ้ายังไม่สุ่มได้ ให้แสดง ... กันว่าง */}
+                {q6Item
+                  ? `“คุณ${q6Item.name} ${q6Item.surname} อยู่บ้านเลขที่ ${q6Item.number} ถนน${q6Item.street} จังหวัด${q6Item.province}”`
+                  : "…"}
               </Text>
               <Text style={[styles.hint, { marginBottom: 12 }]}>
                 เมื่อพร้อมกด “เริ่มตอบข้อ 6” และจะไม่สามารถย้อนกลับมาหน้านี้ได้
@@ -680,8 +723,8 @@ export default function CognitiveTestScreen({ navigation, email }) {
 
               {/* คำแนะนำตามระดับคะแนน */}
               <View style={styles.adviceCard}>
-                <Text style={styles.adviceTitle}>{getAdvice(total).heading}</Text>
-                {getAdvice(total).bullets.map((b, i) => (
+                <Text style={styles.adviceTitle}>{advice.heading}</Text>
+                {advice.bullets.map((b, i) => (
                   <Text key={i} style={styles.adviceItem}>• {b}</Text>
                 ))}
               </View>

@@ -1,86 +1,71 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, ScrollView, ImageBackground } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { post } from "../../api";
 
 const AUTO_NEXT_DELAY = 1000;
 
+/* ---------------------- Result Screen (UI ใหม่) ---------------------- */
 function ScoreScreen({ score, total, onRestart, SetScreen }) {
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>🎉 เกมจบแล้ว 🎉</Text>
-      <Text style={styles.subtitle}>คะแนน ({score} / {total})</Text>
+    <View style={styles.resultWrap}>
+      <View style={styles.resultCard}>
+        <Icon name="trophy" size={40} color={ORANGE.primaryDark} style={{ marginBottom: 12 }} />
+        <Text style={styles.resultTitle}>เกมจบแล้ว!</Text>
+        <Text style={styles.resultScore}>{score} / {total}</Text>
 
-      <TouchableOpacity style={styles.button} onPress={onRestart}>
-        <Text style={styles.buttonText}>เล่นใหม่อีกครั้ง</Text>
-      </TouchableOpacity>
+        <View style={styles.resultActions}>
+          <TouchableOpacity style={styles.primaryBtn} onPress={onRestart} activeOpacity={0.9}>
+            <Text style={styles.primaryBtnText}>เล่นใหม่อีกครั้ง</Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button1} onPress={SetScreen}>
-        <Text style={styles.buttonText1}>กลับหน้าหลัก</Text>
-      </TouchableOpacity>
+          <TouchableOpacity style={styles.secondaryBtn} onPress={SetScreen} activeOpacity={0.9}>
+            <Text style={styles.secondaryBtnText}>กลับหน้าหลัก</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
 
+/* ---------------------- Intro Screen (สไตล์การ์ดโทนส้ม) ---------------------- */
 function IntroScreen({ onStart }) {
-  // return (
-  //   <ScrollView contentContainerStyle={styles.introWrap}>
-  //     <View style={styles.introCard}>
-  //       <View style={styles.introRow}>
-  //         <Icon name="book-outline" size={28} color={ORANGE.primaryDark} />
-  //         <Text style={styles.introText}>จับคู่ตัวเลขกับจำนวนรูปภาพที่ถูกต้อง</Text>
-  //       </View>
-  //       <View style={styles.introRow}>
-  //         <Icon name="gesture-tap" size={28} color={ORANGE.primaryDark} />
-  //         <Text style={styles.introText}>แตะตัวเลือกเพื่อตอบ</Text>
-  //       </View>
-  //     </View>
-
-  //     <TouchableOpacity style={styles.primaryBtn} onPress={onStart}>
-  //       <Text style={styles.primaryBtnText}>เริ่มเกม</Text>
-  //     </TouchableOpacity>
-  //   </ScrollView>
-  // );
   return (
-        <>
-          <View style={styles.topbar}>
-            <View style={styles.topbarContent}>
-              <Icon
-                name="emoticon-outline"
-                size={26}
-                color={ORANGE.primaryDark}
-                style={{ marginRight: 8 }}
-              />
-              <Text style={styles.topbarTitle}>จับคู่ตัวเลขกับจำนวนรูปภาพที่ถูกต้อง</Text>
-            </View>
+    <>
+      <View className="topbar" style={styles.topbar}>
+        <View style={styles.topbarContent}>
+          <Icon name="emoticon-outline" size={26} color={ORANGE.primaryDark} style={{ marginRight: 8 }} />
+          <Text style={styles.topbarTitle}>จับคู่ตัวเลขกับจำนวนรูปภาพที่ถูกต้อง</Text>
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.introWrap} showsVerticalScrollIndicator={false}>
+        <View style={styles.introCard}>
+          <View style={styles.introRow}>
+            <Icon name="book-outline" size={26} color={ORANGE.primaryDark} />
+            <Text style={styles.introText}>ดูตัวเลขที่กำหนดให้แล้วเลือกรูปที่มีจำนวนเท่ากับตัวเลข</Text>
           </View>
-  
-          <ScrollView contentContainerStyle={styles.introWrap} showsVerticalScrollIndicator={false}>
-            <View style={styles.introCard}>
-              <View style={styles.introRow}>
-                <Icon name="book-outline" size={26} color={ORANGE.primaryDark} />
-                <Text style={styles.introText}>ดูตัวเลขที่กำหนดให้แล้วเลือกรูปที่มีจำนวนเท่ากับตัวเลข</Text>
-              </View>
-              <View style={styles.introRow}>
-                <Icon name="gesture-tap" size={26} color={ORANGE.primaryDark} />
-                <Text style={styles.introText}>แตะตัวเลือก เพื่อเลือกคำตอบ</Text>
-              </View>
-              <View style={styles.introRow}>
-                <Icon name="check-circle-outline" size={26} color={ORANGE.okBd} />
-                <Text style={styles.introText}>ตอบถูก = กรอบ/พื้นหลังสีเขียว, ตอบผิด = กรอบ/พื้นหลังสีแดง</Text>
-              </View>
-            </View>
-  
-            <View style={styles.introActions}>
-              <TouchableOpacity style={styles.primaryBtn} onPress={onStart}>
-                <Text style={styles.primaryBtnText}>เริ่มเกม</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </>
-      );
+          <View style={styles.introRow}>
+            <Icon name="gesture-tap" size={26} color={ORANGE.primaryDark} />
+            <Text style={styles.introText}>แตะตัวเลือก เพื่อเลือกคำตอบ</Text>
+          </View>
+          <View style={styles.introRow}>
+            <Icon name="check-circle-outline" size={26} color={ORANGE.okBd} />
+            <Text style={styles.introText}>ตอบถูก = กรอบ/พื้นหลังสีเขียว, ตอบผิด = กรอบ/พื้นหลังสีแดง</Text>
+          </View>
+        </View>
+
+        <View style={styles.introActions}>
+          <TouchableOpacity style={styles.primaryBtn} onPress={onStart} activeOpacity={0.9}>
+            <Text style={styles.primaryBtnText}>เริ่มเกม</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </>
+  );
 }
 
+/* ---------------------- Main Game Screen ---------------------- */
 export default function HomeScreen({ navigation, email }) {
   const [phase, setPhase] = useState("intro"); // intro | quiz | result
   const [selected, setSelected] = useState({});
@@ -144,13 +129,13 @@ export default function HomeScreen({ navigation, email }) {
       setPhase("result");
     }
     setTimeout(() => {
-        const endTime = Date.now();
-        const durationMs = endTime - startTime;
-        const totalSeconds = Math.floor(durationMs / 1000);
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        const playTime = parseFloat(`${minutes}.${seconds.toString().padStart(2, "0")}`);
-        setElapsedTime(playTime.toFixed(2));
+      const endTime = Date.now();
+      const durationMs = endTime - startTime;
+      const totalSeconds = Math.floor(durationMs / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      const playTime = parseFloat(`${minutes}.${seconds.toString().padStart(2, "0")}`);
+      setElapsedTime(playTime.toFixed(2));
     }, AUTO_NEXT_DELAY);
   };
 
@@ -163,16 +148,15 @@ export default function HomeScreen({ navigation, email }) {
   };
 
   const saveResult = async () => {
-      const data = await 
-      post({ 
-        action: "savegametime",
-        email: email.trim(), 
-        gameName: "เกมจับคู่จำนวนกับภาพ",
-        playTime: elapsedTime,
-        score: calculateScore(),
-        total: 0,
-      });
-    };
+    const data = await post({
+      action: "savegametime",
+      email: email.trim(),
+      gameName: "เกมจับคู่จำนวนกับภาพ",
+      playTime: elapsedTime,
+      score: calculateScore(),
+      total: 0,
+    });
+  };
 
   const handleRestart = () => {
     setStartTime(Date.now());
@@ -187,7 +171,6 @@ export default function HomeScreen({ navigation, email }) {
       saveResult();
     }
   }, [phase]);
-
 
   const SetScreen = () => {
     navigation.navigate("MainTabs");
@@ -274,6 +257,7 @@ export default function HomeScreen({ navigation, email }) {
   );
 }
 
+/* ---------------------- Theme & Styles ---------------------- */
 const ORANGE = {
   primary: "#FF8A1F",
   primaryDark: "#E67700",
@@ -297,30 +281,18 @@ const cardShadow = Platform.select({
 });
 
 const styles = StyleSheet.create({
-  card: { 
-    flex: 1, 
-    justifyContent: "center", 
-    alignItems: "center", 
-    paddingVertical: 20, 
+  /* Quiz screen container */
+  card: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+    backgroundColor: NEUTRAL.bg,
   },
-  title: { 
-    color: "#000", 
-    fontSize: 25, 
-    fontWeight: "900", 
-    marginBottom: 20, 
-  },
-  subtitle1: { 
-    color: "#000", 
-    fontSize: 20, 
-    fontWeight: "400", 
-    marginBottom: 5, 
-  },
-  subtitle2: { 
-    color: "#000", 
-    fontSize: 20, 
-    fontWeight: "400", 
-    marginBottom: 30, 
-  },
+  title: { color: "#000", fontSize: 25, fontWeight: "900", marginBottom: 20 },
+  subtitle1: { color: "#000", fontSize: 20, fontWeight: "400", marginBottom: 5 },
+  subtitle2: { color: "#000", fontSize: 20, fontWeight: "400", marginBottom: 30 },
+
   card1: {
     width: 330,
     height: 120,
@@ -345,62 +317,38 @@ const styles = StyleSheet.create({
     top: "75%",
     transform: [{ translateY: -30 }],
   },
-  point: { 
-    color: "#000", 
-    fontSize: 25, 
-    fontWeight: "900", 
-  },
-  choicesRow: { 
-    flexDirection: "row", 
-    justifyContent: "space-between", 
-    width: "95%", 
-    left: 5, 
-    marginBottom: 5, 
-    marginTop: 5, 
-  },
-  choice: { 
-    width: 130, 
-    height: 45, 
-    borderRadius: 10, 
-    backgroundColor: "#fff", 
-    alignItems: "center", 
-    justifyContent: "center", 
-  },
-  image: { 
-    width: "90%", 
-    height: 60, 
-  },
-  subtitle: { 
-    color: "#000", 
-    fontSize: 20, 
-    fontWeight: "400", 
-    marginBottom: 30, 
-  },
-  button: {
-    backgroundColor: "#fea468ff",
-    paddingVertical: 15,
-    paddingHorizontal: 25,
-    borderRadius: 10,
-    marginBottom: 0, 
-  },
-  buttonText: {
-    fontSize: 18,
-    color: "#fff",
-    fontWeight: "500",
-  },
-  button1: {
-    backgroundColor: "#ffffffff",
-    paddingVertical: 15,
-    paddingHorizontal: 25,
-    borderRadius: 10,
-  },
-  buttonText1: {
-    fontSize: 16,
-    color: "#000000ff",
-    fontWeight: "400",
-  },
+  point: { color: "#000", fontSize: 25, fontWeight: "900" },
 
-  // Topbar
+  choicesRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "95%",
+    left: 5,
+    marginBottom: 5,
+    marginTop: 5,
+  },
+  choice: {
+    width: 130,
+    height: 45,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  image: { width: "90%", height: 60 },
+
+  /* Buttons (shared) */
+  primaryBtn: {
+    backgroundColor: ORANGE.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 12,
+    alignItems: "center",
+    ...cardShadow,
+  },
+  primaryBtnText: { fontSize: 18, fontWeight: "600", color: "#fff" },
+
+  /* Intro */
   topbar: {
     paddingTop: 14,
     paddingBottom: 14,
@@ -412,19 +360,7 @@ const styles = StyleSheet.create({
   topbarContent: { flexDirection: "row", alignItems: "center", alignSelf: "center", maxWidth: "92%" },
   topbarTitle: { fontSize: 24, fontWeight: "900", color: ORANGE.textMain, textAlign: "center", flexShrink: 1 },
 
-  primaryBtn: {
-    backgroundColor: ORANGE.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 12,
-    alignItems: "center",
-    ...cardShadow,
-  },
-  primaryBtnText: { fontSize: 18, fontWeight: "600", color: "#fff" },
-
-
-  // Intro
-  introWrap: { padding: 18, alignItems: "center" },
+  introWrap: { padding: 18, alignItems: "center", backgroundColor: NEUTRAL.bg },
   introCard: {
     backgroundColor: NEUTRAL.card,
     borderRadius: 18,
@@ -437,4 +373,36 @@ const styles = StyleSheet.create({
   introRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
   introText: { fontSize: 18, color: ORANGE.textSub, flexShrink: 1, lineHeight: 26 },
   introActions: { marginTop: 14, gap: 10, alignItems: "center", width: "100%" },
+
+  /* Result (new) */
+  resultWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: NEUTRAL.bg,
+    padding: 20,
+  },
+  resultCard: {
+    backgroundColor: NEUTRAL.card,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: ORANGE.border,
+    padding: 24,
+    alignItems: "center",
+    width: "90%",
+    ...cardShadow,
+  },
+  resultTitle: { fontSize: 24, fontWeight: "800", color: ORANGE.textMain, marginBottom: 6 },
+  resultScore: { fontSize: 28, fontWeight: "900", color: ORANGE.primaryDark, marginBottom: 20 },
+  resultActions: { width: "100%", gap: 12, marginTop: 10 },
+  secondaryBtn: {
+    borderWidth: 2,
+    borderColor: ORANGE.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  secondaryBtnText: { fontSize: 16, fontWeight: "600", color: ORANGE.primary },
 });

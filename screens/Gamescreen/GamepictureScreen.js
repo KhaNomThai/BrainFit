@@ -6,9 +6,9 @@ import {
   ImageBackground,
   Image,
   TouchableOpacity,
-  Platform, 
+  Platform,
   ScrollView,
-  Dimensions
+  Dimensions,
 } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { post } from "../../api";
@@ -16,13 +16,35 @@ import { post } from "../../api";
 const { width, height } = Dimensions.get("window");
 const AUTO_NEXT_DELAY = 1000;
 
-export default function GamepictureScreen({navigation, email}) {
-  const [screen, setScreen] = useState("home");
+const ORANGE = {
+  primary: "#FF8A1F",
+  primaryDark: "#E67700",
+  light: "#FFE7CC",
+  pale: "#FFF6EC",
+  border: "#FFD2A3",
+  textMain: "#1F1300",
+  textSub: "#4A3726",
+  okBd: "#1DBF73",
+};
+const NEUTRAL = { bg: "#FFFDF9", line: "#F0E7DC", card: "#FFFFFF" };
+const cardShadow = Platform.select({
+  ios: {
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  android: { elevation: 2 },
+  default: {},
+});
+
+export default function GamepictureScreen({ navigation, email }) {
+  const [screen, setScreen] = useState("home"); // home | memory | choice | score
   const [gameQuestions, setGameQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(5); // ⬅️ ย้ายขึ้นมาที่ top-level
+  const [timeLeft, setTimeLeft] = useState(5);
 
   const [startTime, setStartTime] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -47,18 +69,21 @@ export default function GamepictureScreen({navigation, email}) {
   }
 
   const saveResult = async () => {
-      const data = await 
-      post({ 
+    try {
+      await post({
         action: "savegametime",
-        email: email.trim(), 
+        email: email?.trim?.() ?? "",
         gameName: "เกมจำภาพ",
         playTime: elapsedTime,
-        score: score,
+        score,
         total: 0,
       });
-    };
+    } catch (e) {
+      // เงียบไว้ก่อน / หรือจะแจ้งเตือนก็ได้
+    }
+  };
 
-  // ===== เริ่มเกม: สุ่ม 4 ข้อ =====
+  // เริ่มเกม: สุ่ม 4 ข้อ
   const startGame = () => {
     setStartTime(Date.now());
     setElapsedTime(0);
@@ -66,92 +91,75 @@ export default function GamepictureScreen({navigation, email}) {
     const shuffled = shuffle(allQuestions).slice(0, 4);
     setGameQuestions(shuffled);
     setCurrentIndex(0);
-    setTimeLeft(5); // reset timer
+    setTimeLeft(5);
+    setSelected(null);
     setScreen("memory");
   };
 
-  // ไปข้อถัดไป
   const nextQuestion = (isCorrect) => {
-    if (isCorrect) {
-      setScore((prev) => prev + 1);
-    }
+    if (isCorrect) setScore((prev) => prev + 1);
+
     if (currentIndex + 1 < gameQuestions.length) {
       setCurrentIndex((prev) => prev + 1);
       setSelected(null);
-      setTimeLeft(5); // reset timer
+      setTimeLeft(5);
       setScreen("memory");
-      
     } else {
       setScreen("score");
       saveResult();
     }
   };
 
-  // ใช้ effect จัดการ countdown timer เมื่ออยู่ใน memory screen
+  // จัดการ countdown ตอนหน้า memory
   useEffect(() => {
-    if (screen === "memory") {
-      if (timeLeft === 0) {
-        setScreen("choice");
-        return;
-      }
-      const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
-      return () => clearInterval(timer);
+    if (screen !== "memory") return;
+    if (timeLeft === 0) {
+      setScreen("choice");
+      return;
     }
+    const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
+    return () => clearInterval(timer);
   }, [timeLeft, screen]);
 
   /* ------------------------- Home ------------------------- */
   if (screen === "home") {
-    // return (
-    //   <View style={styles.container}>
-    //     <Text style={styles.title}>เกมจำรูปภาพ</Text>
-    //     <Text style={styles.subtitle}>สุ่มมาเล่น 4 ข้อ จากทั้งหมด 10 ข้อ</Text>
-    //     <TouchableOpacity style={styles.button} onPress={startGame}>
-    //       <Text style={styles.buttonText}>เริ่มเกม</Text>
-    //     </TouchableOpacity>
-    //   </View>
-    // );
     return (
-            <>
-              <View style={styles.topbar}>
-                <View style={styles.topbarContent}>
-                  <Icon
-                    name="emoticon-outline"
-                    size={26}
-                    color={ORANGE.primaryDark}
-                    style={{ marginRight: 8 }}
-                  />
-                  <Text style={styles.topbarTitle}>เกมจำรูปภาพ</Text>
-                </View>
-              </View>
-      
-              <ScrollView contentContainerStyle={styles.introWrap} showsVerticalScrollIndicator={false}>
-                <View style={styles.introCard}>
-                  <View style={styles.introRow}>
-                    <Icon name="book-outline" size={26} color={ORANGE.primaryDark} />
-                    <Text style={styles.introText}>สุ่มมาเล่น 4 ข้อ จากทั้งหมด 10 ข้อ</Text>
-                  </View>
-                  <View style={styles.introRow}>
-                    <Icon name="timer-outline" size={26} color={ORANGE.primaryDark} />
-                    <Text style={styles.introText}>จำตำแหน่งตัวการ์ตูนที่อยู่ในภาพ โดยมีเวลาในการจำ 5 วินาที แล้วเลือกคำตอบ</Text>
-                  </View>
-                  <View style={styles.introRow}>
-                    <Icon name="gesture-tap" size={26} color={ORANGE.primaryDark} />
-                    <Text style={styles.introText}>แตะเลือกรูปภาพที่ตำแหน่งตัวการ์ตูนตรงกับภาพที่ให้จำ</Text>
-                  </View>
-                  <View style={styles.introRow}>
-                    <Icon name="check-circle-outline" size={26} color={ORANGE.okBd} />
-                    <Text style={styles.introText}>ตอบถูก = กรอบ/พื้นหลังสีเขียว, ตอบผิด = กรอบ/พื้นหลังสีแดง </Text>
-                  </View>
-                </View>
-      
-                <View style={styles.introActions}>
-                  <TouchableOpacity style={styles.primaryBtn} onPress={startGame}>
-                    <Text style={styles.primaryBtnText}>เริ่มเกม</Text>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </>
-          );
+      <>
+        <View style={styles.topbar}>
+          <View style={styles.topbarContent}>
+            <Icon name="emoticon-outline" size={26} color={ORANGE.primaryDark} style={{ marginRight: 8 }} />
+            <Text style={styles.topbarTitle}>เกมจำรูปภาพ</Text>
+          </View>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.introWrap} showsVerticalScrollIndicator={false}>
+          <View style={styles.introCard}>
+            <View style={styles.introRow}>
+              <Icon name="book-outline" size={26} color={ORANGE.primaryDark} />
+              <Text style={styles.introText}>สุ่มมาเล่น 4 ข้อ จากทั้งหมด 10 ข้อ</Text>
+            </View>
+            <View style={styles.introRow}>
+              <Icon name="timer-outline" size={26} color={ORANGE.primaryDark} />
+              <Text style={styles.introText}>จำตำแหน่งตัวการ์ตูนที่อยู่ในภาพ มีเวลา 5 วินาที แล้วเลือกคำตอบ</Text>
+            </View>
+            <View style={styles.introRow}>
+              <Icon name="gesture-tap" size={26} color={ORANGE.primaryDark} />
+              <Text style={styles.introText}>แตะเลือกรูปภาพที่ตำแหน่งตัวการ์ตูนตรงกับภาพที่ให้จำ</Text>
+            </View>
+            <View style={styles.introRow}>
+              <Icon name="check-circle-outline" size={26} color={ORANGE.okBd} />
+              <Text style={styles.introText}>ตอบถูก = กรอบ/พื้นหลังสีเขียว, ตอบผิด = กรอบ/พื้นหลังสีแดง</Text>
+            </View>
+          </View>
+
+          <View style={styles.introActions}>
+            <TouchableOpacity style={styles.primaryBtn} onPress={startGame} activeOpacity={0.9}>
+              <Text style={styles.primaryBtnText}>เริ่มเกม</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </>
+    );
   }
 
   /* ------------------------- Memory ------------------------- */
@@ -177,6 +185,7 @@ export default function GamepictureScreen({navigation, email}) {
     const handleChoice = (index) => {
       setSelected(index);
       const isCorrect = index === question.answer;
+
       setTimeout(() => {
         nextQuestion(isCorrect);
         const endTime = Date.now();
@@ -203,17 +212,8 @@ export default function GamepictureScreen({navigation, email}) {
           <Text style={styles.title}>เลือกรูปที่ถูกต้อง</Text>
           <View style={styles.choicesContainer}>
             {question.choices.map((choice, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => selected === null && handleChoice(index)}
-              >
-                <Image
-                  source={choice}
-                  style={[
-                    styles.choiceImg,
-                    { borderColor: getBorderColor(index) },
-                  ]}
-                />
+              <TouchableOpacity key={index} onPress={() => selected === null && handleChoice(index)}>
+                <Image source={choice} style={[styles.choiceImg, { borderColor: getBorderColor(index) }]} />
               </TouchableOpacity>
             ))}
           </View>
@@ -222,23 +222,29 @@ export default function GamepictureScreen({navigation, email}) {
     );
   }
 
-  /* ------------------------- Score ------------------------- */
+  /* ------------------------- Score (UI โทนส้ม + การ์ด) ------------------------- */
   if (screen === "score") {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>🎉 จบเกมแล้ว 🎉</Text>
-        <Text style={styles.scoreText}>
-          ได้คะแนน {score} / {gameQuestions.length}
-        </Text>
-        <TouchableOpacity style={styles.button} onPress={startGame}>
-          <Text style={styles.buttonText}>เล่นใหม่อีกครั้ง</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.buttonOutline}
-          onPress={() => navigation.navigate("MainTabs")}
-        >
-          <Text style={styles.buttonOutlineText}>กลับหน้าหลัก</Text>
-        </TouchableOpacity>
+      <View style={styles.resultWrap}>
+        <View style={styles.resultCard}>
+          <Icon name="trophy" size={40} color={ORANGE.primaryDark} style={{ marginBottom: 12 }} />
+          <Text style={styles.resultTitle}>เกมจบแล้ว!</Text>
+          <Text style={styles.resultScore}>{score} / {gameQuestions.length}</Text>
+
+          <View style={styles.resultActions}>
+            <TouchableOpacity style={styles.primaryBtn} onPress={startGame} activeOpacity={0.9}>
+              <Text style={styles.primaryBtnText}>เล่นใหม่อีกครั้ง</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.secondaryBtn}
+              onPress={() => navigation.navigate("MainTabs")}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.secondaryBtnText}>กลับหน้าหลัก</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     );
   }
@@ -246,51 +252,9 @@ export default function GamepictureScreen({navigation, email}) {
   return null;
 }
 
-const ORANGE = {
-  primary: "#FF8A1F",
-  primaryDark: "#E67700",
-  light: "#FFE7CC",
-  pale: "#FFF6EC",
-  border: "#FFD2A3",
-  textMain: "#1F1300",
-  textSub: "#4A3726",
-  okBd: "#1DBF73",
-};
-const NEUTRAL = { bg: "#FFFDF9", line: "#F0E7DC", card: "#FFFFFF" };
-const cardShadow = Platform.select({
-  ios: {
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  android: { elevation: 2 },
-  default: {},
-});
-
-
 /* ------------------------- Styles ------------------------- */
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  title: { fontSize: 25, fontWeight: "800", marginBottom: 20 },
-  subtitle: { fontSize: 18, marginBottom: 30 },
-  button: {
-    backgroundColor: "#fea468",
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-  buttonText: { fontSize: 18, color: "#fff", fontWeight: "600" },
-  buttonOutline: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#333",
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 10,
-  },
-  buttonOutlineText: { fontSize: 18, color: "#333" },
+  // Quiz card (memory/choice)
   card: {
     width: width * 0.9,
     minHeight: height * 0.55,
@@ -303,8 +267,10 @@ const styles = StyleSheet.create({
     marginTop: height * 0.05,
     ...cardShadow,
   },
-  timer: { fontSize: 20, color: "red", marginBottom: 10 },
-  pic: { width: 280, height: 280, marginTop: 20 },
+  title: { fontSize: 25, fontWeight: "800", marginBottom: 12, color: ORANGE.textMain },
+  timer: { fontSize: 18, color: "#E03131", marginBottom: 10 },
+  pic: { width: 280, height: 280, marginTop: 10 },
+
   choicesContainer: { alignItems: "center" },
   choiceImg: {
     width: 250,
@@ -314,9 +280,8 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     marginTop: 10,
   },
-  scoreText: { fontSize: 22, fontWeight: "600", marginBottom: 30 },
 
-// Topbar
+  // Topbar + Intro
   topbar: {
     paddingTop: 14,
     paddingBottom: 14,
@@ -328,19 +293,7 @@ const styles = StyleSheet.create({
   topbarContent: { flexDirection: "row", alignItems: "center", alignSelf: "center", maxWidth: "92%" },
   topbarTitle: { fontSize: 24, fontWeight: "900", color: ORANGE.textMain, textAlign: "center", flexShrink: 1 },
 
-  primaryBtn: {
-    backgroundColor: ORANGE.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 12,
-    alignItems: "center",
-    ...cardShadow,
-  },
-  primaryBtnText: { fontSize: 18, fontWeight: "600", color: "#fff" },
-
-
-  // Intro
-  introWrap: { padding: 18, alignItems: "center" },
+  introWrap: { padding: 18, alignItems: "center", backgroundColor: NEUTRAL.bg },
   introCard: {
     backgroundColor: NEUTRAL.card,
     borderRadius: 18,
@@ -353,4 +306,48 @@ const styles = StyleSheet.create({
   introRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
   introText: { fontSize: 18, color: ORANGE.textSub, flexShrink: 1, lineHeight: 26 },
   introActions: { marginTop: 14, gap: 10, alignItems: "center", width: "100%" },
+
+  // Shared primary button
+  primaryBtn: {
+    backgroundColor: ORANGE.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 12,
+    alignItems: "center",
+    ...cardShadow,
+  },
+  primaryBtnText: { fontSize: 18, fontWeight: "600", color: "#fff" },
+
+  // Result screen
+  resultWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: NEUTRAL.bg,
+    padding: 20,
+  },
+  resultCard: {
+    backgroundColor: NEUTRAL.card,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: ORANGE.border,
+    padding: 24,
+    alignItems: "center",
+    width: "90%",
+    ...cardShadow,
+  },
+  resultTitle: { fontSize: 24, fontWeight: "800", color: ORANGE.textMain, marginBottom: 6 },
+  resultScore: { fontSize: 28, fontWeight: "900", color: ORANGE.primaryDark, marginBottom: 20 },
+  resultActions: { width: "100%", gap: 12, marginTop: 10 },
+
+  secondaryBtn: {
+    borderWidth: 2,
+    borderColor: ORANGE.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  secondaryBtnText: { fontSize: 16, fontWeight: "600", color: ORANGE.primary },
 });

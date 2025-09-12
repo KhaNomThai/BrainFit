@@ -15,13 +15,13 @@ export default function MainTabs({ email, setEmail }) {
     headerShown: false,
     tabBarShowLabel: true,
     tabBarLabelStyle: {
-      fontSize: 18,          // ใหญ่ขึ้นชัดเจน
+      fontSize: 18,
       fontWeight: "700",
-      marginBottom: 10,      // ขยับ label ขึ้นจากขอบล่าง
+      marginBottom: 10,
     },
     // ทำให้ "ลอย" + ใหญ่ขึ้น
     tabBarStyle: {
-      height: 100,                 // สูงขึ้นอีก
+      height: 100,
       position: "absolute",
       left: 16,
       right: 16,

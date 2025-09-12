@@ -21,13 +21,23 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.cpe.Brain_Fit"
+      "package": "com.cpe.Brain_Fit",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-audio"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5ba672f7-9ed7-4155-952b-2a79ee0d5dc3"
+      }
+    },
+    "owner": "khanomthai"
   }
 }

@@ -19,8 +19,8 @@ const NEUTRAL = { bg: "#FFFDF9", line: "#F0E7DC", card: "#FFFFFF" };
 // หน่วงเวลาหลังเลือก (ms) เพื่อให้เห็นสีถูก/ผิดก่อนข้าม
 const AUTO_NEXT_DELAY = 1000;
 
-// ===== Helper =====
-const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+/* ===== Helper ===== */
+const shuffle = (arr) => [...arr].sort(() => Math.random() - Math.random());
 const sampleN = (arr, n) => shuffle(arr).slice(0, n);
 
 // กลุ่ม emoji ที่ “คล้ายกันเกินไป” จะถูกกันไม่ให้สุ่มมาเป็นตัวหลอก
@@ -66,15 +66,13 @@ const FULL_BANK = [
   { word: "วาฬ", correct: "🐋" },
   { word: "ภูเขา", correct: "⛰️" },
   { word: "กระทะ", correct: "🍳" },
-  { word: "ห้องสมุด", correct: "📚" },
-  // ไม่มี emoji มะละกอ → ใช้ 🥭 (แทนผลไม้โทนใกล้เคียง)
-  { word: "มะละกอ", correct: "🥭" },
+  { word: "สมุด", correct: "📚" },
+  { word: "มะม่วง", correct: "🥭" },
   { word: "เตียงนอน", correct: "🛏️" },
   { word: "ค้อน", correct: "🔨" },
   { word: "ชาวนา", correct: "👨‍🌾" },
-  { word: "ตลาด", correct: "🛍️" },
   { word: "กระโปรง", correct: "👗" },
-  { word: "น้ำตก", correct: "🌊" },
+  { word: "คลื่นน้ำ", correct: "🌊" },
   { word: "ก๋วยเตี๋ยว", correct: "🍜" },
   { word: "นาฬิกา", correct: "⏰" },
   { word: "บาสเกตบอล", correct: "🏀" },
@@ -82,18 +80,16 @@ const FULL_BANK = [
   { word: "กรรไกร", correct: "✂️" },
   { word: "ผีเสื้อ", correct: "🦋" },
   { word: "เครื่องบิน", correct: "✈️" },
-  { word: "เครื่องปรุงรส", correct: "🧂" },
+  { word: "เครื่องปรุง", correct: "🧂" },
   { word: "รองเท้า", correct: "👟" },
   { word: "ปลาหมึก", correct: "🦑" },
   { word: "พยาบาล", correct: "👩‍⚕️" },
   { word: "แจกัน", correct: "🏺" },
-  { word: "หมอน", correct: "🛏️" }, // ไม่มีหมอนเฉพาะ ใช้เตียง
   { word: "รถบรรทุก", correct: "🚚" },
   { word: "ไฟฉาย", correct: "🔦" },
   { word: "กวาง", correct: "🦌" },
   { word: "เสื้อ", correct: "👕" },
   { word: "นักเรียน", correct: "👩‍🎓" },
-  { word: "วัด", correct: "⛩️" },
   { word: "ต้มยำกุ้ง", correct: "🍲" },
   { word: "จักรยาน", correct: "🚲" },
   { word: "ต้นไม้", correct: "🌳" },
@@ -106,7 +102,7 @@ const FULL_BANK = [
 
 // สร้างตัวเลือก 4 ตัว (ถูก 1 + หลอก 3) โดยกันของคล้ายเกินไป
 function buildChoices(correct) {
-  const ban = similarSetOf(correct);    // emoji ที่คล้าย (รวมตัวมันเอง)
+  const ban = similarSetOf(correct);
   const pool = DISTRACTOR_POOL.filter((e) => !ban.has(e));
   const distractors = sampleN(pool, 3);
   return shuffle([correct, ...distractors]);
@@ -117,14 +113,15 @@ function buildQuestion(item) {
   return { ...item, choices: buildChoices(item.correct) };
 }
 
-// ===== Component =====
+/* ===== Component ===== */
 export default function Matchingword({ navigation, email }) {
   const [phase, setPhase] = useState("intro");
+  const [runId, setRunId] = useState(0); // เปลี่ยนค่านี้เพื่อสุ่มชุดใหม่ทุกครั้ง
 
-  // เลือก “10 ข้อแบบสุ่ม” ตอน mount + ผูก choices ให้เรียบร้อย
+  // เลือก “10 ข้อแบบสุ่ม” + ผูก choices ให้เรียบร้อย ทุกครั้งที่ runId เปลี่ยน
   const QUESTIONS = useMemo(
     () => shuffle(FULL_BANK).slice(0, 10).map(buildQuestion),
-    []
+    [runId]
   );
 
   const [index, setIndex] = useState(0);
@@ -140,20 +137,28 @@ export default function Matchingword({ navigation, email }) {
   const choices = q.choices; // สุ่มครั้งเดียวตอนสร้างคำถาม (ลดกระพริบ/สับสน)
 
   const saveResult = async () => {
-    const data = await 
-    post({ 
-      action: "savegametime",
-      email: email.trim(), 
-      gameName: "เกมจับคู่คำกับอิโมจิ",
-      playTime: elapsedTime,
-      score: score,
-      total: 0,
-    });
+    try {
+      await post({
+        action: "savegametime",
+        email: (email || "").trim(),
+        gameName: "เกมจับคู่คำกับอิโมจิ",
+        playTime: elapsedTime,
+        score: score,
+        total: total, // ✅ ส่งค่าจริง
+      });
+    } catch (e) {
+      console.warn("saveResult error:", e);
+    }
   };
 
   const GameStartTime = () => {
+    setRunId((v) => v + 1);       // ✅ สุ่มชุดคำถามใหม่
     setStartTime(Date.now());
     setElapsedTime(0);
+    setIndex(0);
+    setScore(0);
+    setPicked(null);
+    setIsCorrect(null);
     setPhase("quiz");
   };
 
@@ -177,7 +182,7 @@ export default function Matchingword({ navigation, email }) {
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
         const playTime = parseFloat(`${minutes}.${seconds.toString().padStart(2, "0")}`);
-        setElapsedTime(playTime.toFixed(2));
+        setElapsedTime(Number(playTime.toFixed(2)));
         setPhase("result");
       }
     }, AUTO_NEXT_DELAY);
@@ -187,9 +192,10 @@ export default function Matchingword({ navigation, email }) {
     if (phase === "result" && elapsedTime > 0) {
       saveResult();
     }
-  }, [phase]);
+  }, [phase, elapsedTime]);
 
   const restart = () => {
+    setRunId((v) => v + 1);       // ✅ สุ่มชุดคำถามใหม่
     setStartTime(Date.now());
     setElapsedTime(0);
     setIndex(0);
@@ -230,7 +236,7 @@ export default function Matchingword({ navigation, email }) {
           </View>
 
           <View style={styles.introActions}>
-            <TouchableOpacity style={styles.primaryBtn} onPress={GameStartTime}>
+            <TouchableOpacity style={styles.primaryBtn} onPress={GameStartTime} activeOpacity={0.9}>
               <Text style={styles.primaryBtnText}>เริ่มเกม</Text>
             </TouchableOpacity>
           </View>
@@ -254,8 +260,8 @@ export default function Matchingword({ navigation, email }) {
           <View
             style={[
               styles.questionBox,
-              picked && isCorrect === true && { borderColor: "#2ecc71", backgroundColor: "#d4f8e8" },
-              picked && isCorrect === false && { borderColor: "#e74c3c", backgroundColor: "#ffe3e3" },
+              picked && isCorrect === true && { borderColor: "#1DBF73", backgroundColor: "#c6f6d5" },
+              picked && isCorrect === false && { borderColor: "#e11d48", backgroundColor: "#ffe4e6" },
             ]}
           >
             <Text style={styles.word}>{q.word}</Text>
@@ -265,7 +271,7 @@ export default function Matchingword({ navigation, email }) {
           <View style={styles.choicesGrid}>
             {choices.map((em, i) => {
               const isPicked = picked === em;
-              let bg = "#f2f2f2";
+              let bg = "#f9f9f9";
               if (isPicked && isCorrect === true) bg = "#2ecc71";
               if (isPicked && isCorrect === false) bg = "#e74c3c";
               return (
@@ -273,7 +279,7 @@ export default function Matchingword({ navigation, email }) {
                   key={i}
                   style={[styles.choice, { backgroundColor: bg }]}
                   onPress={() => choose(em)}
-                  activeOpacity={0.85}
+                  activeOpacity={0.9}
                 >
                   <Text style={styles.choiceEmoji}>{em}</Text>
                 </TouchableOpacity>
@@ -298,15 +304,13 @@ export default function Matchingword({ navigation, email }) {
           </View>
 
           <View style={styles.resultActionsCenter}>
-            {/* <TouchableOpacity style={styles.secondaryBtn} onPress={() => setPhase("intro")}>
-              <Text style={styles.secondaryBtnText}>กลับหน้าเริ่ม</Text>
-            </TouchableOpacity> */}
-            <TouchableOpacity style={styles.primaryBtn} onPress={restart}>
+            <TouchableOpacity style={styles.primaryBtn} onPress={restart} activeOpacity={0.9}>
               <Text style={styles.primaryBtnText}>เล่นอีกครั้ง (สุ่มใหม่)</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.primaryBtn, { backgroundColor: "#8e8e8e" }]}
               onPress={() => navigation?.goBack?.()}
+              activeOpacity={0.9}
             >
               <Text style={styles.primaryBtnText}>กลับเมนูเกม</Text>
             </TouchableOpacity>
@@ -317,7 +321,7 @@ export default function Matchingword({ navigation, email }) {
   );
 }
 
-/* ===== Styles (เหมือนเดิม) ===== */
+/* ===== Styles ===== */
 const cardShadow = Platform.select({
   ios: { shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
   android: { elevation: 2 },
@@ -326,12 +330,16 @@ const cardShadow = Platform.select({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: NEUTRAL.bg },
+
+  // Topbar
   topbar: {
     paddingTop: 14, paddingBottom: 14, paddingHorizontal: 16,
     backgroundColor: NEUTRAL.card, borderBottomWidth: 1, borderBottomColor: NEUTRAL.line,
   },
   topbarContent: { flexDirection: "row", alignItems: "center", alignSelf: "center", maxWidth: "92%" },
   topbarTitle: { fontSize: 26, fontWeight: "900", color: ORANGE.textMain, textAlign: "center", flexShrink: 1 },
+
+  // Intro
   introWrap: { padding: 18, alignItems: "center" },
   introCard: {
     backgroundColor: NEUTRAL.card, borderRadius: 18, borderWidth: 2, borderColor: ORANGE.border,
@@ -341,29 +349,42 @@ const styles = StyleSheet.create({
   introText: { fontSize: 18, color: ORANGE.textSub, flexShrink: 1, lineHeight: 26 },
   introActions: { marginTop: 14, gap: 10, alignItems: "center", width: "100%" },
   primaryBtn: {
-    backgroundColor: ORANGE.primary, paddingVertical: 18, paddingHorizontal: 26,
-    borderRadius: 14, minWidth: 240, alignItems: "center", ...cardShadow,
+    backgroundColor: ORANGE.primary, paddingVertical: 20, paddingHorizontal: 28,
+    borderRadius: 16, minWidth: 260, alignItems: "center", ...cardShadow,
   },
-  primaryBtnText: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
-  headerRow: { width: "100%", flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
-  badge: { backgroundColor: ORANGE.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
-  badgeText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-  badgeOutline: { borderWidth: 2, borderColor: ORANGE.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
-  badgeOutlineText: { color: ORANGE.primary, fontWeight: "700", fontSize: 16 },
+  primaryBtnText: { color: "#FFFFFF", fontSize: 22, fontWeight: "900", letterSpacing: 0.3 },
+
+  // Quiz 
+  headerRow: {
+    width: "100%", flexDirection: "row", justifyContent: "space-between", marginBottom: 10,
+  },
+  badge: {
+    backgroundColor: ORANGE.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,
+  },
+  badgeText: { color: "#fff", fontWeight: "800", fontSize: 18 },
+  badgeOutline: {
+    borderWidth: 2, borderColor: ORANGE.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,
+  },
+  badgeOutlineText: { color: ORANGE.primary, fontWeight: "800", fontSize: 18 },
+
   questionBox: {
-    borderWidth: 3, borderColor: ORANGE.primary, borderRadius: 16,
-    padding: 20, marginTop: 16, marginBottom: 20, backgroundColor: "#fff", width: "100%", alignItems: "center",
+    borderWidth: 3, borderColor: ORANGE.primary, borderRadius: 18,
+    padding: 24, marginTop: 18, marginBottom: 22, backgroundColor: "#fff", width: "100%", alignItems: "center",
   },
-  word: { fontSize: 42, fontWeight: "800", color: "#222", textAlign: "center" },
+  word: { fontSize: 48, fontWeight: "900", color: "#1A1A1A", textAlign: "center" },
+
   choicesGrid: {
-    width: "90%", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", marginBottom: 20,
+    width: "100%", flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", paddingHorizontal:20,marginBottom: 20,
   },
   choice: {
-    width: "44%", aspectRatio: 1, borderRadius: 20, justifyContent: "center", alignItems: "center",
-    backgroundColor: "#f2f2f2", margin: 8, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 6,
+    width: "45%", aspectRatio: 1, borderRadius: 22, justifyContent: "center", alignItems: "center",
+    backgroundColor: "#f9f9f9", marginBottom: 10,
+    shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 6,
     shadowOffset: { width: 0, height: 4 }, elevation: 3,
   },
-  choiceEmoji: { fontSize: 40, textAlign: "center" },
+  choiceEmoji: { fontSize: 64, lineHeight: 70, textAlign: "center" },
+
+  // Result
   resultWrap: { padding: 18, paddingTop: 36, alignItems: "center" },
   resultCard: {
     backgroundColor: NEUTRAL.card, borderRadius: 18, borderWidth: 2, borderColor: ORANGE.border,
@@ -373,6 +394,7 @@ const styles = StyleSheet.create({
   resultScore: { fontSize: 18, color: ORANGE.textSub, marginTop: 6, marginBottom: 12 },
   resultBar: { width: "100%", height: 12, backgroundColor: ORANGE.pale, borderRadius: 999, overflow: "hidden" },
   resultFill: { height: "100%", backgroundColor: "#1DBF73" },
+
   resultActionsCenter: { width: "100%", gap: 12, alignItems: "center" },
   secondaryBtn: {
     backgroundColor: ORANGE.light, paddingVertical: 16, paddingHorizontal: 22,

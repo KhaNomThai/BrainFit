@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { post, isEmail } from "../../api";
@@ -14,8 +13,20 @@ import { post, isEmail } from "../../api";
 export default function ForgotPasswordRequestScreen({ navigation, email, setEmail }) {
   const [loading, setLoading] = useState(false);
 
+  // ✅ state error สำหรับ email
+  const [emailError, setEmailError] = useState("");
+
   const handleRequestOtp = async () => {
-    if (!isEmail(email)) return Alert.alert("อีเมลไม่ถูกต้อง");
+    setEmailError("");
+
+    if (!email) {
+      setEmailError("กรุณากรอกอีเมล");
+      return;
+    }
+    if (!isEmail(email)) {
+      setEmailError("อีเมลไม่ถูกต้อง");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -26,14 +37,13 @@ export default function ForgotPasswordRequestScreen({ navigation, email, setEmai
       setLoading(false);
 
       if (res.success) {
-        Alert.alert("ส่ง OTP สำเร็จ", "กรุณาตรวจสอบอีเมลของคุณ");
         navigation.replace("forgotpasswordverify");
       } else {
-        Alert.alert("ผิดพลาด", res.message || "ไม่สามารถส่ง OTP ได้");
+        setEmailError(res.message || "ไม่สามารถส่ง OTP ได้");
       }
     } catch (err) {
       setLoading(false);
-      Alert.alert("ผิดพลาด", "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์");
+      setEmailError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์");
     }
   };
 
@@ -49,13 +59,17 @@ export default function ForgotPasswordRequestScreen({ navigation, email, setEmai
 
         <Text style={styles.EmailText}>อีเมล</Text>
         <TextInput
-          style={styles.Input}
+          style={[styles.Input, emailError ? styles.inputError : null]}
           placeholder="กรอกอีเมลของคุณ"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => {
+            setEmail(text);
+            setEmailError("");
+          }}
           keyboardType="email-address"
           autoCapitalize="none"
         />
+        <Text style={styles.errorText}>{emailError}</Text>
 
         <TouchableOpacity style={styles.button} onPress={handleRequestOtp} disabled={loading}>
           {loading ? (
@@ -92,7 +106,7 @@ const styles = StyleSheet.create({
     color: "#000",
     fontSize: 16,
     fontWeight: "400",
-    marginBottom: 50,
+    marginBottom: 40,
     marginLeft: 5,
   },
   EmailText: {
@@ -107,12 +121,21 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
   },
+  inputError: {
+    borderColor: "red",
+  },
+  errorText: {
+    color: "red",
+    fontSize: 14,
+    marginTop: 5,
+    minHeight: 20,
+  },
   button: {
     backgroundColor: "#ff7f32",
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
-    marginTop: 50,
+    marginTop: 20,
   },
   buttonText: {
     color: "#fff",

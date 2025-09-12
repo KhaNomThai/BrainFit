@@ -126,7 +126,7 @@ export default function HomeScreen({ email, setEmail }) {
       });
       if (data?.success) {
         setLoading(false);
-        alert("บันทึกสำเร็จ");
+        // alert("บันทึกสำเร็จ");
         await fetchSaveStats();
       } else {
         setLoading(false);
@@ -152,7 +152,6 @@ export default function HomeScreen({ email, setEmail }) {
       <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: 8 }]}>
         <Text style={styles.header}>กิจกรรมประจำวัน</Text>
 
-        {/* การ์ดสถิติ */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>สถิติการใช้งาน</Text>
           <View style={styles.statsRow}>
@@ -194,7 +193,6 @@ export default function HomeScreen({ email, setEmail }) {
           </View>
         </View>
 
-        {/* Checklist */}
         {CHECKLIST_ITEMS.map((item) => {
           const value = checklist?.[item.key];
           return (

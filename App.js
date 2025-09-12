@@ -16,6 +16,7 @@ import RelationMatch from "./screens/Gamescreen/RelationMatch";
 import MemoryGame from "./screens/Gamescreen/MemoryGame";
 import NumberScreen from "./screens/Gamescreen/NumberScreen";
 import GamepictureScreen from "./screens/Gamescreen/GamepictureScreen";
+import MainScreen from "./screens/Login/MainScreen"
 
 const Stack = createNativeStackNavigator();
 
@@ -31,10 +32,22 @@ export default function App() {
 
   return (
     <NavigationContainer>
+      
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="login"
+        initialRouteName="main"
       >
+        <Stack.Screen name="main">
+          {(props) => (
+            <MainScreen
+              {...props}
+              // email={email}
+              // setEmail={setEmail}
+              // password={password}
+              // setPassword={setPassword}
+            />
+          )}
+        </Stack.Screen>
         <Stack.Screen name="login">
           {(props) => (
             <LoginScreen
@@ -94,7 +107,7 @@ export default function App() {
             />
           )}
         </Stack.Screen>
-        <Stack.Screen name="forgotpasswordReset">
+        <Stack.Screen name="forgotpasswordreset">
           {(props) => (
             <ForgotPasswordResetScreen
               {...props}
@@ -187,7 +200,7 @@ export default function App() {
           {(props) => (
             <NumberScreen
               {...props}
-              // email={email}
+              email={email}
               // setEmail={setEmail}
             />
           )}
@@ -196,7 +209,7 @@ export default function App() {
           {(props) => (
             <GamepictureScreen
               {...props}
-              // email={email}
+              email={email}
               // setEmail={setEmail}
             />
           )}
@@ -205,113 +218,3 @@ export default function App() {
     </NavigationContainer>
   );
 }
-
-// import React, { useState } from "react";
-// import { KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
-// import LoginScreen from "./screens/LoginScreen";
-// import RegisterScreen from "./screens/RegisterScreen";
-// import OTPScreen from "./screens/OTPScreen";
-// import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
-// import ForgotPasswordResetScreen from "./screens/ForgotPasswordResetScreen";
-// import ForgotPasswordVerifyScreen from "./screens/ForgotPasswordVerifyScreen";
-
-// import HomeScreen from "./screens/HomeScreen";
-
-// export default function App() {
-//   const [screen, setScreen] = useState("login");
-//   const [email, setEmail] = useState("");
-//   const [password, setPassword] = useState("");
-//   const [fullName, setFullName] = useState("");
-//   const [height, setHeight] = useState("");
-//   const [weight, setWeight] = useState("");
-//   const [age, setAge] = useState("");
-//   const [gender, setGender] = useState("");
-//   const [address, setAddress] = useState("");
-
-//   return (
-//     <KeyboardAvoidingView
-//       behavior={Platform.select({ ios: "padding", android: undefined })}
-//       style={styles.container}
-//     >
-//       {screen === "login" && (
-//         <LoginScreen
-//           setScreen={setScreen}
-//           email={email}
-//           setEmail={setEmail}
-//           password={password}
-//           setPassword={setPassword}
-//         />
-//       )}
-//       {screen === "register" && (
-//         <RegisterScreen
-//           setScreen={setScreen}
-//           email={email}
-//           setEmail={setEmail}
-//           password={password}
-//           setPassword={setPassword}
-//           fullName={fullName}
-//           setFullName={setFullName}
-//           height={height}
-//           setHeight={setHeight}
-//           weight={weight}
-//           setWeight={setWeight}
-//           age={age}
-//           setAge={setAge}
-//           gender={gender}
-//           setGender={setGender}
-//           address={address}
-//           setAddress={setAddress}
-//         />
-//       )}
-//       {screen === "otp" && (
-//         <OTPScreen
-//           setScreen={setScreen}
-//           email={email}
-//           password={password}
-//           fullName={fullName}
-//           height={height}
-//           weight={weight}
-//           age={age}
-//           gender={gender}
-//           address={address}
-//         />
-//       )}
-//       {screen === "home" && (
-//         <HomeScreen
-//           setScreen={setScreen}
-//           email={email}
-//           setEmail={setEmail}
-//           setPassword={setPassword}
-//         />
-//       )}
-//       {screen === "forgotpassword" && (
-//         <ForgotPasswordScreen
-//           setScreen={setScreen}
-//           email={email}
-//           setEmail={setEmail}
-//           setPassword={setPassword}
-//         />
-//       )}
-//       {screen === "forgotpasswordreset" && (
-//         <ForgotPasswordResetScreen
-//           setScreen={setScreen}
-//           email={email}
-//           setEmail={setEmail}
-//           setPassword={setPassword}
-//         />
-//       )}
-//       {screen === "forgotpasswordverify" && (
-//         <ForgotPasswordVerifyScreen
-//           setScreen={setScreen}
-//           email={email}
-//           setEmail={setEmail}
-//           setPassword={setPassword}
-//         />
-//       )}
-//     </KeyboardAvoidingView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1 },
-// });

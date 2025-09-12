@@ -1,4 +1,4 @@
-export const API_URL = "https://script.google.com/macros/s/AKfycbzatsGErbjy7qIGzximYt7AHGSfj-vZ0FHs2mcXgtnhIudHt16sBx1kG2ZzWWXIL-8h/exec";
+export const API_URL = "https://script.google.com/macros/s/AKfycbz5MvIGCI8QozoLIE76gLL5nivZT0nz8z8LptVw7_kX-L1sR6n4sNIFM3i061vW3DUb/exec";
 
 export const post = async (payload) => {
   const res = await fetch(API_URL, {

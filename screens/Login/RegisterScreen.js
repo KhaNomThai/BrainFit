@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   StyleSheet,
   ScrollView,
 } from "react-native";
@@ -24,33 +23,80 @@ export default function RegisterScreen({
   address, setAddress
 }) {
   const [loading, setLoading] = useState(false);
+  const [fullNameError, setFullNameError] = useState("");
+  const [heightError, setHeightError] = useState("");
+  const [weightError, setWeightError] = useState("");
+  const [ageError, setAgeError] = useState("");
+  const [genderError, setGenderError] = useState("");
+  const [addressError, setAddressError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const handleRegister = async () => {
-    if (!fullName || !height || !weight || !age || !gender || !address || !email || !password) {
-      return Alert.alert("กรอกข้อมูลไม่ครบ", "กรุณากรอกข้อมูลให้ครบทุกช่อง");
+    setFullNameError("");
+    setHeightError("");
+    setWeightError("");
+    setAgeError("");
+    setGenderError("");
+    setAddressError("");
+    setEmailError("");
+    setPasswordError("");
+
+    let hasError = false;
+
+    if (!fullName) {
+      setFullNameError("กรุณากรอกชื่อ-นามสกุล");
+      hasError = true;
+    } else if (!/^[^0-9]+$/.test(fullName)) {
+      setFullNameError("ชื่อนามสกุลห้ามมีตัวเลข");
+      hasError = true;
     }
 
-    if (!isEmail(email)) {
-      return Alert.alert("รูปแบบอีเมลไม่ถูกต้อง");
+    if (!height) {
+      setHeightError("กรุณากรอกส่วนสูง");
+      hasError = true;
     }
 
-    const nameRegex = /^[^0-9]+$/;
-    if (!nameRegex.test(fullName)) {
-      return Alert.alert("ชื่อนามสกุลไม่ถูกต้อง", "ชื่อนามสกุลห้ามมีตัวเลข");
+    if (!weight) {
+      setWeightError("กรุณากรอกน้ำหนัก");
+      hasError = true;
     }
 
-    if (gender !== "ชาย" && gender !== "หญิง") {
-    return Alert.alert(
-      "เพศไม่ถูกต้อง", "กรุณาเลือกเพศเป็น 'ชาย' หรือ 'หญิง' เท่านั้น"
-    );
-  }
-
-    if (password.length < 8) {
-      return Alert.alert(
-        "รหัสผ่านสั้นเกินไป", "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"
-      );
+    if (!age) {
+      setAgeError("กรุณากรอกอายุ");
+      hasError = true;
     }
 
+    if (!gender) {
+      setGenderError("กรุณากรอกเพศ");
+      hasError = true;
+    } else if (gender !== "ชาย" && gender !== "หญิง") {
+      setGenderError("เพศต้องเป็น 'ชาย' หรือ 'หญิง'");
+      hasError = true;
+    }
+
+    if (!address) {
+      setAddressError("กรุณากรอกที่อยู่");
+      hasError = true;
+    }
+
+    if (!email) {
+      setEmailError("กรุณากรอกอีเมล");
+      hasError = true;
+    } else if (!isEmail(email)) {
+      setEmailError("รูปแบบอีเมลไม่ถูกต้อง");
+      hasError = true;
+    }
+
+    if (!password) {
+      setPasswordError("กรุณากรอกรหัสผ่าน");
+      hasError = true;
+    } else if (password.length < 8) {
+      setPasswordError("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
+      hasError = true;
+    }
+
+    if (hasError) return;
     setLoading(true);
     const data = await post({
       action: "register",
@@ -66,10 +112,9 @@ export default function RegisterScreen({
     setLoading(false);
 
     if (data.success) {
-      Alert.alert("ส่ง OTP แล้ว", "ตรวจสอบอีเมลของคุณแล้วกรอกรหัส OTP");
       navigation.replace("otp");
     } else {
-      Alert.alert("สมัครไม่สำเร็จ", data.message || "เกิดข้อผิดพลาด");
+      setEmailError(data.message || "สมัครไม่สำเร็จ");
     }
   };
 
@@ -80,75 +125,133 @@ export default function RegisterScreen({
       resizeMode="cover"
     >
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>ชื่อ-นามสกุล</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="กรอกข้อมูล..."
-          value={fullName}
-          onChangeText={setFullName}
-        />
+        
+        <View>
+          <Text style={styles.label}>ชื่อ-นามสกุล</Text>
+          <TextInput
+            style={[styles.input, fullNameError ? styles.inputError : null]}
+            placeholder="กรอกข้อมูล..."
+            value={fullName}
+            onChangeText={(text) => {
+              setFullName(text);
+              setFullNameError("");
+            }}
+          />
+          <Text style={styles.errorText}>{fullNameError}</Text>
+        </View>
+
         <View style={styles.rowLabel}>
           <Text style={styles.labelLeft}>ส่วนสูง</Text>
           <Text style={styles.labelRight}>น้ำหนัก</Text>
         </View>
         <View style={styles.rowInput}>
-          <TextInput
-            style={styles.inputLeft}
-            placeholder="กรอกข้อมูล..."
-            keyboardType="numeric"
-            value={height}
-            onChangeText={setHeight}
-          />
-          <TextInput
-            style={styles.inputRight}
-            placeholder="กรอกข้อมูล..."
-            keyboardType="numeric"
-            value={weight}
-            onChangeText={setWeight}
-          />
+          <View>
+            <TextInput
+              style={[styles.inputLeft, heightError ? styles.inputError : null]}
+              placeholder="กรอกข้อมูล..."
+              keyboardType="numeric"
+              value={height}
+              onChangeText={(text) => {
+                setHeight(text);
+                setHeightError("");
+              }}
+            />
+            <Text style={styles.errorText}>{heightError}</Text>
+          </View>
+          <View style={{ marginLeft: 30 }}>
+            <TextInput
+              style={[styles.inputRight, weightError ? styles.inputError : null]}
+              placeholder="กรอกข้อมูล..."
+              keyboardType="numeric"
+              value={weight}
+              onChangeText={(text) => {
+                setWeight(text);
+                setWeightError("");
+              }}
+            />
+            <View style={{ marginLeft: "15%" }}>
+              <Text style={styles.errorText}>{weightError}</Text>
+            </View>
+          </View>
         </View>
+
         <View style={styles.rowLabel}>
           <Text style={styles.labelLeft}>อายุ</Text>
           <Text style={styles.labelRight}>เพศ</Text>
         </View>
         <View style={styles.rowInput}>
-          <TextInput
-            style={styles.inputLeft}
-            placeholder="กรอกข้อมูล..."
-            keyboardType="numeric"
-            value={age}
-            onChangeText={setAge}
-          />
-          <TextInput
-            style={styles.inputRight}
-            placeholder="กรอกข้อมูล..."
-            value={gender}
-            onChangeText={setGender}
-          />
+          <View>
+            <TextInput
+              style={[styles.inputLeft, ageError ? styles.inputError : null]}
+              placeholder="กรอกข้อมูล..."
+              keyboardType="numeric"
+              value={age}
+              onChangeText={(text) => {
+                setAge(text);
+                setAgeError("");
+              }}
+            />
+            <Text style={styles.errorText}>{ageError}</Text>
+          </View>
+          <View style={{ marginLeft: 30 }}>
+            <TextInput
+              style={[styles.inputRight, genderError ? styles.inputError : null]}
+              placeholder="กรอกข้อมูล..."
+              value={gender}
+              onChangeText={(text) => {
+                setGender(text);
+                setGenderError("");
+              }}
+            />
+            <View style={{ marginLeft: "15%" }}>
+              <Text style={styles.errorText}>{genderError}</Text>
+            </View>
+          </View>
         </View>
+
         <Text style={styles.label}>ที่อยู่ปัจจุบัน</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, addressError ? styles.inputError : null]}
           placeholder="กรอกข้อมูล..."
           value={address}
-          onChangeText={setAddress}
+          onChangeText={(text) => {
+            setAddress(text);
+            setAddressError("");
+          }}
         />
+        <Text style={styles.errorText}>{addressError}</Text>
+
+
         <Text style={styles.label}>อีเมล</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, emailError ? styles.inputError : null]}
           placeholder="กรอกข้อมูล..."
           keyboardType="email-address"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => {
+            setEmail(text);
+            setEmailError("");
+          }}
         />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{emailError}</Text>
+        </View>
+
         <Text style={styles.label}>รหัสผ่าน</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, passwordError ? styles.inputError : null]}
           placeholder="กรอกข้อมูล..."
           secureTextEntry
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => {
+            setPassword(text);
+            setPasswordError("");
+          }}
         />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{passwordError}</Text>
+        </View>
+
         <TouchableOpacity style={styles.button} onPress={handleRegister}>
           {loading ? (
             <ActivityIndicator color="#fff" />
@@ -156,6 +259,7 @@ export default function RegisterScreen({
             <Text style={styles.buttonText}>สมัครสมาชิก</Text>
           )}
         </TouchableOpacity>
+
         <View style={styles.linklogin}>
           <Text style={{ color: "#555" }}>มีบัญชีอยู่แล้ว? </Text>
           <TouchableOpacity onPress={() => navigation.replace("login")}>
@@ -178,30 +282,27 @@ const styles = StyleSheet.create({
     color: "#000",
     fontSize: 18,
     fontWeight: "bold",
-    marginTop: 10,
   },
   rowLabel: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "flex-start",
   },
   labelLeft: {
     width: 120,
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
   },
   labelRight: {
     width: 120,
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginLeft: '15%',
   },
   rowInput: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginBottom: 5,
+    flexDirection: "row",
+    justifyContent: "flex-start",
   },
   input: {
     borderWidth: 1,
@@ -213,7 +314,7 @@ const styles = StyleSheet.create({
   inputLeft: {
     width: 120,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 10,
     padding: 10,
     marginTop: 5,
@@ -221,7 +322,7 @@ const styles = StyleSheet.create({
   inputRight: {
     width: 120,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 10,
     padding: 10,
     marginTop: 5,
@@ -243,5 +344,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     marginTop: 10,
+  },
+  errorContainer: {
+    minHeight: 20,
+    marginTop: 2,
+  },
+  errorText: {
+    color: "red",
+    fontSize: 14,
+  },
+  inputError: {
+    borderColor: "red",
   },
 });

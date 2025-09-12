@@ -462,14 +462,14 @@ export default function CognitiveTestScreen({ navigation, email }) {
       const data = await post({
         action: "registerCognitiveTest",
         email,
-        roundId,
+        // roundId,
         answers,
         scores: newScores,
         totalScore: sum,
         level: lvl,
-        takenAtDeviceTime: nowISO,
-        q4Generated: { start: q4Start, expected: answers.Q4_ExpectedSeq, shuffled: q4Buttons },
-        q5Generated: { startMonth: q5StartMonth, expected: answers.Q5_ExpectedSeq, shuffled: q5Buttons },
+        // takenAtDeviceTime: nowISO,
+        // q4Generated: { start: q4Start, expected: answers.Q4_ExpectedSeq, shuffled: q4Buttons },
+        // q5Generated: { startMonth: q5StartMonth, expected: answers.Q5_ExpectedSeq, shuffled: q5Buttons },
         q6Picked: picked,
       });
 

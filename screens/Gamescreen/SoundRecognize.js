@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from "react-native";
-import { Audio } from "expo-audio";
+import { Audio } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import { post } from "../../api";
 

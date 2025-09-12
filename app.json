@@ -31,7 +31,7 @@
       "favicon": "./assets/icon.png"
     },
     "plugins": [
-      "expo-audio"
+      "expo-av"
     ],
     "extra": {
       "eas": {

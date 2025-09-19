@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform, Dimensions } from "react-native";
 import { Audio } from "expo-av";
-import { Asset } from "expo-asset";
 import { Ionicons } from "@expo/vector-icons";
 import { post } from "../../api";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
@@ -38,7 +37,7 @@ function generateChoices(correctAnswer) {
 const AUTO_NEXT_DELAY = 3000;
 const MAX_ROUNDS = 5;
 
-export default function SoundRecognize({ email, navigation }) {
+export default function SoundRecognize({email, navigation}) {
   const [phase, setPhase] = useState("intro");
   const [currentSound, setCurrentSound] = useState(null);
   const [round, setRound] = useState(1);
@@ -54,34 +53,6 @@ export default function SoundRecognize({ email, navigation }) {
   const [answers, setAnswers] = useState("");
 
   const soundRef = useRef(null);
-  // ✅ ตั้งโหมดเสียง + preload ไฟล์เสียงล่วงหน้า
-  useEffect(() => {
-    (async () => {
-      try {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,   // iOS เล่นได้แม้สวิตช์เงียบ
-          staysActiveInBackground: false,
-          shouldDuckAndroid: true,      // Android ขอ audio focus
-          playThroughEarpieceAndroid: false,
-        });
-
-        // preload ไฟล์ทั้งหมด กันโหลดไม่ทันในโปรดักชัน
-        await Promise.all(
-          sounds.map(s => Asset.fromModule(s.file).downloadAsync())
-        );
-      } catch { }
-    })();
-
-    // cleanup ตอน unmount
-    return () => {
-      if (soundRef.current) {
-        soundRef.current.unloadAsync().catch(() => { });
-        soundRef.current = null;
-      }
-    };
-  }, []);
-
 
   // cleanup sound when unmount
   useEffect(() => {
@@ -105,10 +76,7 @@ export default function SoundRecognize({ email, navigation }) {
         soundRef.current = null;
       }
 
-      // ใช้ไฟล์ที่ preload แล้ว (localUri ถ้ามี)
-      const asset = Asset.fromModule(currentSound.file);
-      const src = asset.localUri ?? asset.uri;
-      const { sound } = await Audio.Sound.createAsync({ uri: src });
+      const { sound } = await Audio.Sound.createAsync(currentSound.file);
       soundRef.current = sound;
       await sound.playAsync();
     } catch (e) {
@@ -117,17 +85,17 @@ export default function SoundRecognize({ email, navigation }) {
   };
 
   const saveResult = async () => {
-    const data = await
-      post({
+      const data = await 
+      post({ 
         action: "savegametime",
-        email: email.trim(),
+        email: email.trim(), 
         gameName: "เกมฟังเสียง",
         playTime: elapsedTime,
         score: score,
         total: 0,
       });
-  };
-
+    };
+  
   const startGame = () => {
     setStartTime(Date.now());
     setElapsedTime(0);
@@ -170,8 +138,8 @@ export default function SoundRecognize({ email, navigation }) {
     if (ok) setScore((s) => s + 1);
     setAnswers(currentSound.answer);
     setTimeout(
-      goNext,
-      AUTO_NEXT_DELAY);
+      goNext, 
+    AUTO_NEXT_DELAY);
   };
 
   // ----- UI -----
@@ -241,17 +209,17 @@ export default function SoundRecognize({ email, navigation }) {
         </Text> */}
         <ScrollView contentContainerStyle={styles.resultWrap} showsVerticalScrollIndicator={false}>
           <View style={styles.resultCard}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: vw(2) }}>
-              <Icon name="flag-checkered" size={22} color={ORANGE.primaryDark} />
-              <Text style={styles.resultTitle}>สรุปผล</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: vw(2) }}>
+                <Icon name="flag-checkered" size={22} color={ORANGE.primaryDark} />
+                <Text style={styles.resultTitle}>สรุปผล</Text>
+              </View>
+              <Text style={styles.resultScore}>ได้ {score} / {MAX_ROUNDS} ข้อ</Text>
+              <Text style={styles.resultScore}>ได้ ข้อ</Text>
+              <View style={styles.resultBar}>
+                <View style={[styles.resultFill, { width: `${(score/MAX_ROUNDS)*100}%` }]} />
+                <View style={[styles.resultFill]} />
+              </View>
             </View>
-            <Text style={styles.resultScore}>ได้ {score} / {MAX_ROUNDS} ข้อ</Text>
-            <Text style={styles.resultScore}>ได้ ข้อ</Text>
-            <View style={styles.resultBar}>
-              <View style={[styles.resultFill, { width: `${(score / MAX_ROUNDS) * 100}%` }]} />
-              <View style={[styles.resultFill]} />
-            </View>
-          </View>
 
           <View style={styles.resultActionsCenter}>
             <TouchableOpacity style={styles.secondaryBtn} onPress={startGame}>
@@ -266,23 +234,23 @@ export default function SoundRecognize({ email, navigation }) {
           </View>
         </ScrollView>
       </View>
-
+      
     );
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.topbar}>
-        <View style={styles.topbarContent}>
-          <Ionicons
-            name="headset"
-            size={26}
-            color={ORANGE.primaryDark}
-            style={{ marginRight: 8 }}
-          />
-          <Text style={styles.topbarTitle}>เกมฟังเสียง</Text>
+          <View style={styles.topbarContent}>
+            <Ionicons
+              name="headset"
+              size={26}
+              color={ORANGE.primaryDark}
+              style={{ marginRight: 8 }}
+            />
+            <Text style={styles.topbarTitle}>เกมฟังเสียง</Text>
+          </View>
         </View>
-      </View>
       <View style={styles.headerRow}>
         <View style={styles.badgeSolid}>
           <Text style={styles.badgeSolidText}>
@@ -366,8 +334,8 @@ const vh = (v) => (height * v) / 100;
 const vw = (v) => (width * v) / 100;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: NEUTRAL.bg },
-
-  headerRow: { paddingTop: vh(2), paddingHorizontal: vw(4), backgroundColor: NEUTRAL.card, borderBottomWidth: 0, borderBottomColor: NEUTRAL.line, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: vw(5) },
+  
+  headerRow: { paddingTop: vh(2), paddingHorizontal: vw(4), backgroundColor: NEUTRAL.card, borderBottomWidth: 0, borderBottomColor: NEUTRAL.line, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: vw(5)},
   badgeSolid: { backgroundColor: ORANGE.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
   badgeSolidText: { color: "#fff", fontWeight: "800", fontSize: 18 },
   badgeOutline: { borderWidth: 2, borderColor: ORANGE.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
@@ -381,30 +349,29 @@ const styles = StyleSheet.create({
     backgroundColor: NEUTRAL.card,
     borderBottomWidth: 1,
     borderBottomColor: NEUTRAL.line,
-    flexDirection: "column",
+    flexDirection: "column", 
     justifyContent: "center",
     // alignItems: "center",
   },
   PlayWrap: { paddingHorizontal: vw(25), paddingTop: vh(1.5) },
-  primaryBtnPlay: { backgroundColor: NEUTRAL.card, borderRadius: vh(2), borderWidth: 2, borderColor: ORANGE.border, padding: vw(4), alignItems: "center", ...cardShadow },
+  primaryBtnPlay: {backgroundColor: NEUTRAL.card, borderRadius: vh(2), borderWidth: 2, borderColor: ORANGE.border, padding: vw(4), alignItems: "center", ...cardShadow},
   primaryBtnPlayText: { color: "#000000ff", fontSize: 18, fontWeight: "700", letterSpacing: 0.3 },
 
   primaryBtn: {
     backgroundColor: ORANGE.primary, paddingVertical: 15, paddingHorizontal: 15,
-    borderRadius: 16, minWidth: 260, marginTop: 15, alignItems: "center", ...cardShadow,
-
+    borderRadius: 16, minWidth: 260, marginTop: 15,alignItems: "center", ...cardShadow,
+    
   },
   primaryBtnText: { color: "#FFFFFF", fontSize: 18, fontWeight: "700", letterSpacing: 0.3 },
   choices: { width: "100%", marginTop: 10, paddingHorizontal: vw(5), },
   choiceBtn: {
-    backgroundColor: NEUTRAL.card, borderWidth: 2, borderColor: "#E5E2DA", borderRadius: vh(2), paddingVertical: vh(2), paddingHorizontal: vw(4), marginTop: vh(1.5), justifyContent: "center", ...cardShadow
-  },
+    backgroundColor: NEUTRAL.card, borderWidth: 2, borderColor: "#E5E2DA", borderRadius: vh(2), paddingVertical: vh(2), paddingHorizontal: vw(4), marginTop: vh(1.5),justifyContent: "center", ...cardShadow },
   correctChoice: { backgroundColor: "#d4f8e8", borderColor: GREEN },
   wrongChoice: { backgroundColor: "#ffe3e3", borderColor: RED },
   choiceText: { fontSize: vh(2), fontWeight: "700", color: ORANGE.textSub, textAlign: "center" },
   correctText: { color: GREEN },
   wrongText: { color: RED },
-  feedbackbox: { alignItems: "center" },
+  feedbackbox: {alignItems: "center"  },
   feedback: { marginTop: 10, fontSize: 20, fontWeight: "bold" },
   ok: { color: GREEN },
   no: { color: RED },

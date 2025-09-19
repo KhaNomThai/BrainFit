@@ -1,5 +1,5 @@
 // screens/Gamescreen/FastMath.js
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Keyboard,
   ScrollView,
   Platform,
+  Animated,
+  Dimensions
 } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { post } from "../../api";
@@ -30,7 +32,7 @@ const RED = "#E74C3C";
 /* ===== CONFIG ===== */
 const TOTAL_QUESTIONS = 20;
 const SECONDS_PER_QUESTION = 20;
-const AUTO_NEXT_DELAY = 1000; // หน่วงให้เห็นสีถูก/ผิดก่อนข้าม
+const AUTO_NEXT_DELAY = 3000; // หน่วงให้เห็นสีถูก/ผิดก่อนข้าม
 
 const cardShadow = Platform.select({
   ios: { shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
@@ -38,7 +40,7 @@ const cardShadow = Platform.select({
   default: {},
 });
 
-export default function FastMath({email}) {
+export default function FastMath({email, navigation}) {
   // phase: intro | quiz | result
   const [phase, setPhase] = useState("intro");
 
@@ -55,6 +57,8 @@ export default function FastMath({email}) {
   const [elapsedTime, setElapsedTime] = useState(0);
 
   const total = useMemo(() => TOTAL_QUESTIONS, []);
+  const progress = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(1)).current;
 
   // สร้างโจทย์ (ลบไม่ติดลบ)
   const generateQuestions = () => {
@@ -101,7 +105,13 @@ export default function FastMath({email}) {
     if (phase === "result" && elapsedTime > 0) {
       saveResult();
     }
-    if (phase !== "quiz") return;
+    if (phase === "quiz") {
+      Animated.timing(progress, {
+        toValue: questionIndex / total,
+        duration: 400,
+        useNativeDriver: false,
+      }).start();
+    }
     if (questionIndex >= total) {
       setGameOver(true);
       setPhase("result");
@@ -226,6 +236,12 @@ export default function FastMath({email}) {
             <TouchableOpacity style={styles.secondaryBtn} onPress={startGame}>
               <Text style={styles.secondaryBtnText}>เล่นอีกครั้ง</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.backBtn]}
+              onPress={() => navigation?.goBack?.()}
+            >
+              <Text style={styles.secondaryBtnText}>เลือกเกมอื่นๆ</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </View>
@@ -249,8 +265,21 @@ export default function FastMath({email}) {
       </View>
 
       <View style={styles.bodyWrap}>
-        {/* Header badges */}
-        <View style={styles.headerRow}>
+        <View style={styles.quizHeader}>
+            <Animated.View style={[styles.timerPill, { transform: [{ scale: pulse }] }]}>
+              <Text style={styles.timerLabel}>เวลา</Text>
+              <Text style={[styles.timerValue, timeLeft <= 10 && styles.timerUrgent]}>{timeLeft} วินาที</Text>
+            </Animated.View>
+            <View style={styles.quizTitlePill}>
+              <Text style={styles.quizTitleInline}>ข้อ {questionIndex + 1} / {questions.length}</Text>
+            </View>
+            <View style={styles.progressBox}>
+              <View style={styles.progressBar}>
+                <Animated.View style={[styles.progressFill, { width: progress.interpolate({ inputRange: [0,1], outputRange: ["0%","100%"] }) }]} />
+              </View>
+            </View>
+          </View>
+        {/* <View style={styles.headerRow}>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>
               ข้อ {questionIndex + 1}/{total}
@@ -261,10 +290,10 @@ export default function FastMath({email}) {
           </View>
         </View>
 
-        {/* เวลา (ตัวเลขล้วน) */}
-        <Text style={styles.timerText}>เวลา {timeLeft} วิ</Text>
+        <Text style={styles.timerText}>เวลา {timeLeft} วิ</Text> */}
 
         {/* กล่องโจทย์ (เปลี่ยนสีตามผลลัพธ์) */}
+        <View style={styles.Box}>
         <View
           style={[
             styles.questionBox,
@@ -309,12 +338,17 @@ export default function FastMath({email}) {
           >
             {feedback}
           </Text>
+          
         )}
+        </View>
       </View>
     </View>
   );
 }
 
+const { width, height } = Dimensions.get("window");
+const vh = (v) => (height * v) / 100;
+const vw = (v) => (width * v) / 100;
 /* ===== Styles ===== */
 const styles = StyleSheet.create({
   containerBG: { flex: 1, backgroundColor: NEUTRAL.bg },
@@ -363,7 +397,7 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
 
   // QUIZ BODY WRAP
-  bodyWrap: { flex: 1, alignItems: "center", paddingHorizontal: 24, paddingTop: 24 },
+  bodyWrap: { flex: 1, backgroundColor: NEUTRAL.bg, paddingBottom: vh(5) },
 
   headerRow: {
     width: "100%",
@@ -394,12 +428,18 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
 
+  Box:{
+    padding: vh(2),
+    alignItems: "center" 
+  },
   questionBox: {
     borderWidth: 3,
     borderColor: ORANGE.primary,
     borderRadius: 16,
     padding: 20,
-    marginBottom: 20,
+    marginTop: vh(1),
+    marginBottom: vh(2),
+    
     backgroundColor: "#fff",
     width: "100%",
     ...cardShadow,
@@ -435,12 +475,10 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: "#fff", fontSize: 18, fontWeight: "800" },
 
-  feedback: {
-    marginTop: 16,
-    fontSize: 20,
-    fontWeight: "700",
-    color: ORANGE.primary,
-  },
+  feedbackbox: {alignItems: "center", marginTop: vh(2)},
+  feedback: { marginTop: 10, fontSize: 20, fontWeight: "bold" },
+  ok: { color: "green" },
+  no: { color: 'red' },
 
   // RESULT
   resultWrap: { padding: 18, paddingTop: 36, alignItems: "center" },
@@ -460,6 +498,17 @@ const styles = StyleSheet.create({
   resultBar: { width: "100%", height: 12, backgroundColor: ORANGE.pale, borderRadius: 999, overflow: "hidden" },
   resultFill: { height: "100%", backgroundColor: "#1DBF73" },
   resultActionsCenter: { width: "100%", gap: 12, alignItems: "center" },
+  backBtn: {
+    backgroundColor: "#bebebeff",
+    paddingVertical: 16,
+    paddingHorizontal: 22,
+    borderRadius: 14,
+    minWidth: 200,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#a0a0a0ff",
+    ...cardShadow,
+  },
   secondaryBtn: {
     backgroundColor: ORANGE.light,
     paddingVertical: 16,
@@ -471,5 +520,16 @@ const styles = StyleSheet.create({
     borderColor: ORANGE.border,
     ...cardShadow,
   },
-  secondaryBtnText: { color: ORANGE.textMain, fontSize: 18, fontWeight: "900" },
+  secondaryBtnText: { color: "#000000ff", fontSize: 18, fontWeight: "700", letterSpacing: 0.3 },
+
+  quizHeader: { padding: vh(2), paddingHorizontal: vw(4), backgroundColor: NEUTRAL.card, borderBottomWidth: 1, borderBottomColor: NEUTRAL.line, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: vw(5) },
+  timerPill: { backgroundColor: ORANGE.pale, borderWidth: 2, borderColor: ORANGE.border, paddingHorizontal: vw(4), paddingVertical: vh(1.2), borderRadius: vh(2), minWidth: vw(28), alignItems: "center" },
+  timerLabel: { fontSize: vh(2), color: ORANGE.textSub, marginBottom: vh(0.4), fontWeight: "800" },
+  timerValue: { fontSize: vh(1.8), fontWeight: "900", color: ORANGE.primaryDark },
+  timerUrgent: { color: "#C81E1E" },
+  quizTitlePill: { paddingHorizontal: vw(3), paddingVertical: vh(1.2), borderRadius: 30, backgroundColor: ORANGE.light, borderWidth: 2, borderColor: ORANGE.border },
+  quizTitleInline: { fontSize: vh(1.8), fontWeight: "900", color: ORANGE.textMain },
+  progressBox: { flex: 1, marginLeft: vw(2) },
+  progressBar: { width: "100%", height: vh(1.2), backgroundColor: ORANGE.pale, borderRadius: 999, overflow: "hidden", paddingHorizontal: vw(0.5) },
+  progressFill: { height: "100%", backgroundColor: ORANGE.primary, borderRadius: 999 },
 });

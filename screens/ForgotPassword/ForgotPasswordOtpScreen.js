@@ -11,6 +11,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
+  Dimensions
 } from "react-native";
 import { post } from "../../api";
 
@@ -24,7 +26,7 @@ export default function ForgotPasswordVerifyScreen({ navigation, email }) {
     const newOtp = [...otp];
     newOtp[index] = text;
     setOtp(newOtp);
-    setOtpError(""); // clear error เมื่อพิมพ์ใหม่
+    setOtpError("");
 
     if (text && index < 5) {
       inputs.current[index + 1].focus();
@@ -82,6 +84,13 @@ export default function ForgotPasswordVerifyScreen({ navigation, email }) {
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           <View style={styles.form}>
+              <View style={styles.Viewlogo}>
+                <Image 
+                  source={require("../../assets/security.png")}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+              </View>
             <Text style={styles.securityText}>ตรวจสอบความปลอดภัย</Text>
             <Text style={styles.optText}>ยืนยันตัวตนด้วยรหัส OTP</Text>
 
@@ -107,11 +116,13 @@ export default function ForgotPasswordVerifyScreen({ navigation, email }) {
               </View>
 
               {otpError ? (
-                <Text style={styles.errorText}>{otpError}</Text>
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{otpError}</Text>
+                </View>
               ) : null}
 
               <View style={styles.linkotp}>
-                <Text style={styles.codeText}>หากไม่ได้รับรหัส </Text>
+                <Text style={styles.codeTexts}>หากไม่ได้รับรหัส </Text>
                 <TouchableOpacity onPress={handleResendOtp}>
                   <Text style={styles.resendText}>ส่งรหัสอีกครั้ง</Text>
                 </TouchableOpacity>
@@ -146,29 +157,40 @@ export default function ForgotPasswordVerifyScreen({ navigation, email }) {
   );
 }
 
+const { width, height } = Dimensions.get("window");
+const vh = (value) => (height * value) / 100;
+const vw = (value) => (width * value) / 100;
 const styles = StyleSheet.create({
   form: {
     flex: 1,
-    justifyContent: "center",
-    padding: 30,
+    paddingBottom: vh(25),
+    paddingHorizontal: vw(8),
+  },
+  Viewlogo: {
+    alignItems: "center",
+  },
+  logo: {
+    marginTop: vh(10),
+    width: vw(55),
+    height: vh(18),
+    marginBottom: vh(2),
   },
   securityText: {
-    color: "#000",
-    fontSize: 32,
+    color: "#000000ff",
+    fontSize: vh(5),
     fontWeight: "900",
-    marginBottom: 5,
-    marginTop: 150
+    marginBottom: vh(0.8),
   },
   optText: {
-    color: "#000",
-    fontSize: 16,
+    color: "#000000ff",
+    fontSize: vh(1.8),
     fontWeight: "400",
-    marginBottom: 30,
+    marginBottom: vh(6),
+    marginLeft: vw(1.5),
   },
   linkotp: {
     flexDirection: "row",
-    marginTop: 10,
-    marginBottom: 30,
+    marginBottom: vh(6),
   },
   linklogin: {
     flexDirection: "row",
@@ -176,7 +198,7 @@ const styles = StyleSheet.create({
   },
   resendText: {
     color: "red",
-    fontSize: 16,
+    fontSize: vh(1.8),
     fontWeight: "bold",
   },
   form1: {
@@ -184,46 +206,65 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   codeText: {
-    color: "#000",
-    fontSize: 16,
+    color: "#000000",
+    fontSize: vh(2),
     fontWeight: "400",
-    marginBottom: 5,
+    marginBottom: vh(0.5),
+  },
+  codeTexts: {
+    color: "#000000",
+    fontSize: vh(1.8),
+    fontWeight: "400",
+    marginBottom: vh(0.5),
   },
   otpContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 5,
-    marginTop: 15,
+    marginBottom: vh(1.5),
+    marginTop: vh(1.5),
   },
   otpInput: {
     borderWidth: 1,
     borderColor: "#000",
-    borderRadius: 10,
-    width: 50,
-    height: 50,
+    borderRadius: vw(2.5),
+    width: vw(12),
+    height: vh(6),
     textAlign: "center",
-    fontSize: 18,
-    marginHorizontal: 5,
-    backgroundColor: "#fff",
+    fontSize: vh(2.2),
+    marginHorizontal: vw(1.5),
+  },
+  linkContainer: {
+    alignItems: "flex-end",
+    marginBottom: vh(2),
+  },
+  link: {
+    color: "#ff7f32",
+    fontSize: vh(1.8),
+    fontWeight: "bold",
+  },
+  buttonV: {
+    backgroundColor: "#ff7f32",
+    paddingVertical: vh(1.5),
+    borderRadius: vw(2.5),
+    alignItems: "center",
+    marginTop: vh(1.2),
+  },
+  buttonVText: {
+    color: "#fff",
+    fontSize: vh(1.5),
+    fontWeight: "bold",
   },
   inputError: {
     borderColor: "red",
   },
+  errorContainer: {
+    minHeight: vh(2),
+    justifyContent: "center",
+    marginBottom: vh(1),
+  },
   errorText: {
     color: "red",
-    fontSize: 14,
-    marginTop: 5,
-    textAlign: "center",
-  },
-  buttonV: {
-    backgroundColor: "#ff7f32",
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  buttonVText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: vh(1.5),
+    marginLeft: vw(1),
   },
 });

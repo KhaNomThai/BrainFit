@@ -1,6 +1,6 @@
 // screens/Gamescreen/Catchword.js
 import React, { useMemo, useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform, Dimensions } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { post } from "../../api";
 
@@ -17,7 +17,7 @@ const ORANGE = {
 const NEUTRAL = { bg: "#FFFDF9", line: "#F0E7DC", card: "#FFFFFF" };
 
 // หน่วงเวลาหลังเลือก (ms) เพื่อให้เห็นสีถูก/ผิดก่อนข้าม
-const AUTO_NEXT_DELAY = 1000;
+const AUTO_NEXT_DELAY = 3000;
 
 /* ===== Helper ===== */
 const shuffle = (arr) => [...arr].sort(() => Math.random() - Math.random());
@@ -236,7 +236,7 @@ export default function Matchingword({ navigation, email }) {
           </View>
 
           <View style={styles.introActions}>
-            <TouchableOpacity style={styles.primaryBtn} onPress={GameStartTime} activeOpacity={0.9}>
+            <TouchableOpacity style={styles.primaryBtn} onPress={GameStartTime}>
               <Text style={styles.primaryBtnText}>เริ่มเกม</Text>
             </TouchableOpacity>
           </View>
@@ -245,7 +245,8 @@ export default function Matchingword({ navigation, email }) {
 
       {/* ===== QUIZ ===== */}
       {phase === "quiz" && (
-        <View style={{ flex: 1, alignItems: "center", paddingHorizontal: 24, paddingTop: 20 }}>
+        
+        <View style={{ flex: 1, alignItems: "center", paddingHorizontal: vw(6), paddingTop: vh(3) }}>
           {/* Header badges */}
           <View style={styles.headerRow}>
             <View style={styles.badge}>
@@ -262,22 +263,27 @@ export default function Matchingword({ navigation, email }) {
               styles.questionBox,
               picked && isCorrect === true && { borderColor: "#1DBF73", backgroundColor: "#c6f6d5" },
               picked && isCorrect === false && { borderColor: "#e11d48", backgroundColor: "#ffe4e6" },
+              { marginTop: vh(2), marginBottom: vh(3), paddingVertical: vh(3), width: "100%" },
             ]}
           >
             <Text style={styles.word}>{q.word}</Text>
           </View>
 
           {/* ตัวเลือกอีโมจิ 2x2 */}
-          <View style={styles.choicesGrid}>
+          <View style={[styles.choicesGrid, { marginTop: vh(1) }]}>
             {choices.map((em, i) => {
               const isPicked = picked === em;
+              const answers = em === q.correct;
               let bg = "#f9f9f9";
+
               if (isPicked && isCorrect === true) bg = "#2ecc71";
               if (isPicked && isCorrect === false) bg = "#e74c3c";
+              if (picked && isCorrect === false && answers) bg = "#2ecc71";
+
               return (
                 <TouchableOpacity
                   key={i}
-                  style={[styles.choice, { backgroundColor: bg }]}
+                  style={[styles.choice, { backgroundColor: bg, marginBottom: vh(2) }]}
                   onPress={() => choose(em)}
                   activeOpacity={0.9}
                 >
@@ -286,7 +292,16 @@ export default function Matchingword({ navigation, email }) {
               );
             })}
           </View>
+
+          <View style={[styles.feedbackbox, { marginTop: vh(-5) }]}>
+            {picked && (
+              <Text style={[styles.feedback, isCorrect ? styles.ok : styles.no]}>
+                {isCorrect ? "✓ ถูกต้อง" : `✗ ผิด (คำตอบคือ ${q.correct})`}
+              </Text>
+            )}
+          </View>
         </View>
+        
       )}
 
       {/* ===== RESULT ===== */}
@@ -304,15 +319,14 @@ export default function Matchingword({ navigation, email }) {
           </View>
 
           <View style={styles.resultActionsCenter}>
-            <TouchableOpacity style={styles.primaryBtn} onPress={restart} activeOpacity={0.9}>
-              <Text style={styles.primaryBtnText}>เล่นอีกครั้ง (สุ่มใหม่)</Text>
+            <TouchableOpacity style={styles.secondaryBtn} onPress={restart}>
+              <Text style={styles.secondaryBtnText}>เล่นอีกครั้ง</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.primaryBtn, { backgroundColor: "#8e8e8e" }]}
+              style={[styles.backBtn]}
               onPress={() => navigation?.goBack?.()}
-              activeOpacity={0.9}
             >
-              <Text style={styles.primaryBtnText}>กลับเมนูเกม</Text>
+              <Text style={styles.secondaryBtnText}>เลือกเกมอื่นๆ</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -321,6 +335,9 @@ export default function Matchingword({ navigation, email }) {
   );
 }
 
+const { width, height } = Dimensions.get("window");
+const vh = (value) => (height * value) / 100;
+const vw = (value) => (width * value) / 100;
 /* ===== Styles ===== */
 const cardShadow = Platform.select({
   ios: { shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
@@ -349,10 +366,11 @@ const styles = StyleSheet.create({
   introText: { fontSize: 18, color: ORANGE.textSub, flexShrink: 1, lineHeight: 26 },
   introActions: { marginTop: 14, gap: 10, alignItems: "center", width: "100%" },
   primaryBtn: {
-    backgroundColor: ORANGE.primary, paddingVertical: 20, paddingHorizontal: 28,
+    backgroundColor: ORANGE.primary, paddingVertical: 15, paddingHorizontal: 15,
     borderRadius: 16, minWidth: 260, alignItems: "center", ...cardShadow,
+    
   },
-  primaryBtnText: { color: "#FFFFFF", fontSize: 22, fontWeight: "900", letterSpacing: 0.3 },
+  primaryBtnText: { color: "#FFFFFF", fontSize: 18, fontWeight: "700", letterSpacing: 0.3 },
 
   // Quiz 
   headerRow: {
@@ -374,15 +392,32 @@ const styles = StyleSheet.create({
   word: { fontSize: 48, fontWeight: "900", color: "#1A1A1A", textAlign: "center" },
 
   choicesGrid: {
-    width: "100%", flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", paddingHorizontal:20,marginBottom: 20,
+    width: "100%",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingHorizontal: vh(2.5),
   },
   choice: {
-    width: "45%", aspectRatio: 1, borderRadius: 22, justifyContent: "center", alignItems: "center",
-    backgroundColor: "#f9f9f9", marginBottom: 10,
-    shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 }, elevation: 3,
+    width: "45%",
+    aspectRatio: 1,
+    borderRadius: vh(2.8),
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f9f9f9",
+    marginBottom: vh(1.3),
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
-  choiceEmoji: { fontSize: 64, lineHeight: 70, textAlign: "center" },
+  choiceEmoji: {
+    fontSize: vh(8),
+    lineHeight: vh(8.7),
+    textAlign: "center",
+},
+
 
   // Result
   resultWrap: { padding: 18, paddingTop: 36, alignItems: "center" },
@@ -396,10 +431,30 @@ const styles = StyleSheet.create({
   resultFill: { height: "100%", backgroundColor: "#1DBF73" },
 
   resultActionsCenter: { width: "100%", gap: 12, alignItems: "center" },
-  secondaryBtn: {
-    backgroundColor: ORANGE.light, paddingVertical: 16, paddingHorizontal: 22,
-    borderRadius: 14, minWidth: 200, alignItems: "center",
-    borderWidth: 2, borderColor: ORANGE.border, ...cardShadow,
+  backBtn: {
+    backgroundColor: "#bebebeff",
+    paddingVertical: 16,
+    paddingHorizontal: 22,
+    borderRadius: 14,
+    minWidth: 200,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#a0a0a0ff",
+    ...cardShadow,
   },
-  secondaryBtnText: { color: ORANGE.textMain, fontSize: 18, fontWeight: "900" },
+  secondaryBtn: {
+    backgroundColor: ORANGE.light,
+    paddingVertical: 16,
+    paddingHorizontal: 22,
+    borderRadius: 14,
+    minWidth: 200,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: ORANGE.border,
+    ...cardShadow,
+  },
+  secondaryBtnText: { color: "#000000ff", fontSize: 18, fontWeight: "700", letterSpacing: 0.3 },
+  feedback: { fontSize: 20, fontWeight: "bold" },
+  ok: { color: "green" },
+  no: { color: "red" },
 });

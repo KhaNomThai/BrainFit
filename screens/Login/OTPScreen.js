@@ -8,12 +8,15 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
+  Dimensions,
+  Image,
 } from "react-native";
 import { post } from "../../api";
 
 export default function OTPScreen({ navigation, email, password, 
   fullName, height, weight, age, gender, address}) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otpError, setOtpError] = useState("");
   const [loadingVerify, setLoadingVerify] = useState(false);
   const inputs = useRef([]);
 
@@ -21,6 +24,7 @@ export default function OTPScreen({ navigation, email, password,
     const newOtp = [...otp];
     newOtp[index] = text;
     setOtp(newOtp);
+    setOtpError("");
 
     if (text && index < 5) {
       inputs.current[index + 1].focus();
@@ -32,7 +36,8 @@ export default function OTPScreen({ navigation, email, password,
   const handleVerifyOtp = async () => {
     const code = otp.join("");
     if (!code || code.length < 6) {
-      return Alert.alert("กรุณากรอก OTP ให้ครบ 6 หลัก");
+        setOtpError("กรุณากรอก OTP ให้ครบ 6 หลัก");
+      return;
     }
 
     setLoadingVerify(true);
@@ -51,10 +56,9 @@ export default function OTPScreen({ navigation, email, password,
     setLoadingVerify(false);
 
     if (data.success) {
-      Alert.alert("สมัครข้อมูลสำเร็จ", "เข้าสู่ระบบได้เลย");
         navigation.replace("login");
     } else {
-      Alert.alert("ยืนยัน OTP ไม่สำเร็จ", data.message || "ลองใหม่อีกครั้ง");
+      setOtpError(data.message || "ยืนยัน OTP ไม่สำเร็จ");
     }
   };
 
@@ -76,7 +80,7 @@ export default function OTPScreen({ navigation, email, password,
     if (data.success) {
       Alert.alert("ส่ง OTP ใหม่แล้ว", "กรุณาตรวจอีเมลอีกครั้ง");
     } else {
-      Alert.alert("ส่ง OTP ใหม่ไม่สำเร็จ", data.message || "ลองใหม่อีกครั้ง");
+      setOtpError(data.message || "ส่ง OTP ใหม่ไม่สำเร็จ");
     }
   };
 
@@ -87,26 +91,43 @@ export default function OTPScreen({ navigation, email, password,
       resizeMode="cover"
     >
       <View style={styles.form}>
+        <View style={styles.Viewlogo}>
+          <Image 
+            source={require("../../assets/security.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
         <Text style={styles.securityText}>ตรวจสอบความปลอดภัย</Text>
         <Text style={styles.optText}>ยืนยันตัวตนด้วยรหัส OTP</Text>
         <View style={styles.form1}>
           <Text style={styles.codeText}>ป้อนรหัสยืนยัน OTP</Text>
           <Text style={styles.codeText}>ที่ส่งไปยังอีเมลของคุณ</Text>
           <View style={styles.otpContainer}>
-            {otp.map((digit, index) => (
-              <TextInput
-                key={index}
-                ref={(el) => (inputs.current[index] = el)}
-                style={styles.otpInput}
-                keyboardType="number-pad"
-                maxLength={1}
-                value={digit}
-                onChangeText={(text) => handleChange(text, index)}
-              />
-            ))}
-          </View>
+                {otp.map((digit, index) => (
+                  <TextInput
+                    key={index}
+                    ref={(el) => (inputs.current[index] = el)}
+                    style={[
+                      styles.otpInput,
+                      otpError ? styles.inputError : null,
+                    ]}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    value={digit}
+                    onChangeText={(text) => handleChange(text, index)}
+                  />
+                ))}
+              </View>
+
+              {otpError ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{otpError}</Text>
+                </View>
+              ) : null}
+
           <View style={styles.linkotp}>
-            <Text style={styles.codeText}>หากไม่ได้รับรหัส </Text>
+            <Text style={styles.codeTexts}>หากไม่ได้รับรหัส </Text>
             <TouchableOpacity onPress={handleResendOtp}>
               <Text style={styles.resendText}>ส่งรหัสอีกครั้ง</Text>
             </TouchableOpacity>
@@ -131,37 +152,48 @@ export default function OTPScreen({ navigation, email, password,
   );
 }
 
+const { width, height } = Dimensions.get("window");
+const vh = (value) => (height * value) / 100;
+const vw = (value) => (width * value) / 100;
 const styles = StyleSheet.create({
   form: {
     flex: 1,
-    justifyContent: "flex-end",
-    paddingBottom: 230,    
-    padding: 30,
+    paddingBottom: vh(25),
+    paddingHorizontal: vw(8),
+  },
+  Viewlogo: {
+    alignItems: "center",
+  },
+  logo: {
+    marginTop: vh(10),
+    width: vw(55),
+    height: vh(18),
+    marginBottom: vh(2),
   },
   securityText: {
     color: "#000000ff",
-    fontSize: 36,
+    fontSize: vh(5),
     fontWeight: "900",
-    marginBottom: 5,
+    marginBottom: vh(0.8),
   },
   optText: {
     color: "#000000ff",
-    fontSize: 16,
+    fontSize: vh(1.8),
     fontWeight: "400",
-    marginBottom: 50,
-    marginLeft: 5,
+    marginBottom: vh(6),
+    marginLeft: vw(1.5),
   },
   linkotp: {
-    flexDirection: "row", 
-    marginBottom: 50
+    flexDirection: "row",
+    marginBottom: vh(6),
   },
   linklogin: {
-    flexDirection: "row", 
+    flexDirection: "row",
     justifyContent: "center",
   },
   resendText: {
     color: "red",
-    fontSize: 16,
+    fontSize: vh(1.8),
     fontWeight: "bold",
   },
   form1: {
@@ -170,45 +202,64 @@ const styles = StyleSheet.create({
   },
   codeText: {
     color: "#000000",
-    fontSize: 16,
+    fontSize: vh(2),
     fontWeight: "400",
-    marginBottom: "5",
+    marginBottom: vh(0.5),
+  },
+  codeTexts: {
+    color: "#000000",
+    fontSize: vh(1.8),
+    fontWeight: "400",
+    marginBottom: vh(0.5),
   },
   otpContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 10,
-    marginTop: 10, 
+    marginBottom: vh(1.5),
+    marginTop: vh(1.5),
   },
   otpInput: {
     borderWidth: 1,
     borderColor: "#000",
-    borderRadius: 10,
-    width: 50,
-    height: 50,
+    borderRadius: vw(2.5),
+    width: vw(12),
+    height: vh(6),
     textAlign: "center",
-    fontSize: 18,
-    marginHorizontal: 5,
+    fontSize: vh(2.2),
+    marginHorizontal: vw(1.5),
   },
   linkContainer: {
     alignItems: "flex-end",
-    marginBottom: 20,
+    marginBottom: vh(2),
   },
   link: {
     color: "#ff7f32",
-    fontSize: 14,
+    fontSize: vh(1.8),
     fontWeight: "bold",
   },
   buttonV: {
     backgroundColor: "#ff7f32",
-    paddingVertical: 15,
-    borderRadius: 10,
+    paddingVertical: vh(1.5),
+    borderRadius: vw(2.5),
     alignItems: "center",
-    marginTop: 10,
+    marginTop: vh(1.2),
   },
   buttonVText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: vh(1.5),
     fontWeight: "bold",
+  },
+  inputError: {
+    borderColor: "red",
+  },
+  errorContainer: {
+    minHeight: vh(2),
+    justifyContent: "center",
+    marginBottom: vh(1),
+  },
+  errorText: {
+    color: "red",
+    fontSize: vh(1.5),
+    marginLeft: vw(1),
   },
 });

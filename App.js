@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import LoginScreen from "./screens/Login/LoginScreen";
 import RegisterScreen from "./screens/Login/RegisterScreen";
 import OTPScreen from "./screens/Login/OTPScreen";
@@ -30,12 +32,36 @@ export default function App() {
   const [gender, setGender] = useState("");
   const [address, setAddress] = useState("");
 
+  const [initialRoute, setInitialRoute] = useState(null);
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem("userToken");
+        const savedEmail = await AsyncStorage.getItem("userEmail");
+
+        if (token && savedEmail) {
+          setEmail(savedEmail); 
+          setInitialRoute("MainTabs");
+        } else {
+          setInitialRoute("main");
+        }
+      } catch (error) {
+        setInitialRoute("main");
+      }
+    };
+    checkLoginStatus();
+  }, []);
+  if (!initialRoute) {
+    return null;
+  }
+
   return (
     <NavigationContainer>
       
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="main"
+        initialRouteName={initialRoute} 
       >
         <Stack.Screen name="main">
           {(props) => (

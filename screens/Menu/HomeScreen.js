@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, Dimensions  } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { post, isEmail } from "../../api";
@@ -122,7 +122,10 @@ export default function HomeScreen({ email, setEmail }) {
       const data = await post({
         action: "Homescreen",
         email,
-        checklist: formatted,
+        exercise: formatted[keyToLabel("exercise")],
+        social: formatted[keyToLabel("social")],
+        lunch: formatted[keyToLabel("lunch")],
+        sleep: formatted[keyToLabel("sleep")],
       });
       if (data?.success) {
         setLoading(false);
@@ -148,8 +151,8 @@ export default function HomeScreen({ email, setEmail }) {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: 8 }]}>
+    <SafeAreaView style={styles.safe}
+    >
         <Text style={styles.header}>กิจกรรมประจำวัน</Text>
 
         <View style={styles.card}>
@@ -192,7 +195,7 @@ export default function HomeScreen({ email, setEmail }) {
             })}
           </View>
         </View>
-
+      <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: 8 }]} showsVerticalScrollIndicator={false}>
         {CHECKLIST_ITEMS.map((item) => {
           const value = checklist?.[item.key];
           return (
@@ -240,57 +243,79 @@ function Pill({ label, active, onPress, color }) {
   );
 }
 
-// ===== styles =====
 const ORANGE = "#FB923C";
 const ORANGE_LIGHT = "#FFEDD5";
 const GRAY = "#6B7280";
+const { width, height } = Dimensions.get("window");
+const vh = (value) => (height * value) / 100;
+const vw = (value) => (width * value) / 100;
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#fff" },
-  screen: { flex: 1, backgroundColor: "#fff" },
-  content: { padding: 16, paddingBottom: 32 },
-  header: { fontSize: 22, fontWeight: "700", marginBottom: 12, color: "#111827" },
+  safe: { flex: 1, backgroundColor: "#fff",padding: vw(5),},
+  screen: { flex: 1, backgroundColor: "#fff", paddingBottom: vh(11) },
+  content: { padding: vw(4), paddingBottom: vh(4) },
+
+  header: { fontSize: vh(2.8), fontWeight: "700", marginBottom: vh(1.5), color: "#111827" },
+
   card: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: vw(4),
+    padding: vw(4),
     shadowColor: "#000",
     shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: vw(2),
+    shadowOffset: { width: 0, height: vh(0.3) },
     elevation: 2,
-    marginBottom: 14,
+    marginBottom: vh(1.8),
   },
-  cardTitle: { fontSize: 18, fontWeight: "700", marginBottom: 8, color: "#111827" },
-  statsRow: { flexDirection: "row", gap: 16, marginTop: 8, marginBottom: 6 },
-  statBox: { flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 12, backgroundColor: ORANGE_LIGHT },
-  statNumber: { fontSize: 26, fontWeight: "800", color: ORANGE },
-  statLabel: { fontSize: 12, color: GRAY, marginTop: 2 },
-  subHeader: { fontSize: 14, fontWeight: "600", marginTop: 12, marginBottom: 8, color: "#111827" },
-  chartWrap: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", height: 120, paddingHorizontal: 4 },
-  barWrap: { alignItems: "center", width: 26 },
-  bar: { width: 18, borderRadius: 8, backgroundColor: ORANGE },
-  barLabel: { fontSize: 11, color: GRAY, marginTop: 6 },
+
+  cardTitle: { fontSize: vh(2.3), fontWeight: "700", marginBottom: vh(1), color: "#111827" },
+
+  statsRow: { flexDirection: "row", gap: vw(4), marginTop: vh(1), marginBottom: vh(0.8) },
+
+  statBox: { flex: 1, alignItems: "center", paddingVertical: vh(1), borderRadius: vw(3), backgroundColor: ORANGE_LIGHT },
+  statNumber: { fontSize: vh(3.3), fontWeight: "800", color: ORANGE },
+  statLabel: { fontSize: vh(1.5), color: GRAY, marginTop: vh(0.3) },
+
+  subHeader: { fontSize: vh(1.8), fontWeight: "600", marginTop: vh(1.5), marginBottom: vh(1), color: "#111827" },
+
+  chartWrap: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", height: vh(15), paddingHorizontal: vw(1) },
+  barWrap: { alignItems: "center", width: vw(6.5) },
+  bar: { width: vw(4.5), borderRadius: vw(2), backgroundColor: ORANGE },
+  barLabel: { fontSize: vh(1.4), color: GRAY, marginTop: vh(0.8) },
+
   listCard: {
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    borderRadius: vw(4.5),
+    paddingVertical: vh(1),
+    paddingHorizontal: vw(4),
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: vh(1.5),
     shadowColor: "#000",
     shadowOpacity: 0.03,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: vw(1),
+    shadowOffset: { width: 0, height: vh(0.3) },
     elevation: 1,
   },
-  listIcon: { marginRight: 10 },
-  listText: { flex: 1, fontSize: 16, fontWeight: "700", color: "#111827" },
-  pillRow: { flexDirection: "row", gap: 8, marginLeft: 12 },
-  pill: { borderWidth: 1, paddingVertical: 6, paddingHorizontal: 16, borderRadius: 999, backgroundColor: "transparent" },
-  pillText: { fontSize: 14, fontWeight: "700" },
+  
+  listIcon: { marginRight: vw(2.5) },
+  listText: { flex: 1, fontSize: vh(1.6), fontWeight: "700", color: "#111827" },
+
+  pillRow: { flexDirection: "row", gap: vw(2), marginLeft: vw(3) },
+  pill: { borderWidth: 1, paddingVertical: vh(0.8), paddingHorizontal: vw(4), borderRadius: 999, backgroundColor: "transparent" },
+  pillText: { fontSize: vh(1.5), fontWeight: "700" },
+
   loadingWrap: { flex: 1, justifyContent: "center", alignItems: "center" },
-  loadingText: { fontSize: 16, color: GRAY },
-  saveBtn: { backgroundColor: ORANGE, paddingVertical: 12, borderRadius: 12, alignItems: "center", marginTop: 16 },
-  saveBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  loadingText: { fontSize: vh(2), color: GRAY },
+
+  saveBtn: { backgroundColor: "#ff7f32",
+    paddingVertical: vh(1.5),
+    borderRadius: vw(2.5),
+    alignItems: "center",
+    marginTop: vh(1.2),
+  },
+  saveBtnText: { color: "#fff",
+    fontSize: vh(1.5),
+    fontWeight: "bold",
+  },
 });

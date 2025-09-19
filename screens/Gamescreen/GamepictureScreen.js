@@ -14,6 +14,8 @@ import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { post } from "../../api";
 
 const { width, height } = Dimensions.get("window");
+const vh = (value) => (height * value) / 100;
+const vw = (value) => (width * value) / 100;
 const AUTO_NEXT_DELAY = 1000;
 
 const ORANGE = {
@@ -169,6 +171,12 @@ export default function GamepictureScreen({ navigation, email }) {
 
     return (
       <ImageBackground style={{ flex: 1 }}>
+        <View style={styles.topbar}>
+          <View style={styles.topbarContent}>
+            <Icon name="emoticon-outline" size={26} color={ORANGE.primaryDark} style={{ marginRight: 8 }} />
+            <Text style={styles.topbarTitle}>เกมจำรูปภาพ</Text>
+          </View>
+        </View>
         <View style={styles.card}>
           <Text style={styles.title}>จำรูปนี้ให้ดี</Text>
           <Text style={styles.timer}>เหลือเวลา {timeLeft} วิ</Text>
@@ -208,6 +216,12 @@ export default function GamepictureScreen({ navigation, email }) {
 
     return (
       <ImageBackground style={{ flex: 1 }}>
+        <View style={styles.topbar}>
+          <View style={styles.topbarContent}>
+            <Icon name="emoticon-outline" size={26} color={ORANGE.primaryDark} style={{ marginRight: 8 }} />
+            <Text style={styles.topbarTitle}>เกมจำรูปภาพ</Text>
+          </View>
+        </View>
         <View style={styles.card}>
           <Text style={styles.title}>เลือกรูปที่ถูกต้อง</Text>
           <View style={styles.choicesContainer}>
@@ -225,7 +239,39 @@ export default function GamepictureScreen({ navigation, email }) {
   /* ------------------------- Score (UI โทนส้ม + การ์ด) ------------------------- */
   if (screen === "score") {
     return (
-      <View style={styles.resultWrap}>
+      <><View style={styles.topbar}>
+          <View style={styles.topbarContent}>
+            <Icon name="emoticon-outline" size={26} color={ORANGE.primaryDark} style={{ marginRight: 8 }} />
+            <Text style={styles.topbarTitle}>เกมจำรูปภาพ</Text>
+          </View>
+        </View>
+      <ScrollView contentContainerStyle={styles.resultWrap} showsVerticalScrollIndicator={false}>
+          <View style={styles.resultCard}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: vw(2) }}>
+              <Icon name="flag-checkered" size={22} color={ORANGE.primaryDark} />
+              <Text style={styles.resultTitle}>สรุปผล</Text>
+            </View>
+            <Text style={styles.resultScore}>ได้ {score} / {gameQuestions.length} ข้อ</Text>
+            <View style={styles.resultBar}>
+              <View style={[styles.resultFill, { width: `${(score/gameQuestions.length)*100}%` }]} />
+            </View>
+          </View>
+          <View style={styles.resultActionsCenter}>
+            <TouchableOpacity style={styles.secondaryBtn} onPress={startGame}>
+              <Text style={styles.secondaryBtnText}>เล่นอีกครั้ง</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.backBtn]}
+              onPress={() => navigation?.goBack?.()}
+            >
+              <Text style={styles.secondaryBtnText}>เลือกเกมอื่นๆ</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+      
+      
+      {/* <View style={styles.resultWrap}>
         <View style={styles.resultCard}>
           <Icon name="trophy" size={40} color={ORANGE.primaryDark} style={{ marginBottom: 12 }} />
           <Text style={styles.resultTitle}>เกมจบแล้ว!</Text>
@@ -245,7 +291,8 @@ export default function GamepictureScreen({ navigation, email }) {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </View> */}
+      </>
     );
   }
 
@@ -264,7 +311,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     padding: 20,
     alignSelf: "center",
-    marginTop: height * 0.05,
+    marginTop: height * 0.02,
     ...cardShadow,
   },
   title: { fontSize: 25, fontWeight: "800", marginBottom: 12, color: ORANGE.textMain },
@@ -273,8 +320,9 @@ const styles = StyleSheet.create({
 
   choicesContainer: { alignItems: "center" },
   choiceImg: {
-    width: 250,
-    height: 200,
+    width: width * 0.6,
+    height: height * 0.2,
+    resizeMode: "contain",
     margin: 10,
     borderWidth: 5,
     borderRadius: 15,
@@ -319,35 +367,44 @@ const styles = StyleSheet.create({
   primaryBtnText: { fontSize: 18, fontWeight: "600", color: "#fff" },
 
   // Result screen
-  resultWrap: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: NEUTRAL.bg,
-    padding: 20,
-  },
+  resultWrap: { padding: 18, paddingTop: 36, alignItems: "center" },
   resultCard: {
-    backgroundColor: NEUTRAL.card,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: ORANGE.border,
-    padding: 24,
+    backgroundColor: NEUTRAL.card, borderRadius: 18, borderWidth: 2, borderColor: ORANGE.border,
+    padding: 22, width: "100%", alignItems: "center", marginBottom: 14, ...cardShadow,
+  },
+  resultTitle: { fontSize: 22, fontWeight: "900", color: ORANGE.textMain },
+  resultScore: { fontSize: 18, color: ORANGE.textSub, marginTop: 6, marginBottom: 12 },
+  resultBar: { width: "100%", height: 12, backgroundColor: ORANGE.pale, borderRadius: 999, overflow: "hidden" },
+  resultFill: { height: "100%", backgroundColor: "#1DBF73" },
+
+  resultActionsCenter: { width: "100%", gap: 12, alignItems: "center" },
+  primaryBtn: {
+    backgroundColor: ORANGE.primary, paddingVertical: 15, paddingHorizontal: 15,
+    borderRadius: 16, minWidth: 260, alignItems: "center", ...cardShadow,
+    
+  },
+  primaryBtnText: { color: "#FFFFFF", fontSize: 18, fontWeight: "700", letterSpacing: 0.3 },
+  backBtn: {
+    backgroundColor: "#bebebeff",
+    paddingVertical: 16,
+    paddingHorizontal: 22,
+    borderRadius: 14,
+    minWidth: 200,
     alignItems: "center",
-    width: "90%",
+    borderWidth: 2,
+    borderColor: "#a0a0a0ff",
     ...cardShadow,
   },
-  resultTitle: { fontSize: 24, fontWeight: "800", color: ORANGE.textMain, marginBottom: 6 },
-  resultScore: { fontSize: 28, fontWeight: "900", color: ORANGE.primaryDark, marginBottom: 20 },
-  resultActions: { width: "100%", gap: 12, marginTop: 10 },
-
   secondaryBtn: {
-    borderWidth: 2,
-    borderColor: ORANGE.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    backgroundColor: ORANGE.light,
+    paddingVertical: 16,
+    paddingHorizontal: 22,
+    borderRadius: 14,
+    minWidth: 200,
     alignItems: "center",
-    backgroundColor: "#fff",
+    borderWidth: 2,
+    borderColor: ORANGE.border,
+    ...cardShadow,
   },
-  secondaryBtnText: { fontSize: 16, fontWeight: "600", color: ORANGE.primary },
+  secondaryBtnText: { color: "#000000ff", fontSize: 18, fontWeight: "700", letterSpacing: 0.3 },
 });

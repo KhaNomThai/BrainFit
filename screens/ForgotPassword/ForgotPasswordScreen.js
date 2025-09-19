@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Dimensions,
+  Image,
 } from "react-native";
 import { post, isEmail } from "../../api";
 
 export default function ForgotPasswordRequestScreen({ navigation, email, setEmail }) {
   const [loading, setLoading] = useState(false);
-
-  // ✅ state error สำหรับ email
   const [emailError, setEmailError] = useState("");
 
   const handleRequestOtp = async () => {
@@ -39,7 +39,7 @@ export default function ForgotPasswordRequestScreen({ navigation, email, setEmai
       if (res.success) {
         navigation.replace("forgotpasswordverify");
       } else {
-        setEmailError(res.message || "ไม่สามารถส่ง OTP ได้");
+        setEmailError("อีเมลไม่ถูกต้อง");
       }
     } catch (err) {
       setLoading(false);
@@ -54,6 +54,13 @@ export default function ForgotPasswordRequestScreen({ navigation, email, setEmai
       resizeMode="cover"
     >
       <View style={styles.form}>
+         <View style={styles.Viewlogo}>
+            <Image 
+              source={require("../../assets/profile.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
         <Text style={styles.forgotText}>ลืมรหัสผ่าน</Text>
         <Text style={styles.forText}>เปลี่ยนรหัสผ่าน</Text>
 
@@ -90,64 +97,83 @@ export default function ForgotPasswordRequestScreen({ navigation, email, setEmai
   );
 }
 
+const { width, height } = Dimensions.get("window");
+const vh = (value) => (height * value) / 100;
+const vw = (value) => (width * value) / 100;
 const styles = StyleSheet.create({
   form: {
     flex: 1,
-    justifyContent: "center",
-    padding: 30,
+    paddingHorizontal: vw(8),
+  },
+  Viewlogo: {
+    alignItems: "center",
+  },
+  logo: {
+    marginTop: vh(10),
+    width: vw(55),
+    height: vh(18),
+    marginBottom: vh(2),
   },
   forgotText: {
     color: "#000",
-    fontSize: 36,
+    fontSize: vh(5),
     fontWeight: "900",
-    marginBottom: 5,
+    marginBottom: vh(0.8),
   },
   forText: {
     color: "#000",
-    fontSize: 16,
+    fontSize: vh(1.8),
     fontWeight: "400",
-    marginBottom: 40,
-    marginLeft: 5,
+    marginBottom: vh(5),
+    marginLeft: vw(1.2),
   },
   EmailText: {
     color: "#000",
-    fontSize: 20,
+    fontSize: vh(2),
     fontWeight: "bold",
-    marginBottom: 5,
+    marginBottom: vh(0.8),
   },
   Input: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#ccc",
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: vw(3),
+    paddingVertical: vh(1.2),
+    paddingHorizontal: vw(2),
+    fontSize: vh(1.5),
   },
   inputError: {
     borderColor: "red",
   },
+  errorContainer: {
+    minHeight: vh(2),
+    justifyContent: "center",
+    marginBottom: vh(1),
+  },
   errorText: {
     color: "red",
-    fontSize: 14,
-    marginTop: 5,
-    minHeight: 20,
+    fontSize: vh(1.5),
+    marginLeft: vw(1),
   },
   button: {
     backgroundColor: "#ff7f32",
-    padding: 15,
-    borderRadius: 10,
+    paddingVertical: vh(1.5),
+    borderRadius: vw(2.5),
     alignItems: "center",
-    marginTop: 20,
+    marginTop: vh(1.2),
   },
   buttonText: {
     color: "#fff",
+    fontSize: vh(1.5),
     fontWeight: "bold",
   },
   linklogin: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 15,
+    marginTop: vh(2),
   },
   linkText: {
     color: "#ff7f32",
     fontWeight: "bold",
+    fontSize: vh(1.5),
   },
 });

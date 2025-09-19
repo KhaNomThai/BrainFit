@@ -65,19 +65,31 @@ export default function CognitiveTestScreen({ navigation, email }) {
   const currentHour24 = now.getHours(); // 0-23
 
   // คำตอบ/บันทึก
-  const [answers, setAnswers] = useState({
+  const [answersQ_1, setAnswersQ_1] = useState({
     Quiz_1: "",
+  });
+
+  const [answersQ_2, setAnswersQ_2] = useState({
     Quiz_2: "",
+  });
+
+  const [answersQ_3, setAnswersQ_3] = useState({
     Quiz_3: "",
-    // Q4
+  });
+
+  const [answersQ_4, setAnswersQ_4] = useState({
     Q4_Start: 0,
     Q4_ExpectedSeq: [],
     Q4_Taps: [],
-    // Q5
+  });
+
+  const [answersQ_5, setAnswersQ_5] = useState({
     Q5_StartMonth: 0,
     Q5_ExpectedSeq: [],
     Q5_Taps: [],
-    // Q6
+  });
+
+  const [answersQ_6, setAnswersQ_6] = useState({
     Q6_Index: 0,
     Quiz6_Name: "",
     Quiz6_Surname: "",
@@ -186,7 +198,7 @@ export default function CognitiveTestScreen({ navigation, email }) {
     setQ4WrongCount(0);
     setQ4Complete(false);
     setQ4WrongFlash(new Set());
-    setAnswers((prev) => ({
+    setAnswersQ_4((prev) => ({
       ...prev,
       Q4_Start: start,
       Q4_ExpectedSeq: descSeq,
@@ -196,7 +208,7 @@ export default function CognitiveTestScreen({ navigation, email }) {
 
   const onTapQ4 = (num) => {
     const minVal = q4Start - 19;
-    setAnswers((p) => ({ ...p, Q4_Taps: [...p.Q4_Taps, num] }));
+    setAnswersQ_4((p) => ({ ...p, Q4_Taps: [...p.Q4_Taps, num] }));
 
     if (num === q4Next) {
       // correct → pop & fade
@@ -292,7 +304,7 @@ export default function CognitiveTestScreen({ navigation, email }) {
     setQ5Complete(false);
     setQ5WrongFlash(new Set());
 
-    setAnswers((prev) => ({
+    setAnswersQ_5((prev) => ({
       ...prev,
       Q5_StartMonth: start,
       Q5_ExpectedSeq: seq,
@@ -301,7 +313,7 @@ export default function CognitiveTestScreen({ navigation, email }) {
   };
 
   const onTapQ5 = (monthNum) => {
-    setAnswers((p) => ({ ...p, Q5_Taps: [...p.Q5_Taps, monthNum] }));
+    setAnswersQ_5((p) => ({ ...p, Q5_Taps: [...p.Q5_Taps, monthNum] }));
     const expected = q5ExpectedSeq[q5Index];
 
     if (monthNum === expected) {
@@ -333,7 +345,7 @@ export default function CognitiveTestScreen({ navigation, email }) {
     initQ5();
     // init Q6
     const idx = randInt(0, Q6_BANK.length - 1);
-    setAnswers((prev) => ({
+    setAnswersQ_6((prev) => ({
       ...prev,
       Q6_Index: idx,
       Quiz6_Name: "",
@@ -419,29 +431,29 @@ export default function CognitiveTestScreen({ navigation, email }) {
   const handleSubmit = async () => {
     // ตรวจว่ากรอกครบข้อ 6
     if (
-      !answers.Quiz6_Name?.trim() ||
-      !answers.Quiz6_Surname?.trim() ||
-      !answers.Quiz6_Number?.trim() ||
-      !answers.Quiz6_Street?.trim() ||
-      !answers.Quiz6_Province?.trim()
+      !answersQ_6.Quiz6_Name?.trim() ||
+      !answersQ_6.Quiz6_Surname?.trim() ||
+      !answersQ_6.Quiz6_Number?.trim() ||
+      !answersQ_6.Quiz6_Street?.trim() ||
+      !answersQ_6.Quiz6_Province?.trim()
     ) {
       Alert.alert("กรอกไม่ครบ", "กรุณากรอกข้อมูลให้ครบทุกช่องในข้อ 6");
       return;
     }
 
-    const Sum_Quiz_1 = scoreQuiz_1(answers.Quiz_1);
-    const Sum_Quiz_2 = scoreQuiz_2(answers.Quiz_2);
-    const Sum_Quiz_3 = scoreQuiz_3(answers.Quiz_3);
+    const Sum_Quiz_1 = scoreQuiz_1(answersQ_1.Quiz_1);
+    const Sum_Quiz_2 = scoreQuiz_2(answersQ_2.Quiz_2);
+    const Sum_Quiz_3 = scoreQuiz_3(answersQ_3.Quiz_3);
     const Sum_Quiz_4 = scoreFromWrong(q4WrongCount);
     const Sum_Quiz_5 = scoreFromWrong(q5WrongCount);
-    const picked = Q6_BANK[answers.Q6_Index] || Q6_BANK[0];
+    const picked = Q6_BANK[answersQ_6.Q6_Index] || Q6_BANK[0];
     const Sum_Quiz_6 = scoreQ6(
       {
-        name: answers.Quiz6_Name,
-        surname: answers.Quiz6_Surname,
-        number: answers.Quiz6_Number,
-        street: answers.Quiz6_Street,
-        province: answers.Quiz6_Province,
+        name: answersQ_6.Quiz6_Name,
+        surname: answersQ_6.Quiz6_Surname,
+        number: answersQ_6.Quiz6_Number,
+        street: answersQ_6.Quiz6_Street,
+        province: answersQ_6.Quiz6_Province,
       },
       picked
     );
@@ -463,7 +475,12 @@ export default function CognitiveTestScreen({ navigation, email }) {
         action: "registerCognitiveTest",
         email,
         // roundId,
-        answers,
+        sum_Quiz_1 : Sum_Quiz_1,
+        sum_Quiz_2 : Sum_Quiz_2,
+        sum_Quiz_3 : Sum_Quiz_3,
+        sum_Quiz_4 : Sum_Quiz_4,
+        sum_Quiz_5 : Sum_Quiz_5,
+        sum_Quiz_6 : Sum_Quiz_6,
         scores: newScores,
         totalScore: sum,
         level: lvl,
@@ -472,7 +489,6 @@ export default function CognitiveTestScreen({ navigation, email }) {
         // q5Generated: { startMonth: q5StartMonth, expected: answers.Q5_ExpectedSeq, shuffled: q5Buttons },
         q6Picked: picked,
       });
-
       if (data?.success) setStep("review");
       else throw new Error(data?.message ?? "ไม่สามารถบันทึกข้อมูลไป Google Sheet ได้");
     } catch (error) {
@@ -497,9 +513,9 @@ export default function CognitiveTestScreen({ navigation, email }) {
 
   const canProceed = (() => {
     switch (step) {
-      case "Quiz_1": return !!answers.Quiz_1?.trim();
-      case "Quiz_2": return !!answers.Quiz_2?.trim();
-      case "Quiz_3": return isValidHour00to23(answers.Quiz_3);
+      case "Quiz_1": return !!answersQ_1.Quiz_1?.trim();
+      case "Quiz_2": return !!answersQ_2.Quiz_2?.trim();
+      case "Quiz_3": return isValidHour00to23(answersQ_3.Quiz_3);
       case "Quiz_4": return q4Complete;
       case "Quiz_5": return q5Complete;
       case "q6_read": return true;
@@ -509,13 +525,31 @@ export default function CognitiveTestScreen({ navigation, email }) {
 
   /* ----------------------- เริ่มรอบใหม่ ----------------------- */
   const resetRound = () => {
-    setAnswers({
-      Quiz_1: "", Quiz_2: "", Quiz_3: "",
-      Q4_Start: 0, Q4_ExpectedSeq: [], Q4_Taps: [],
-      Q5_StartMonth: 0, Q5_ExpectedSeq: [], Q5_Taps: [],
-      Q6_Index: 0,
-      Quiz6_Name: "", Quiz6_Surname: "", Quiz6_Number: "", Quiz6_Street: "", Quiz6_Province: "",
+    setAnswersQ_1({ Quiz_1: "" });
+    setAnswersQ_2({ Quiz_2: "" });
+    setAnswersQ_3({ Quiz_3: "" });
+
+    setAnswersQ_4({
+      Q4_Start: 0,
+      Q4_ExpectedSeq: [],
+      Q4_Taps: [],
     });
+
+    setAnswersQ_5({
+      Q5_StartMonth: 0,
+      Q5_ExpectedSeq: [],
+      Q5_Taps: [],
+    });
+
+    setAnswersQ_6({
+      Q6_Index: 0,
+      Quiz6_Name: "",
+      Quiz6_Surname: "",
+      Quiz6_Number: "",
+      Quiz6_Street: "",
+      Quiz6_Province: "",
+    });
+
     setScores({ Quiz_1: 0, Quiz_2: 0, Quiz_3: 0, Quiz_4: 0, Quiz_5: 0, Quiz_6: 0 });
     setTotal(0);
     setLevel("");
@@ -528,7 +562,7 @@ export default function CognitiveTestScreen({ navigation, email }) {
   const topInset = Platform.OS === "android" ? (StatusBar.currentHeight || 12) : 0;
   const advice = useMemo(() => getAdvice(total), [total]);
 
-  const pickedQ6 = Q6_BANK[answers.Q6_Index] || Q6_BANK[0];
+  const pickedQ6 = Q6_BANK[answersQ_6.Q6_Index] || Q6_BANK[0];
   const q6Text = `“คุณ${pickedQ6.name} ${pickedQ6.surname} อยู่บ้านเลขที่ ${pickedQ6.number} ถนน${pickedQ6.street} จังหวัด${pickedQ6.province}”`;
 
   return (
@@ -567,8 +601,8 @@ export default function CognitiveTestScreen({ navigation, email }) {
               <TextInput
                 style={styles.input}
                 placeholder="เช่น 2025 หรือ พ.ศ. 2568"
-                value={answers.Quiz_1}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz_1: t }))}
+                value={answersQ_1.Quiz_1}
+                onChangeText={(t) => setAnswersQ_1((s) => ({ ...s, Quiz_1: t }))}
               />
             </QuestionBlock>
           )}
@@ -584,8 +618,8 @@ export default function CognitiveTestScreen({ navigation, email }) {
               <TextInput
                 style={styles.input}
                 placeholder="เช่น สิงหาคม / Aug / 8"
-                value={answers.Quiz_2}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz_2: t }))}
+                value={answersQ_2.Quiz_2}
+                onChangeText={(t) => setAnswersQ_2((s) => ({ ...s, Quiz_2: t }))}
               />
             </QuestionBlock>
           )}
@@ -594,7 +628,7 @@ export default function CognitiveTestScreen({ navigation, email }) {
           {step === "Quiz_3" && (
             <QuestionBlock
               title="ข้อ 3) ตอนนี้ประมาณกี่โมง?"
-              hint="ตอบเป็นเวลา 00 - 23 น. (±1 ชั่วโมงถือว่าถูก)"
+              hint="ตอบเป็นเวลา 00 - 23 น. (±1 ชั่วโมงถือว่าถูก เเละห้ามดูนาฬิกา)"
               onNext={() => canProceed && setStep("Quiz_4")}
               disabledNext={!canProceed}
             >
@@ -603,13 +637,13 @@ export default function CognitiveTestScreen({ navigation, email }) {
                 placeholder="เช่น 14"
                 keyboardType="number-pad"
                 maxLength={2}
-                value={answers.Quiz_3}
+                value={answersQ_3.Quiz_3}
                 onChangeText={(t) => {
                   const digits = t.replace(/[^\d]/g, "").slice(0, 2);
-                  setAnswers((s) => ({ ...s, Quiz_3: digits }));
+                  setAnswersQ_3((s) => ({ ...s, Quiz_3: digits }));
                 }}
               />
-              {answers.Quiz_3 !== "" && !isValidHour00to23(answers.Quiz_3) ? (
+              {answersQ_3.Quiz_3 !== "" && !isValidHour00to23(answersQ_3.Quiz_3) ? (
                 <Text style={styles.errorText}>กรุณาใส่ชั่วโมง 00–23</Text>
               ) : null}
             </QuestionBlock>
@@ -732,33 +766,33 @@ export default function CognitiveTestScreen({ navigation, email }) {
               <TextInput
                 style={styles.input}
                 placeholder="ชื่อ"
-                value={answers.Quiz6_Name}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz6_Name: t }))}
+                value={answersQ_6.Quiz6_Name}
+                onChangeText={(t) => setAnswersQ_6((s) => ({ ...s, Quiz6_Name: t }))}
               />
               <TextInput
                 style={styles.input}
                 placeholder="นามสกุล"
-                value={answers.Quiz6_Surname}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz6_Surname: t }))}
+                value={answersQ_6.Quiz6_Surname}
+                onChangeText={(t) => setAnswersQ_6((s) => ({ ...s, Quiz6_Surname: t }))}
               />
               <TextInput
                 style={styles.input}
                 placeholder="บ้านเลขที่"
                 keyboardType="number-pad"
-                value={answers.Quiz6_Number}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz6_Number: t }))}
+                value={answersQ_6.Quiz6_Number}
+                onChangeText={(t) => setAnswersQ_6((s) => ({ ...s, Quiz6_Number: t }))}
               />
               <TextInput
                 style={styles.input}
                 placeholder="ถนน"
-                value={answers.Quiz6_Street}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz6_Street: t }))}
+                value={answersQ_6.Quiz6_Street}
+                onChangeText={(t) => setAnswersQ_6((s) => ({ ...s, Quiz6_Street: t }))}
               />
               <TextInput
                 style={styles.input}
                 placeholder="จังหวัด"
-                value={answers.Quiz6_Province}
-                onChangeText={(t) => setAnswers((s) => ({ ...s, Quiz6_Province: t }))}
+                value={answersQ_6.Quiz6_Province}
+                onChangeText={(t) => setAnswersQ_6((s) => ({ ...s, Quiz6_Province: t }))}
               />
               <PrimaryButton label="ส่งคำตอบ" onPress={handleSubmit} style={{ marginTop: 4 }} />
             </View>

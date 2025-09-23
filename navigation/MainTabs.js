@@ -1,7 +1,8 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
-import { Dimensions } from "react-native";
+import { Dimensions, TouchableOpacity } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context"; 
 import HomeScreen from "../screens/Menu/HomeScreen";
 import CognitiveTestScreen from "../screens/Menu/CognitiveTestScreen";
 import GameScreen from "../screens/Menu/GameScreen";
@@ -12,50 +13,51 @@ const Tab = createBottomTabNavigator();
 const { width, height } = Dimensions.get("window");
 const vh = (value) => (height * value) / 100;
 const vw = (value) => (width * value) / 100;
+
 export default function MainTabs({ email, setEmail }) {
+  const insets = useSafeAreaInsets(); 
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: true,
         tabBarLabelStyle: {
-          fontSize: vh(1.6),
-          fontWeight: "700",
-          marginBottom: 0,
-          marginLeft: vw(1),
+          fontSize: vh(1.5),
+          fontWeight: "600",
+          marginBottom: vh(0.5),
         },
-        // ทำให้ "ลอย" + ใหญ่ขึ้น
         tabBarStyle: {
-          height: vh(10),
-          position: "absolute",
-          left: vw(4.5),
-          right: vw(4.5),
-          // bottom: vh(2.2),                  // เว้นจากขอบล่างให้ลอย
-          borderRadius: vw(8),              // โค้งมนแบบแคปซูล
+          height: vh(9) + insets.bottom,
           backgroundColor: "#FFFFFF",
-          paddingBottom: vh(1.2),           // กันจอมี home indicator (iOS) ดูไม่อึดอัด
+          paddingBottom: insets.bottom > 0 ? insets.bottom : vh(1.2),
           paddingTop: vh(0.8),
 
           // iOS shadow
           shadowColor: "#000",
-          shadowOpacity: 0.12,
-          shadowOffset: { width: 0, height: vh(1) },
-          shadowRadius: vh(2),
+          shadowOpacity: 0.08,
+          shadowOffset: { width: 0, height: vh(0.5) },
+          shadowRadius: vh(1.5),
+
           // Android shadow
-          elevation: 20,
-          // เส้นขอบจาง ๆ ให้ตัดกับพื้น
-          borderWidth: 1,
-          borderColor: "rgba(0,0,0,0.05)",
+          elevation: 8,
+
+          borderTopWidth: 0.5,
+          borderTopColor: "rgba(0,0,0,0.1)",
         },
         tabBarItemStyle: {
-          paddingVertical: vh(0.8),    // เพิ่มพื้นที่กด
+          paddingVertical: vh(0.5),
         },
         tabBarIconStyle: {
-          marginTop: vh(0.5),
+          marginTop: vh(0.2),
         },
-        tabBarActiveTintColor: "#e4710dff",
+        tabBarActiveTintColor: "#ff7f32",
         tabBarInactiveTintColor: "#9AA0A6",
-        tabBarHideOnKeyboard: true, // เปิดคีย์บอร์ดแล้วซ่อนแถบ
+        tabBarHideOnKeyboard: true,
+        // ✅ ลดเอฟเฟกต์กด
+        tabBarButton: (props) => (
+          <TouchableOpacity {...props} activeOpacity={0.7} />
+        ),
         tabBarIcon: ({ focused, color }) => {
           let iconName;
           if (route.name === "Home") {
@@ -67,29 +69,18 @@ export default function MainTabs({ email, setEmail }) {
           } else if (route.name === "Menu") {
             iconName = focused ? "menu" : "menu-outline";
           }
-          return <Ionicons name={iconName} size={vh(3)} color={color} />; // ไอคอนใหญ่สะใจ
+          return <Ionicons name={iconName} size={vh(2.8)} color={color} />;
         },
       })}
     >
-      {/* <Tab.Screen name="Home" component={HomeScreen} options={{ title: "หน้าแรก" }} /> */}
-      <Tab.Screen
-        name="Home"
-        options={{ title: "หน้าแรก" }}
-      >
+      <Tab.Screen name="Home" options={{ title: "หน้าแรก" }}>
         {(props) => <HomeScreen {...props} email={email} setEmail={setEmail} />}
       </Tab.Screen>
-      <Tab.Screen
-        name="6CIT"
-        options={{ title: "6CIT" }}
-      >
+      <Tab.Screen name="6CIT" options={{ title: "6CIT" }}>
         {(props) => <CognitiveTestScreen {...props} email={email} setEmail={setEmail} />}
       </Tab.Screen>
       <Tab.Screen name="Game" component={GameScreen} options={{ title: "เกม" }} />
-      {/* <Tab.Screen name="Menu" component={MenuScreen} options={{ title: "เมนู" }} /> */}
-      <Tab.Screen
-        name="Menu"
-        options={{ title: "เมนู" }}
-      >
+      <Tab.Screen name="Menu" options={{ title: "เมนู" }}>
         {(props) => <MenuScreen {...props} email={email} setEmail={setEmail} />}
       </Tab.Screen>
     </Tab.Navigator>

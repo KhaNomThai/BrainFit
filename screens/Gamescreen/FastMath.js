@@ -31,7 +31,7 @@ const RED = "#E74C3C";
 
 /* ===== CONFIG ===== */
 const TOTAL_QUESTIONS = 20;
-const SECONDS_PER_QUESTION = 20;
+const SECONDS_PER_QUESTION = 30;
 const AUTO_NEXT_DELAY = 3000; // หน่วงให้เห็นสีถูก/ผิดก่อนข้าม
 
 const cardShadow = Platform.select({
@@ -459,9 +459,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 24,
     textAlign: "center",
-    color: "#222",
+    color: '#000',
     marginBottom: 14,
     backgroundColor: "#fff",
+    
   },
 
   button: {

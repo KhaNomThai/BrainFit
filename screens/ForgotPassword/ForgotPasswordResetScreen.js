@@ -12,6 +12,7 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  SafeAreaView,
 } from "react-native";
 import { post } from "../../api";
 import { Ionicons } from "@expo/vector-icons";
@@ -68,106 +69,99 @@ export default function ForgotPasswordResetScreen({ navigation, email }) {
   };
 
   return (
-    <ImageBackground
-      source={require("../../assets/background_login.png")}
-      style={{ flex: 1 }}
-      resizeMode="cover"
-    >
-      <KeyboardAvoidingView
+    <SafeAreaView style={{ flex: 1 }}>
+      <ImageBackground
+        source={require("../../assets/background_login.png")}
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        resizeMode="cover"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-          <View style={styles.form}>
-            <View style={styles.Viewlogo}>
-              <Image
-                source={require("../../assets/security.png")}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            </View>
-            <Text style={styles.forgotText}>ตั้งรหัสผ่านใหม่</Text>
-            <Text style={styles.forText}>ป้อนรหัสผ่านใหม่ของคุณ</Text>
-
-            <Text style={styles.label}>รหัสผ่าน</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={[styles.input, newPasswordError ? styles.inputError : null]}
-                placeholder="กรอกรหัสผ่านใหม่"
-                secureTextEntry={!showNewPassword}
-                value={newPassword}
-                onChangeText={(text) => {
-                  setNewPassword(text);
-                  setNewPasswordError("");
-                }}
-              />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowNewPassword(!showNewPassword)}
-              >
-                <Ionicons
-                  name={showNewPassword ? "eye-off" : "eye"}
-                  size={18}
-                  color="#555"
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+            <View style={styles.form}>
+              <View style={styles.Viewlogo}>
+                <Image
+                  source={require("../../assets/security.png")}
+                  style={styles.logo}
+                  resizeMode="contain"
                 />
-              </TouchableOpacity>
-            </View>
-            {newPasswordError ? (
-              <Text style={styles.errorText}>{newPasswordError}</Text>
-            ) : null}
+              </View>
+              <Text style={styles.forgotText}>ตั้งรหัสผ่านใหม่</Text>
+              <Text style={styles.forText}>ป้อนรหัสผ่านใหม่ของคุณ</Text>
 
-            <Text style={styles.label}>ยืนยันรหัสผ่าน</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={[
-                  styles.input,
-                  confirmPasswordError ? styles.inputError : null,
-                ]}
-                placeholder="กรอกยืนยันรหัสผ่าน"
-                secureTextEntry={!showConfirmPassword}
-                value={confirmPassword}
-                onChangeText={(text) => {
-                  setConfirmPassword(text);
-                  setConfirmPasswordError("");
-                }}
-              />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                <Ionicons
-                  name={showConfirmPassword ? "eye-off" : "eye"}
-                  size={18}
-                  color="#555"
+              <Text style={styles.label}>รหัสผ่าน</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, newPasswordError ? styles.inputError : null]}
+                  placeholder="กรอกรหัสผ่านใหม่"
+                  placeholderTextColor="#666"
+                  secureTextEntry={!showNewPassword}
+                  value={newPassword}
+                  onChangeText={(text) => {
+                    setNewPassword(text);
+                    setNewPasswordError("");
+                  }}
                 />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowNewPassword(!showNewPassword)}
+                >
+                  <Ionicons
+                    name={showNewPassword ? "eye-off" : "eye"}
+                    size={18}
+                    color="#555"
+                  />
+                </TouchableOpacity>
+              </View>
+              {newPasswordError ? (
+                <Text style={styles.errorText}>{newPasswordError}</Text>
+              ) : null}
+
+              <Text style={styles.label}>ยืนยันรหัสผ่าน</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    confirmPasswordError ? styles.inputError : null,
+                  ]}
+                  placeholder="กรอกยืนยันรหัสผ่าน"
+                  placeholderTextColor="#666"
+                  secureTextEntry={!showConfirmPassword}
+                  value={confirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    setConfirmPasswordError("");
+                  }}
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  <Ionicons
+                    name={showConfirmPassword ? "eye-off" : "eye"}
+                    size={18}
+                    color="#555"
+                  />
+                </TouchableOpacity>
+              </View>
+              {confirmPasswordError ? (
+                <Text style={styles.errorText}>{confirmPasswordError}</Text>
+              ) : null}
+
+              <TouchableOpacity style={styles.button} onPress={handleResetPassword}>
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>ยืนยันรหัสผ่านใหม่</Text>
+                )}
               </TouchableOpacity>
             </View>
-            {confirmPasswordError ? (
-              <Text style={styles.errorText}>{confirmPasswordError}</Text>
-            ) : null}
-
-            <TouchableOpacity
-              style={styles.button}
-              onPress={handleResetPassword}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>ยืนยัน</Text>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.linklogin}>
-              <Text style={{ color: "#555" }}>มีบัญชีอยู่แล้ว? </Text>
-              <TouchableOpacity onPress={() => navigation.replace("login")}>
-                <Text style={styles.linkText}>เข้าสู่ระบบ</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </ImageBackground>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </ImageBackground>
+    </SafeAreaView>
   );
 }
 
@@ -178,80 +172,73 @@ const vw = (value) => (width * value) / 100;
 const styles = StyleSheet.create({
   form: {
     flex: 1,
-    paddingHorizontal: vw(8),
-    paddingVertical: vh(3),
+    padding: vw(8),
   },
   Viewlogo: {
     alignItems: "center",
-  },
-  logo: {
-    marginTop: vh(10),
-    width: vw(55),
-    height: vh(18),
     marginBottom: vh(2),
   },
+  logo: {
+    width: vw(30),
+    height: vh(15),
+  },
   forgotText: {
+    fontSize: vh(3),
+    fontWeight: "bold",
     color: "#000",
-    fontSize: vh(5),
-    fontWeight: "900",
-    marginBottom: vh(0.8),
+    textAlign: "center",
+    marginBottom: vh(1),
   },
   forText: {
-    color: "#000",
     fontSize: vh(1.8),
-    fontWeight: "400",
-    marginBottom: vh(4),
+    color: "#000",
+    textAlign: "center",
+    marginBottom: vh(3),
   },
   label: {
+    fontSize: vh(1.6),
     color: "#000",
-    fontSize: vh(2),
-    fontWeight: "bold",
-    marginBottom: vh(0.6),
+    marginTop: vh(1),
   },
   inputWrapper: {
     position: "relative",
+    justifyContent: "center",
   },
   input: {
     borderWidth: 1.5,
     borderColor: "#ccc",
-    borderRadius: vw(3),
+    borderRadius: 8,
     paddingVertical: vh(1.2),
-    paddingHorizontal: vw(2),
-    fontSize: vh(1.5),
-    marginBottom: vh(1.2),
-  },
-  eyeButton: {
-    position: "absolute",
-    right: vw(3),
-    top: vh(1.5),
+    paddingHorizontal: vw(3),
+    fontSize: vh(1.6),
+    color: "#000",
+    marginTop: vh(0.5),
+    paddingRight: vw(10),
   },
   inputError: {
     borderColor: "red",
   },
+  eyeButton: {
+    position: "absolute",
+    right: vw(2),
+    top: "50%",
+    transform: [{ translateY: -10 }],
+  },
   errorText: {
     color: "red",
-    fontSize: vh(1.5),
-    marginLeft: vw(1),
+    marginTop: vh(0.5),
+    fontSize: vh(1.4),
   },
   button: {
     backgroundColor: "#ff7f32",
     paddingVertical: vh(1.5),
-    borderRadius: vw(2.5),
+    borderRadius: 8,
+    marginTop: vh(3),
     alignItems: "center",
-    marginTop: vh(1.2),
   },
   buttonText: {
     color: "#fff",
-    fontSize: vh(1.5),
-    fontWeight: "bold",
-  },
-  linklogin: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: vh(2),
-  },
-  linkText: {
-    color: "#ff7f32",
+    fontSize: vh(1.8),
     fontWeight: "bold",
   },
 });

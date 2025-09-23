@@ -314,9 +314,10 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#FFFFFF",},
   container: {
     flexGrow: 1,
-    padding: vw(5), // เดิม 20
+    padding: vw(2),
     backgroundColor: "#FFFFFF",
-    paddingBottom: vh(10)
+    paddingBottom: vh(height*0.02),
+    marginTop: vh(3),
   },
   Title: {
     fontSize: vh(2.8),

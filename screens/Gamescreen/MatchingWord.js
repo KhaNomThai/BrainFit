@@ -1,6 +1,6 @@
 // screens/Gamescreen/Catchword.js
 import React, { useMemo, useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform, Dimensions,SafeAreaView  } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { post } from "../../api";
 
@@ -245,63 +245,66 @@ export default function Matchingword({ navigation, email }) {
 
       {/* ===== QUIZ ===== */}
       {phase === "quiz" && (
-        
-        <View style={{ flex: 1, alignItems: "center", paddingHorizontal: vw(6), paddingTop: vh(3) }}>
-          {/* Header badges */}
-          <View style={styles.headerRow}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>ข้อ {index + 1}/{total}</Text>
+          <>
+            {/* Header badges */}
+            <View style={styles.headerRow}>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>ข้อ {index + 1}/{total}</Text>
+              </View>
+              <View style={[styles.feedbackbox, { marginTop: vh(1) }]}>
+              {picked && (
+                <Text style={[styles.feedback, isCorrect ? styles.ok : styles.no]}>
+                  {isCorrect ? "✓ ถูกต้อง" : `✗ ผิด (คำตอบคือ ${q.correct})`}
+                </Text>
+              )}
             </View>
-            <View style={styles.badgeOutline}>
-              <Text style={styles.badgeOutlineText}>คะแนน {score}</Text>
+              <View style={styles.badgeOutline}>
+                <Text style={styles.badgeOutlineText}>คะแนน {score}</Text>
+              </View>
             </View>
-          </View>
 
-          {/* กล่องคำศัพท์ */}
-          <View
-            style={[
-              styles.questionBox,
-              picked && isCorrect === true && { borderColor: "#1DBF73", backgroundColor: "#c6f6d5" },
-              picked && isCorrect === false && { borderColor: "#e11d48", backgroundColor: "#ffe4e6" },
-              { marginTop: vh(2), marginBottom: vh(3), paddingVertical: vh(3), width: "100%" },
-            ]}
+            {/* กล่องคำศัพท์ */}
+            <View
+              style={[
+                styles.questionBox,
+                picked && isCorrect === true && { borderColor: "#1DBF73", backgroundColor: "#c6f6d5" },
+                picked && isCorrect === false && { borderColor: "#e11d48", backgroundColor: "#ffe4e6" },
+                { marginTop: vh(2), marginBottom: vh(3), paddingVertical: vh(1), width: vw(80), alignSelf: "center" },
+              ]}
+            >
+              <Text style={styles.word}>{q.word}</Text>
+            </View>
+            <SafeAreaView style={{ flex: 1 }}>
+          <ScrollView 
+            contentContainerStyle={{ flexGrow: 1, alignItems: "center", }}
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.word}>{q.word}</Text>
-          </View>
+            {/* ตัวเลือกอีโมจิ 2x2 */}
+            <View style={[styles.choicesGrid, { marginTop: vh(1) }]}>
+              {choices.map((em, i) => {
+                const isPicked = picked === em;
+                const answers = em === q.correct;
+                let bg = "#f9f9f9";
 
-          {/* ตัวเลือกอีโมจิ 2x2 */}
-          <View style={[styles.choicesGrid, { marginTop: vh(1) }]}>
-            {choices.map((em, i) => {
-              const isPicked = picked === em;
-              const answers = em === q.correct;
-              let bg = "#f9f9f9";
+                if (isPicked && isCorrect === true) bg = "#2ecc71";
+                if (isPicked && isCorrect === false) bg = "#e74c3c";
+                if (picked && isCorrect === false && answers) bg = "#2ecc71";
 
-              if (isPicked && isCorrect === true) bg = "#2ecc71";
-              if (isPicked && isCorrect === false) bg = "#e74c3c";
-              if (picked && isCorrect === false && answers) bg = "#2ecc71";
-
-              return (
-                <TouchableOpacity
-                  key={i}
-                  style={[styles.choice, { backgroundColor: bg, marginBottom: vh(2) }]}
-                  onPress={() => choose(em)}
-                  activeOpacity={0.9}
-                >
-                  <Text style={styles.choiceEmoji}>{em}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <View style={[styles.feedbackbox, { marginTop: vh(-5) }]}>
-            {picked && (
-              <Text style={[styles.feedback, isCorrect ? styles.ok : styles.no]}>
-                {isCorrect ? "✓ ถูกต้อง" : `✗ ผิด (คำตอบคือ ${q.correct})`}
-              </Text>
-            )}
-          </View>
-        </View>
-        
+                return (
+                  <TouchableOpacity
+                    key={i}
+                    style={[styles.choice, { backgroundColor: bg, marginBottom: vh(2) }]}
+                    onPress={() => choose(em)}
+                    activeOpacity={0.9}
+                  >
+                    <Text style={styles.choiceEmoji}>{em}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+        </>
       )}
 
       {/* ===== RESULT ===== */}
@@ -374,7 +377,7 @@ const styles = StyleSheet.create({
 
   // Quiz 
   headerRow: {
-    width: "100%", flexDirection: "row", justifyContent: "space-between", marginBottom: 10,
+    width: "100%", flexDirection: "row", justifyContent: "space-between", marginBottom: 10, paddingHorizontal: vh(1)
   },
   badge: {
     backgroundColor: ORANGE.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,

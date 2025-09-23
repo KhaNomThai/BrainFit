@@ -889,7 +889,7 @@ const styles = StyleSheet.create({
   startBig: { fontSize: 28, fontWeight: "900", color: "#7C2D12", marginTop: -4, marginBottom: 6 },
 
   input: {
-    borderWidth: 1, borderColor: "#FED7AA", padding: 12, borderRadius: 12, marginBottom: 12, backgroundColor: "#FFFBEB",
+    borderWidth: 1, borderColor: "#FED7AA", padding: 12, borderRadius: 12, marginBottom: 12, backgroundColor: "#FFFBEB", color: '#000',
   },
   errorText: { fontSize: 12, color: "#DC2626", marginTop: -6, marginBottom: 8 },
 

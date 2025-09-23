@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     paddingTop: vh(1.2),
-    paddingBottom: vh(11),
+    paddingBottom:  vh(height*0.02),
   },
 
   header: {

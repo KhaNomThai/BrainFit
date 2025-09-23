@@ -3,9 +3,9 @@
     "name": "Brain Fit",
     "slug": "Brain_Fit",
     "version": "1.2.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/icon.png",
@@ -21,6 +21,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
       "package": "com.cpe.Brain_Fit",
       "permissions": [
         "android.permission.RECORD_AUDIO",
@@ -35,9 +36,6 @@
         "projectId": "d9dafb7f-eb54-489c-9307-0c5480809ed4"
       }
     },
-    "plugins": [
-      "react-native-edge-to-edge"
-    ],
     "owner": "err0r4o4"
   }
 }

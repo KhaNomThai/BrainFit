@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { Platform, Text, TextInput, KeyboardAvoidingView, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import LoginScreen from "./screens/Login/LoginScreen";
@@ -21,6 +23,14 @@ import GamepictureScreen from "./screens/Gamescreen/GamepictureScreen";
 import MainScreen from "./screens/Login/MainScreen"
 
 const Stack = createNativeStackNavigator();
+
+/* Global text defaults */
+if (Text && !Text.defaultProps) Text.defaultProps = {};
+if (TextInput && !TextInput.defaultProps) TextInput.defaultProps = {};
+Text.defaultProps.allowFontScaling = true;
+Text.defaultProps.style = [{ color: "#111", fontFamily: Platform.OS === "ios" ? "System" : "Roboto" }];
+TextInput.defaultProps.placeholderTextColor = "#666";
+TextInput.defaultProps.style = [{ color: "#000", fontFamily: Platform.OS === "ios" ? "System" : "Roboto" }];
 
 export default function App() {
   const [email, setEmail] = useState("");
@@ -57,7 +67,10 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
+    <SafeAreaProvider>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <View style={{ flex: 1 }}>
+          <NavigationContainer>
       
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
@@ -153,7 +166,7 @@ export default function App() {
             />
           )}
         </Stack.Screen>
-        <Stack.Screen name="FastMath" options={{ headerShown: true }}>
+        <Stack.Screen name="FastMath" options={{ headerShown: true, title: "Game"}}>
           {(props) => (
             <FastMath
               {...props}
@@ -163,7 +176,7 @@ export default function App() {
             />
           )}
         </Stack.Screen>
-        <Stack.Screen name="SoundRecognize" options={{ headerShown: true }}>
+        <Stack.Screen name="SoundRecognize" options={{ headerShown: true, title: "Game" }}>
           {(props) => (
             <SoundRecognize
               {...props}
@@ -173,7 +186,7 @@ export default function App() {
             />
           )}
         </Stack.Screen>
-        <Stack.Screen name="StoryGame" options={{ headerShown: true }}>
+        <Stack.Screen name="StoryGame" options={{ headerShown: true, title: "Game" }}>
           {(props) => (
             <StoryGame
               {...props}
@@ -183,7 +196,7 @@ export default function App() {
             />
           )}
         </Stack.Screen>
-        <Stack.Screen name="MatchingWord" options={{ headerShown: true }}>
+        <Stack.Screen name="MatchingWord" options={{ headerShown: true, title: "Game" }}>
           {(props) => (
             <MatchingWord
               {...props}
@@ -193,7 +206,7 @@ export default function App() {
             />
           )}
         </Stack.Screen>
-        <Stack.Screen name="RelationMatch" options={{ headerShown: true }}>
+        <Stack.Screen name="RelationMatch" options={{ headerShown: true, title: "Game" }}>
           {(props) => (
             <RelationMatch
               {...props}
@@ -203,7 +216,7 @@ export default function App() {
             />
           )}
         </Stack.Screen>
-        <Stack.Screen name="MemoryGame" options={{ headerShown: true }}>
+        <Stack.Screen name="MemoryGame" options={{ headerShown: true, title: "Game" }}>
           {(props) => (
             <MemoryGame
               {...props}
@@ -222,7 +235,7 @@ export default function App() {
             />
           )}
         </Stack.Screen>
-        <Stack.Screen name="NumberScreen" options={{ headerShown: true }}>
+        <Stack.Screen name="NumberScreen" options={{ headerShown: true, title: "Game" }}>
           {(props) => (
             <NumberScreen
               {...props}
@@ -231,7 +244,7 @@ export default function App() {
             />
           )}
         </Stack.Screen>
-        <Stack.Screen name="GamepictureScreen" options={{ headerShown: true }}>
+        <Stack.Screen name="GamepictureScreen" options={{ headerShown: true, title: "Game" }}>
           {(props) => (
             <GamepictureScreen
               {...props}
@@ -242,5 +255,8 @@ export default function App() {
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
+    </View>
+      </KeyboardAvoidingView>
+    </SafeAreaProvider>
   );
 }

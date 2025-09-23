@@ -6,174 +6,140 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Dimensions,
-  Image,
+  SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { post, isEmail } from "../../api";
 
-export default function ForgotPasswordRequestScreen({ navigation, email, setEmail }) {
+export default function ForgotPasswordScreen({ navigation, email, setEmail }) {
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [emailError, setEmailError] = useState("");
 
   const handleRequestOtp = async () => {
-    setEmailError("");
-
-    if (!email) {
-      setEmailError("กรุณากรอกอีเมล");
-      return;
-    }
     if (!isEmail(email)) {
-      setEmailError("อีเมลไม่ถูกต้อง");
+      setError("กรุณากรอกอีเมลให้ถูกต้อง");
       return;
     }
-
     setLoading(true);
     try {
-      const res = await post({
-        action: "requestReset",
-        email: email.trim(),
-      });
-      setLoading(false);
-
+      const res = await post({ action: "requestReset", email });
       if (res.success) {
         navigation.replace("forgotpasswordverify");
       } else {
-        setEmailError("อีเมลไม่ถูกต้อง");
+        setError(res.message || "ไม่สามารถขอ OTP ได้");
       }
     } catch (err) {
+      setError("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้");
+    } finally {
       setLoading(false);
-      setEmailError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์");
     }
   };
 
   return (
-    <ImageBackground
-      source={require("../../assets/background_login.png")}
-      style={{ flex: 1 }}
-      resizeMode="cover"
-    >
-      <View style={styles.form}>
-         <View style={styles.Viewlogo}>
-            <Image 
-              source={require("../../assets/profile.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
-        <Text style={styles.forgotText}>ลืมรหัสผ่าน</Text>
-        <Text style={styles.forText}>เปลี่ยนรหัสผ่าน</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ImageBackground
+        source={require("../../assets/background_login.png")}
+        style={{ flex: 1 }}
+        resizeMode="cover"
+      >
+        <View style={styles.form}>
+          <Text style={styles.title}>ลืมรหัสผ่าน</Text>
+          <Text style={styles.label}>กรอกอีเมลที่ใช้สมัคร</Text>
 
-        <Text style={styles.EmailText}>อีเมล</Text>
-        <TextInput
-          style={[styles.Input, emailError ? styles.inputError : null]}
-          placeholder="กรอกอีเมลของคุณ"
-          value={email}
-          onChangeText={(text) => {
-            setEmail(text);
-            setEmailError("");
-          }}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <Text style={styles.errorText}>{emailError}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="กรอกอีเมล..."
+            placeholderTextColor="#666"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={(t) => {
+              setEmail(t);
+              setError("");
+            }}
+          />
 
-        <TouchableOpacity style={styles.button} onPress={handleRequestOtp} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>ส่ง OTP</Text>
-          )}
-        </TouchableOpacity>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <View style={styles.linklogin}>
-          <Text style={{ color: "#555" }}>มีบัญชีอยู่แล้ว? </Text>
-          <TouchableOpacity onPress={() => navigation.replace("login")}>
-            <Text style={styles.linkText}>เข้าสู่ระบบ</Text>
+          <TouchableOpacity style={styles.sendBtn} onPress={handleRequestOtp}>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.sendText}>ขอรหัส OTP</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.replace("login")}
+          >
+            <Text style={styles.backText}>กลับไปหน้าเข้าสู่ระบบ</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </ImageBackground>
+      </ImageBackground>
+    </SafeAreaView>
   );
 }
 
 const { width, height } = Dimensions.get("window");
 const vh = (value) => (height * value) / 100;
 const vw = (value) => (width * value) / 100;
+
 const styles = StyleSheet.create({
   form: {
     flex: 1,
-    paddingHorizontal: vw(8),
+    justifyContent: "center",
+    padding: vw(10),
   },
-  Viewlogo: {
-    alignItems: "center",
-  },
-  logo: {
-    marginTop: vh(10),
-    width: vw(55),
-    height: vh(18),
+  title: {
+    fontSize: vh(3),
+    fontWeight: "bold",
+    color: "#000",
+    textAlign: "center",
     marginBottom: vh(2),
   },
-  forgotText: {
-    color: "#000",
-    fontSize: vh(5),
-    fontWeight: "900",
-    marginBottom: vh(0.8),
-  },
-  forText: {
-    color: "#000",
+  label: {
     fontSize: vh(1.8),
-    fontWeight: "400",
-    marginBottom: vh(5),
-    marginLeft: vw(1.2),
-  },
-  EmailText: {
     color: "#000",
-    fontSize: vh(2),
-    fontWeight: "bold",
-    marginBottom: vh(0.8),
+    marginBottom: vh(1),
+    textAlign: "center",
   },
-  Input: {
+  input: {
     borderWidth: 1.5,
     borderColor: "#ccc",
-    borderRadius: vw(3),
+    borderRadius: 8,
     paddingVertical: vh(1.2),
-    paddingHorizontal: vw(2),
-    fontSize: vh(1.5),
-  },
-  inputError: {
-    borderColor: "red",
-  },
-  errorContainer: {
-    minHeight: vh(2),
-    justifyContent: "center",
+    paddingHorizontal: vw(3),
+    fontSize: vh(1.8),
+    color: "#000",
     marginBottom: vh(1),
   },
   errorText: {
     color: "red",
     fontSize: vh(1.5),
-    marginLeft: vw(1),
+    marginBottom: vh(1),
+    textAlign: "center",
   },
-  button: {
+  sendBtn: {
     backgroundColor: "#ff7f32",
     paddingVertical: vh(1.5),
-    borderRadius: vw(2.5),
-    alignItems: "center",
-    marginTop: vh(1.2),
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: vh(1.5),
-    fontWeight: "bold",
-  },
-  linklogin: {
-    flexDirection: "row",
-    justifyContent: "center",
+    borderRadius: 8,
     marginTop: vh(2),
+    alignItems: "center",
   },
-  linkText: {
-    color: "#ff7f32",
+  sendText: {
+    color: "#fff",
+    fontSize: vh(1.8),
     fontWeight: "bold",
-    fontSize: vh(1.5),
+  },
+  backBtn: {
+    marginTop: vh(2),
+    alignItems: "center",
+  },
+  backText: {
+    color: "#ff7f32",
+    fontSize: vh(1.6),
+    fontWeight: "600",
   },
 });

@@ -56,11 +56,10 @@ export default function LoginScreen({ navigation, email, setEmail, password, set
       }
     } catch (error) {
       console.error(error);
-      setEmailError("เกิดข้อผิดพลาด เเจ้งผู้พัฒนาเเอปพลิเคชัน");
+      setEmailError("เกิดข้อผิดพลาด แจ้งผู้พัฒนาแอปพลิเคชัน");
     } finally {
       setLoading(false);
     }
-
   };
 
   const handleForgotPassword = () => {
@@ -69,41 +68,41 @@ export default function LoginScreen({ navigation, email, setEmail, password, set
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-    <ImageBackground
-      source={require("../../assets/background_login.png")}
-      style={{ flex: 1 }}
-      resizeMode="cover"
-    >
-      
-      <View style={styles.form}>
-        <View style={styles.Viewlogo}>
-          <Image 
-            source={require("../../assets/profile.png")}
-            style={styles.logo}
-            resizeMode="contain"
+      <ImageBackground
+        source={require("../../assets/background_login.png")}
+        style={{ flex: 1 }}
+        resizeMode="cover"
+      >
+        <View style={styles.form}>
+          <View style={styles.Viewlogo}>
+            <Image
+              source={require("../../assets/profile.png")}
+              style={styles.logo}
+              resizeMode="contain"
             />
-        </View>
-        <Text style={styles.loginAText}>เข้าสู่ระบบบัญชี</Text>
-        <Text style={styles.WelconeText}>ยินดีต้อนรับเข้าสู่เเอปพลิเคชัน....</Text>
+          </View>
+          <Text style={styles.loginAText}>เข้าสู่ระบบบัญชี</Text>
+          <Text style={styles.WelconeText}>ยินดีต้อนรับเข้าสู่แอปพลิเคชัน....</Text>
 
-        <Text style={styles.EmailText}>อีเมล</Text>
-        <TextInput
-          style={[styles.input, emailError ? styles.inputError : null]}
-          placeholder="กรอกข้อมูล..."
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={(t) => {
-            setEmail(t);
-            if (emailError) setEmailError("");
-          }}
-        />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{emailError}</Text>
-        </View>
+          <Text style={styles.EmailText}>อีเมล</Text>
+          <TextInput
+            style={[styles.input, emailError ? styles.inputError : null]}
+            placeholder="กรอกข้อมูล..."
+            placeholderTextColor="#666"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={(t) => {
+              setEmail(t);
+              if (emailError) setEmailError("");
+            }}
+          />
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{emailError}</Text>
+          </View>
 
-        <Text style={styles.PasswordText}>รหัสผ่าน</Text>
-         <View style={styles.passwordContainer}>
+          <Text style={styles.PasswordText}>รหัสผ่าน</Text>
+          <View style={styles.passwordContainer}>
             <TextInput
               style={[
                 styles.input,
@@ -111,6 +110,7 @@ export default function LoginScreen({ navigation, email, setEmail, password, set
                 passwordError ? styles.inputError : null,
               ]}
               placeholder="กรอกข้อมูล..."
+              placeholderTextColor="#666"
               secureTextEntry={!showPassword}
               value={password}
               onChangeText={(t) => {
@@ -129,30 +129,30 @@ export default function LoginScreen({ navigation, email, setEmail, password, set
               />
             </TouchableOpacity>
           </View>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{passwordError}</Text>
-        </View>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{passwordError}</Text>
+          </View>
 
-        <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotContainer}>
-          <Text style={styles.forgot}>ลืมรหัสผ่าน?</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.loginText}>เข้าสู่ระบบ</Text>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.linklogin}>
-          <Text style={{     fontSize: vh(1.5), color: "#555" }}> ยังไม่มีบัญชี? </Text>
-          <TouchableOpacity onPress={() => navigation.replace("register")}>
-            <Text style={{ color: "#ff7f32", fontWeight: "bold",    fontSize: vh(1.5) }}>สร้างบัญชี</Text>
+          <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotContainer}>
+            <Text style={styles.forgot}>ลืมรหัสผ่าน?</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.loginText}>เข้าสู่ระบบ</Text>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.linklogin}>
+            <Text style={{ fontSize: vh(1.5), color: "#555" }}>ยังไม่มีบัญชี?</Text>
+            <TouchableOpacity onPress={() => navigation.replace("register")}>
+              <Text style={{ color: "#ff7f32", fontWeight: "bold", fontSize: vh(1.5) }}>สร้างบัญชี</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </ImageBackground>
+      </ImageBackground>
     </SafeAreaView>
   );
 }
@@ -188,6 +188,7 @@ const styles = StyleSheet.create({
     paddingVertical: vh(1.2),
     paddingHorizontal: vw(2),
     fontSize: vh(1.5),
+    color: "#000",
   },
   inputError: {
     borderColor: "red",
@@ -210,7 +211,7 @@ const styles = StyleSheet.create({
     color: "#ff7f32",
     fontSize: vh(1.5),
     fontWeight: "bold",
-    marginTop: vh(-2)
+    marginTop: vh(-2),
   },
   loginBtn: {
     backgroundColor: "#ff7f32",

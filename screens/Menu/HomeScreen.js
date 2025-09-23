@@ -251,9 +251,9 @@ const vh = (value) => (height * value) / 100;
 const vw = (value) => (width * value) / 100;
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#fff",padding: vw(5),},
-  screen: { flex: 1, backgroundColor: "#fff", paddingBottom: vh(11) },
-  content: { padding: vw(4), paddingBottom: vh(4) },
+  safe: { flex: 1, backgroundColor: "#fff",padding: vw(5)},
+  screen: {flex: 1, backgroundColor: "#fff", minHeight: vh(30),},
+  content: {paddingBottom: vh(height*0.02) },
 
   header: { fontSize: vh(2.8), fontWeight: "700", marginBottom: vh(1.5), color: "#111827" },
 

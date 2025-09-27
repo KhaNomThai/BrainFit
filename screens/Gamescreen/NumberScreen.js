@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, ScrollView,Dimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, SafeAreaView, ScrollView, Dimensions } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { post } from "../../api";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 
 const AUTO_NEXT_DELAY = 1000;
 // อิโมจิที่ใช้สุ่ม
@@ -182,7 +184,7 @@ export default function HomeScreen({ navigation, email }) {
   const [elapsedTime, setElapsedTime] = useState(0);
 
   const [questions, setQuestions] = useState([]);
-
+  const insets = useSafeAreaInsets();
   useEffect(() => {
     setQuestions(generateQuestions()); // โหลดโจทย์ตอนเริ่ม
   }, []);
@@ -266,86 +268,83 @@ export default function HomeScreen({ navigation, email }) {
     );
   }
 
-  return (
-    <View>
-    <View style={styles.topbar}>
-            <View style={styles.topbarContent}>
-              <Icon
-                name="emoticon-outline"
-                size={26}
-                color={ORANGE.primaryDark}
-                style={{ marginRight: 8 }}
-              />
-              <Text style={styles.topbarTitle}>จับคู่ตัวเลขกับจำนวนรูปภาพ</Text>
-         </View>
+    return (
+    <SafeAreaView style={{ flex: 1 }}>
+      {/* 🔹 Topbar */}
+      <View style={styles.topbar}>
+        <View style={styles.topbarContent}>
+          <Icon
+            name="emoticon-outline"
+            size={26}
+            color={ORANGE.primaryDark}
+            style={{ marginRight: 8 }}
+          />
+          <Text style={styles.topbarTitle}>จับคู่ตัวเลขกับจำนวนรูปภาพ</Text>
+        </View>
       </View>
 
-    <View style={styles.card}>
-      
-      {/* <View style={styles.Textt}>
-        <Text style={styles.title}>เกมจับคู่จำนวนกับภาพ</Text>
-        <Text style={styles.subtitle1}>จับคู่ตัวเลขกับ</Text>
-        <Text style={styles.subtitle2}>จำนวนรูปภาพที่ถูกต้อง</Text>
-      </View> */}
-      {/* ✅ ScrollView ครอบทั้งหมด */}
-      <ScrollView 
-        // contentContainerStyle={{ paddingBottom: 40 }} 
+      {/* 🔹 ScrollView + safe padding */}
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + vh(2) }} // ✅ เผื่อที่ข้างล่าง
         showsVerticalScrollIndicator={false}
       >
-        {questions.map((q, qIndex) => (
-          <View key={qIndex} style={styles.card1}>
-            <View style={styles.circle}>
-              <Text style={styles.point}>{q.number}</Text>
-            </View>
+        <View style={styles.card}>
+          {questions.map((q, qIndex) => (
+            <View key={qIndex} style={styles.card1}>
+              <View style={styles.circle}>
+                <Text style={styles.point}>{q.number}</Text>
+              </View>
 
-            <View style={styles.choicesRow}>
-              {q.choices.slice(0, 2).map((c, cIndex) => {
-                const isSelected = selected[qIndex] === cIndex;
-                let borderColor = "#fff";
-                if (selected[qIndex] !== undefined) {
-                  if (c.correct) borderColor = "green";
-                  else if (isSelected) borderColor = "red";
-                }
-                return (
-                  <TouchableOpacity
-                    key={cIndex}
-                    style={[styles.choice, { borderWidth: 3, borderColor }]}
-                    onPress={() => handleChoice(qIndex, cIndex)}
-                    disabled={selected[qIndex] !== undefined}
-                  >
-                    <Text style={styles.choiceText}>{c.text}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+              {/* แถวแรก */}
+              <View style={styles.choicesRow}>
+                {q.choices.slice(0, 2).map((c, cIndex) => {
+                  const isSelected = selected[qIndex] === cIndex;
+                  let borderColor = "#fff";
+                  if (selected[qIndex] !== undefined) {
+                    if (c.correct) borderColor = "green";
+                    else if (isSelected) borderColor = "red";
+                  }
+                  return (
+                    <TouchableOpacity
+                      key={cIndex}
+                      style={[styles.choice, { borderWidth: 3, borderColor }]}
+                      onPress={() => handleChoice(qIndex, cIndex)}
+                      disabled={selected[qIndex] !== undefined}
+                    >
+                      <Text style={styles.choiceText}>{c.text}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
 
-            <View style={styles.choicesRow}>
-              {q.choices.slice(2, 4).map((c, cIndex) => {
-                const realIndex = cIndex + 2;
-                const isSelected = selected[qIndex] === realIndex;
-                let borderColor = "#fff";
-                if (selected[qIndex] !== undefined) {
-                  if (c.correct) borderColor = "green";
-                  else if (isSelected) borderColor = "red";
-                }
-                return (
-                  <TouchableOpacity
-                    key={realIndex}
-                    style={[styles.choice, { borderWidth: 3, borderColor }]}
-                    onPress={() => handleChoice(qIndex, realIndex)}
-                    disabled={selected[qIndex] !== undefined}
-                  >
-                    <Text style={styles.choiceText}>{c.text}</Text>
-                  </TouchableOpacity>
-                );
-              })}
+              {/* แถวสอง */}
+              <View style={styles.choicesRow}>
+                {q.choices.slice(2, 4).map((c, cIndex) => {
+                  const realIndex = cIndex + 2;
+                  const isSelected = selected[qIndex] === realIndex;
+                  let borderColor = "#fff";
+                  if (selected[qIndex] !== undefined) {
+                    if (c.correct) borderColor = "green";
+                    else if (isSelected) borderColor = "red";
+                  }
+                  return (
+                    <TouchableOpacity
+                      key={realIndex}
+                      style={[styles.choice, { borderWidth: 3, borderColor }]}
+                      onPress={() => handleChoice(qIndex, realIndex)}
+                      disabled={selected[qIndex] !== undefined}
+                    >
+                      <Text style={styles.choiceText}>{c.text}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
-          </View>
-        ))}
+          ))}
+        </View>
       </ScrollView>
-    </View>
-    </View>
-);
+    </SafeAreaView>
+  );
 
 }
 

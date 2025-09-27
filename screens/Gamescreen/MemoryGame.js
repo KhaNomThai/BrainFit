@@ -290,7 +290,7 @@ export default function HiddenObjectGame({ email, navigation }) {
           >
             {/* Background Image */}
             <Image
-              source={require("../../assets/FindPic.png")}
+              source={require("../../assets/FindPic.jpg")}
               style={{
                 width: imageLayout.width,
                 height: imageLayout.height,
@@ -355,6 +355,11 @@ export default function HiddenObjectGame({ email, navigation }) {
               <Text
                 style={[
                   styles.listItem,
+                  {
+                    flexShrink: 1,
+                    flexWrap: "wrap",
+                    maxWidth: "90%",
+                  },
                   item.found && {
                     textDecorationLine: "line-through",
                     color: ORANGE.gray,
@@ -366,6 +371,7 @@ export default function HiddenObjectGame({ email, navigation }) {
             </View>
           ))}
         </View>
+
       </ScrollView>
     </View>
   );
@@ -491,7 +497,12 @@ const styles = StyleSheet.create({
     margin: 4,
     backgroundColor: ORANGE.pale,
   },
-  listItem: { fontSize: 16, color: ORANGE.textMain },
+  listItem: { 
+    fontSize: 16, 
+    color: ORANGE.textMain,
+    flexShrink: 1,
+    flexWrap: "wrap",
+  },
 
   resultWrap: { padding: 18, paddingTop: 36, alignItems: "center" },
   resultCard: {

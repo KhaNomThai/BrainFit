@@ -1,6 +1,7 @@
 // screens/Gamescreen/StoryGame.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, Platform } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView,SafeAreaView, Animated, Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { post } from "../../api";
 
 // ===== ICONS =====
@@ -451,7 +452,7 @@ export default function StoryGame({email}) {
 
   const [startTime, setStartTime] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
-
+  const insets = useSafeAreaInsets();   
   const current = questions[index];
 
   /* ขนาดฟอนต์เนื้อเรื่อง */
@@ -670,93 +671,141 @@ export default function StoryGame({email}) {
 
       {/* ===== STORY ===== */}
       {phase === "story" && (
-        <View style={{ flex: 1 }}>
-          <ScrollView contentContainerStyle={styles.storyWrap} showsVerticalScrollIndicator={false}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <ScrollView
+            contentContainerStyle={[
+              styles.storyWrap,
+              { paddingBottom: insets.bottom || 24 }, // ✅ กันท้ายจอชน
+            ]}
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.storyCard}>
               <View style={styles.storyTitleRow}>
                 <Icon name="book" size={22} color={ORANGE.primaryDark} />
                 <Text style={styles.storyTitle}>{story.title}</Text>
               </View>
               <View style={styles.divider} />
-              <Text style={[styles.storyBody, { fontSize: storyFontSize }]}>{story.body}</Text>
+              <Text style={[styles.storyBody, { fontSize: storyFontSize }]}>
+                {story.body}
+              </Text>
+            </View>
+
+            {/* 🔹 ปุ่มย้ายมาอยู่ใน ScrollView */}
+            <View style={{ marginTop: 24, alignItems: "center", gap: 10 }}>
+              <PressableScale style={styles.primaryBtn} onPress={startQuiz}>
+                <Text style={styles.primaryBtnText}>เริ่มทำแบบทดสอบ</Text>
+              </PressableScale>
+              <PressableScale style={styles.ghostBtn} onPress={replayNew}>
+                <Text style={styles.ghostBtnText}>สุ่มเรื่องใหม่</Text>
+              </PressableScale>
             </View>
           </ScrollView>
-
-          <View style={styles.bottomBarCenter}>
-            <PressableScale style={styles.primaryBtn} onPress={startQuiz}>
-              <Text style={styles.primaryBtnText}>เริ่มทำแบบทดสอบ</Text>
-            </PressableScale>
-            <PressableScale style={styles.ghostBtn} onPress={replayNew}>
-              <Text style={styles.ghostBtnText}>สุ่มเรื่องใหม่</Text>
-            </PressableScale>
-          </View>
-        </View>
+        </SafeAreaView>
       )}
+
+
+
 
       {/* ===== QUIZ ===== */}
       {phase === "quiz" && current && (
-        <View style={{ flex: 1 }}>
-          <View style={styles.quizHeader}>
-            <Animated.View style={[styles.timerPill, { transform: [{ scale: pulse }] }]}>
-              <Text style={styles.timerLabel}>เวลา</Text>
-              <Text style={[styles.timerValue, timeLeft <= 10 && styles.timerUrgent]}>{timeLeft} วินาที</Text>
-            </Animated.View>
-
-            <View style={styles.quizTitlePill}>
-              <Text style={styles.quizTitleInline}>ข้อ {index + 1} / {questions.length}</Text>
-            </View>
-
-            <View style={styles.progressBox}>
-              <View style={styles.progressBar}>
-                <Animated.View
-                  style={[
-                    styles.progressFill,
-                    { width: progress.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }) },
-                  ]}
-                />
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.quizBody}>
-            <View style={styles.questionRow}>
-              <Icon name="help-circle-outline" size={22} color={ORANGE.primaryDark} />
-              <Text style={styles.question}>{current.prompt}</Text>
-            </View>
-
-            <View style={{ rowGap: 14 }}>
-              {current.choices.map((c, i) => (
-                <Option key={`${current.id}-${i}`} label={c} i={i} />
-              ))}
-            </View>
-
-            {selected !== null && (
-              <View style={styles.feedback}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={{ flex: 1 }}>
+            <View style={styles.quizHeader}>
+              <Animated.View style={[styles.timerPill, { transform: [{ scale: pulse }] }]}>
+                <Text style={styles.timerLabel}>เวลา</Text>
                 <Text
                   style={[
-                    styles.feedbackText,
-                    selected === current.correctIndex ? styles.feedbackOk : styles.feedbackNo,
+                    styles.timerValue,
+                    timeLeft <= 10 && styles.timerUrgent,
                   ]}
                 >
-                  {selected === current.correctIndex ? "ตอบถูกต้อง" : "ไม่ถูก ลองใหม่รอบต่อไป"}
+                  {timeLeft} วินาที
+                </Text>
+              </Animated.View>
+
+              <View style={styles.quizTitlePill}>
+                <Text style={styles.quizTitleInline}>
+                  ข้อ {index + 1} / {questions.length}
                 </Text>
               </View>
-            )}
+
+              <View style={styles.progressBox}>
+                <View style={styles.progressBar}>
+                  <Animated.View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: progress.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ["0%", "100%"],
+                        }),
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* 🔹 ScrollView เผื่อ safe area ด้านล่าง */}
+            <ScrollView
+              contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.quizBody}>
+                <View style={styles.questionRow}>
+                  <Icon name="help-circle-outline" size={22} color={ORANGE.primaryDark} />
+                  <Text style={styles.question}>{current.prompt}</Text>
+                </View>
+
+                <View style={{ rowGap: 14 }}>
+                  {current.choices.map((c, i) => (
+                    <Option key={`${current.id}-${i}`} label={c} i={i} />
+                  ))}
+                </View>
+
+                {selected !== null && (
+                  <View style={styles.feedback}>
+                    <Text
+                      style={[
+                        styles.feedbackText,
+                        selected === current.correctIndex
+                          ? styles.feedbackOk
+                          : styles.feedbackNo,
+                      ]}
+                    >
+                      {selected === current.correctIndex
+                        ? "ตอบถูกต้อง"
+                        : "ไม่ถูก ลองใหม่รอบต่อไป"}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </ScrollView>
           </View>
-        </View>
+        </SafeAreaView>
       )}
 
       {/* ===== RESULT ===== */}
       {phase === "result" && (
-        <ScrollView contentContainerStyle={styles.resultWrap} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={[styles.resultWrap, { paddingBottom: insets.bottom + 24 }]}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.resultCard}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <Icon name="flag-checkered" size={22} color={ORANGE.primaryDark} />
               <Text style={styles.resultTitle}>สรุปผล</Text>
             </View>
-            <Text style={styles.resultScore}>ได้ {correctCount} / {questions.length} ข้อ</Text>
+            <Text style={styles.resultScore}>
+              ได้ {correctCount} / {questions.length} ข้อ
+            </Text>
             <View style={styles.resultBar}>
-              <View style={[styles.resultFill, { width: `${(correctCount / questions.length) * 100}%` }]} />
+              <View
+                style={[
+                  styles.resultFill,
+                  { width: `${(correctCount / questions.length) * 100}%` },
+                ]}
+              />
             </View>
           </View>
 
@@ -784,6 +833,7 @@ export default function StoryGame({email}) {
           </View>
         </ScrollView>
       )}
+
     </View>
   );
 }
@@ -917,7 +967,7 @@ const styles = StyleSheet.create({
   // BUTTONS
   primaryBtn: {
     backgroundColor: ORANGE.primary, paddingVertical: 18, paddingHorizontal: 26,
-    borderRadius: 14, minWidth: 240, alignItems: "center", ...cardShadow,
+    borderRadius: 14, minWidth: 240, alignItems: "center", ...cardShadow, 
   },
   primaryBtnText: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
   secondaryBtn: {

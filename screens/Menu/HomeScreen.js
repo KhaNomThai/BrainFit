@@ -127,10 +127,11 @@ export default function HomeScreen({ email, setEmail }) {
         lunch: formatted[keyToLabel("lunch")],
         sleep: formatted[keyToLabel("sleep")],
       });
+
       if (data?.success) {
-        setLoading(false);
-        // alert("บันทึกสำเร็จ");
         await fetchSaveStats();
+        setChecklist({});
+        setLoading(false);
       } else {
         setLoading(false);
         throw new Error(data?.message ?? "บันทึกไม่สำเร็จ");
@@ -140,6 +141,7 @@ export default function HomeScreen({ email, setEmail }) {
       setLoading(false);
     }
   };
+
 
 
   if (!ready) {
@@ -279,10 +281,32 @@ const styles = StyleSheet.create({
 
   subHeader: { fontSize: vh(1.8), fontWeight: "600", marginTop: vh(1.5), marginBottom: vh(1), color: "#111827" },
 
-  chartWrap: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", height: vh(15), paddingHorizontal: vw(1) },
-  barWrap: { alignItems: "center", width: vw(6.5) },
-  bar: { width: vw(4.5), borderRadius: vw(2), backgroundColor: ORANGE },
-  barLabel: { fontSize: vh(1.4), color: GRAY, marginTop: vh(0.8) },
+  chartWrap: { 
+    flexDirection: "row", 
+    justifyContent: "space-around",
+    alignItems: "flex-end", 
+    height: vh(15),
+    marginTop: vh(1.5),
+  },
+
+  barWrap: { 
+    alignItems: "center", 
+    flex: 1, 
+  },
+
+  bar: { 
+    width: vw(5),
+    borderRadius: vw(2.5),
+    backgroundColor: ORANGE,
+  },
+
+  barLabel: { 
+    marginTop: vh(0.8), 
+    fontSize: vh(1.6), 
+    color: "#6B7280", 
+    textAlign: "center",
+  },
+
 
   listCard: {
     borderRadius: vw(4.5),
